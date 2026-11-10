@@ -69,3 +69,12 @@ traces = ["out/data/fish26b/gen-*-ls220[12]-*-n[0-9]*[0-9].jsonl", "out/data/fis
           "out/data/fish31b-cov/gen-*-nofood0.6.jsonl",
           "out/data/big-play/gen-*-ls3611-*-play0.6.jsonl"]
 sha256 = "a52e8648dd8a4c1610d8d716144f2c12300d37759d0ea745ffbe07a08b397028"   # 28,948 pairs, 2026-11-10 14:17
+
+["fish-v4-mix-cov-bigplay-relabel"]
+# issue #1 eating fix: fish-v4-mix-cov-bigplay with the 31B's labels at hunger 1-3 with food in view (4,021 of its
+# 13,500) relabelled by the 26B (relabel.py, label seed 4701); every other pair the same
+schema = "4"
+traces = ["out/data/fish26b/gen-*-ls220[12]-*-n[0-9]*[0-9].jsonl", "out/data/fish26b/gen-*-ls2211-*-n[0-9]*[0-9].jsonl",
+          "out/data/fish26b-cov/gen-*-ls2301-*-nofood0.6.jsonl", "out/data/fish26b-cov/gen-*-ls2311-*-nofood0.6.jsonl",
+          "out/data/fish31b-relabel/kept-31b-h1-3food.jsonl", "out/data/fish31b-relabel/relabel26b-h1-3food-s[01]of2.jsonl",
+          "out/data/big-play/gen-*-ls3611-*-play0.6.jsonl"]
