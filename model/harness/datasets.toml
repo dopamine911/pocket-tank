@@ -37,3 +37,13 @@ schema = "4"
 traces = ["out/data/fish26b/gen-*-ls220[1234]-*-n[0-9]*[0-9].jsonl", "out/data/fish26b/gen-*-ls221[123]-*-n[0-9]*[0-9].jsonl",
           "out/data/fish26b-cov/gen-*-nofood0.6.jsonl"]
 sha256 = "d06a7e28c49b7fa41f5226e3cdfca37f2ef574014c2fe2b911bb6f3c5cff50cf"   # 29,299 pairs, food none in 22.4% (was ~4%), 2026-11-10 08:31
+
+["fish-v4-mix-cov"]
+# issue #1: 50/50 teacher mix with coverage. 26B half: regular shards 201, 202, 211 + --no-food 0.6 shards 301, 311;
+# 31B half: regular shards 101, 102, 111 + --no-food 0.6 shards 401, 411; ~26,700 pairs, ~25% no-food states
+schema = "4"
+traces = ["out/data/fish26b/gen-*-ls220[12]-*-n[0-9]*[0-9].jsonl", "out/data/fish26b/gen-*-ls2211-*-n[0-9]*[0-9].jsonl",
+          "out/data/fish26b-cov/gen-*-ls2301-*-nofood0.6.jsonl", "out/data/fish26b-cov/gen-*-ls2311-*-nofood0.6.jsonl",
+          "out/data/fish31b/gen-*-ls110[12]-*-n[0-9]*[0-9].jsonl", "out/data/fish31b/gen-*-ls1111-*-n[0-9]*[0-9].jsonl",
+          "out/data/fish31b-cov/gen-*-nofood0.6.jsonl"]
+# sha256 pinned once the fold is done
