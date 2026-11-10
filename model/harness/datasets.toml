@@ -20,7 +20,7 @@ traces = ["out/phase2/gen-*.jsonl"]
 # Gemma 4 26B-A4B (Google QAT Q4_0; upstream's teacher model) at T 0.7, seeded, one request at a time per card.
 schema = "4"
 traces = ["out/data/fish26b/gen-*-n[0-9]*[0-9].jsonl"]
-# sha256 pinned once the fold is done
+sha256 = "de3bbabebd5c5a4d48296de8e1930ca178d47b229d3e29414f464f8fd8ac1987"   # 28,998 pairs from 29,000 seeded 26B labels (2 duplicates), 2026-11-10 05:18
 
 ["fish-v4-mix"]
 # 50/50: half the 31B shards and half the 26B shards, ~29,000 pairs like the other two
@@ -28,4 +28,4 @@ schema = "4"
 traces = ["out/data/fish31b/gen-*-ls110[12]-*-n[0-9]*[0-9].jsonl", "out/data/fish31b/gen-*-ls111[12]-*-n[0-9]*[0-9].jsonl",
           "out/data/fish31b/gen-*-ls1121-*-n[0-9]*[0-9].jsonl",
           "out/data/fish26b/gen-*-ls220[123]-*-n[0-9]*[0-9].jsonl", "out/data/fish26b/gen-*-ls221[12]-*-n[0-9]*[0-9].jsonl"]
-# sha256 pinned once the fold is done
+sha256 = "5f55d52a2282d7d5a95c9c3dca843d63903af988bdfa849961afbf8187b83c1e"   # 28,996 pairs (4 duplicates), 2026-11-10 05:18
