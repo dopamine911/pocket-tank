@@ -1,0 +1,49 @@
+{
+ "stages": [
+  {
+   "stage": "train",
+   "exit": 0,
+   "wall_s": 119.8
+  },
+  {
+   "stage": "probe_p11_n400",
+   "exit": 0,
+   "wall_s": 4.2
+  },
+  {
+   "stage": "probe_p23_n400",
+   "exit": 0,
+   "wall_s": 4.3
+  },
+  {
+   "stage": "export_q4",
+   "exit": 0,
+   "wall_s": 1.7
+  },
+  {
+   "stage": "export_fp32",
+   "exit": 0,
+   "wall_s": 2.1
+  }
+ ],
+ "train": {
+  "docs": 26698,
+  "iters_done": 5000,
+  "loss": 0.4914,
+  "s_per_iter": 0.02,
+  "kept_iter": 3200,
+  "best_val": 8.8816,
+  "goal_nll": 0.5513,
+  "goal_acc": 0.7789,
+  "decision_loss": 0.5927,
+  "params_m": 4.83,
+  "peak_gpu_mib": 584
+ },
+ "versions": {
+  "torch": "2.10.0+rocm7.13.0a20260513",
+  "hip": "7.13.26183",
+  "cuda_available": true,
+  "device_name": "AMD Radeon AI PRO R9700",
+  "device_count": 1
+ }
+}
