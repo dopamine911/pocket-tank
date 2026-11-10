@@ -19,6 +19,7 @@ EXTRA=()   # MAX_TOKENS=512 REASONING=low: a reasoning teacher (gpt-oss)
 [ -n "${REASONING:-}" ] && EXTRA+=(--reasoning-effort "$REASONING")
 GEN_EXTRA=()   # NO_FOOD=0.6: that share of generator samples with the pellets cleared
 [ -n "${NO_FOOD:-}" ] && GEN_EXTRA+=(--no-food "$NO_FOOD")
+[ -n "${PLAY:-}" ] && GEN_EXTRA+=(--play "$PLAY")      # PLAY=0.6: that share turned into rested, fed, no-food fish
 mkdir -p "$OUT"
 log() { echo "[$(date '+%F %T')] $MODEL: $*" | tee -a "$OUT/jobs.log"; }
 rc_all=0
@@ -34,7 +35,7 @@ for job in "$@"; do
         rc=$?
         ;;
     gen)
-        res="$OUT/gen-$MODEL-T$t-ls$ls-sim$sim-n$count${NO_FOOD:+-nofood$NO_FOOD}.jsonl"
+        res="$OUT/gen-$MODEL-T$t-ls$ls-sim$sim-n$count${NO_FOOD:+-nofood$NO_FOOD}${PLAY:+-play$PLAY}.jsonl"
         [ -s "$res" ] && { log "skip $job (done)"; continue; }
         log "start $job"
         rm -f "$res.part" "$res.part.meta.jsonl"

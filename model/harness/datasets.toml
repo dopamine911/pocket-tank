@@ -47,3 +47,13 @@ traces = ["out/data/fish26b/gen-*-ls220[12]-*-n[0-9]*[0-9].jsonl", "out/data/fis
           "out/data/fish31b/gen-*-ls110[12]-*-n[0-9]*[0-9].jsonl", "out/data/fish31b/gen-*-ls1111-*-n[0-9]*[0-9].jsonl",
           "out/data/fish31b-cov/gen-*-nofood0.6.jsonl"]
 sha256 = "d76fd64adfbae2bb15420023f19f20902bfe24000de3f337780e7fbdb3bce402"   # 26,698 pairs, food none 24.5%, seek_food 36.5%, 2026-11-10 09:31
+
+["fish-v4-mix-cov-play"]
+# issue #1 dart fix: fish-v4-mix-cov + one --play 0.6 shard per teacher (26B sim 501, 31B sim 511; 2,250 each):
+# rested, fed, no-food fish by day at every boldness, the context of dart_play (~0.4% of the sim's states)
+schema = "4"
+traces = ["out/data/fish26b/gen-*-ls220[12]-*-n[0-9]*[0-9].jsonl", "out/data/fish26b/gen-*-ls2211-*-n[0-9]*[0-9].jsonl",
+          "out/data/fish26b-cov/gen-*-ls2301-*-nofood0.6.jsonl", "out/data/fish26b-cov/gen-*-ls2311-*-nofood0.6.jsonl",
+          "out/data/fish31b/gen-*-ls110[12]-*-n[0-9]*[0-9].jsonl", "out/data/fish31b/gen-*-ls1111-*-n[0-9]*[0-9].jsonl",
+          "out/data/fish31b-cov/gen-*-nofood0.6.jsonl",
+          "out/data/fish26b-play/gen-*-ls2501-*-play0.6.jsonl", "out/data/fish31b-play/gen-*-ls1511-*-play0.6.jsonl"]

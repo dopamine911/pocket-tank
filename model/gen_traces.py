@@ -615,6 +615,10 @@ def main():
     ap.add_argument("--no-food", type=float, default=0.0,
                     help="share of samples taken with the tank's pellets cleared first (default 0: as before). "
                          "The sim shows food in ~96%% of states, so calm no-food states are rare (issue #1)")
+    ap.add_argument("--play", type=float, default=0.0,
+                    help="share of samples turned into a rested, fed fish with no food in view by day (energy 7-9, "
+                         "hunger 0-3, bold 0-9 drawn fresh): the context of dart_play, which the sim hardly makes "
+                         "(about 0.4%% of states; issue #1). Default 0: as before")
     ap.add_argument("--timeout", type=float, default=30.0, help="per-request timeout, seconds")
     ap.add_argument("--max-minutes", type=float, default=None,
                     help="hard wall-clock cap; stop cleanly when exceeded")
@@ -643,7 +647,7 @@ def main():
         out = open(args.out, "a")
         meta = dict(teacher_meta(args.api, host, args.model, args.temperature, args.label_seed),
                     sim_seed=args.seed, count=args.count, ticks_between=args.ticks_between, perturb=args.perturb,
-                    repopulate=args.repopulate, no_food=args.no_food, started=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
+                    repopulate=args.repopulate, no_food=args.no_food, play=args.play, started=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
         with open(args.out + ".meta.jsonl", "a") as mf:      # one line per run appending to --out
             mf.write(json.dumps(meta) + "\n")
 
@@ -667,6 +671,9 @@ def main():
                 tank.perturb(f)
             if args.no_food and rng.random() < args.no_food:
                 tank.food.clear()      # no food in view: the fish really sees none, the label feeds back as usual
+            if args.play and not tank.night and rng.random() < args.play:
+                f.energy = rng.randint(7, 9); f.hunger = rng.randint(0, 3); f.bold = rng.randint(0, 9)
+                tank.food.clear()      # the fish keeps these values afterwards, as after a persona reroll
             state = encode(tank, f)
 
             if args.dry_run:
