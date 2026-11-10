@@ -21,13 +21,14 @@ GEN_EXTRA=()   # NO_FOOD=0.6: that share of generator samples with the pellets c
 [ -n "${NO_FOOD:-}" ] && GEN_EXTRA+=(--no-food "$NO_FOOD")
 [ -n "${PLAY:-}" ] && GEN_EXTRA+=(--play "$PLAY")      # PLAY=0.6: that share turned into rested, fed, no-food fish
 mkdir -p "$OUT"
+NAME=${MODEL//\//-}   # a peer model (marvin/big) in file names: marvin-big
 log() { echo "[$(date '+%F %T')] $MODEL: $*" | tee -a "$OUT/jobs.log"; }
 rc_all=0
 for job in "$@"; do
     read -r kind t ls count sim <<<"$job"
     case "$kind" in
     panel)
-        res="$OUT/panel-$MODEL-T$t-ls$ls.json"
+        res="$OUT/panel-$NAME-T$t-ls$ls.json"
         [ -s "$res" ] && { log "skip $job (done)"; continue; }
         log "start $job"
         python3 prompt_check.py --schema 4 --api openai --host "$HOST" --model "$MODEL" --workers "$WORKERS" \
@@ -35,7 +36,7 @@ for job in "$@"; do
         rc=$?
         ;;
     gen)
-        res="$OUT/gen-$MODEL-T$t-ls$ls-sim$sim-n$count${NO_FOOD:+-nofood$NO_FOOD}${PLAY:+-play$PLAY}.jsonl"
+        res="$OUT/gen-$NAME-T$t-ls$ls-sim$sim-n$count${NO_FOOD:+-nofood$NO_FOOD}${PLAY:+-play$PLAY}.jsonl"
         [ -s "$res" ] && { log "skip $job (done)"; continue; }
         log "start $job"
         rm -f "$res.part" "$res.part.meta.jsonl"
