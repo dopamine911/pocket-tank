@@ -7,8 +7,8 @@
 # prompt unchanged, seeded (--label-seed), one request at a time per server; shards in
 # out/data/fish31b/ with a .meta.jsonl each (teacher, temperature, seeds, prompt sha256).
 schema = "4"
-traces = ["out/data/fish31b/*.jsonl"]
-# sha256 = "..."   # pinned once the fold is done (issue #1)
+traces = ["out/data/fish31b/gen-*-n[0-9]*[0-9].jsonl"]   # the shards, not their .meta.jsonl
+sha256 = "ef2dd667acf3bb5ce5492c2c994a3fca31c35dade2cf71d0bf20f7ce9577ecfc"   # 28,993 pairs from 29,000 labels (7 duplicates), 2026-11-10 01:19
 
 ["fish-smoke"]
 # the phase-2 generator runs (a few hundred labels): proves the plumbing, not a model
