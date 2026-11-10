@@ -17,6 +17,7 @@ Keep this encoder in exact sync with common/llm/advisor_core.c.
 """
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -480,31 +481,75 @@ def encode(tank, f):
     )
 
 
-def ask_ollama(host, model, state, timeout):
-    body = json.dumps({
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt()},
-            {"role": "user", "content": state},
-        ],
-        "format": output_schema(),
-        "stream": False,
-        "think": False,
-        "keep_alive": "5m",
-        "options": {"temperature": 0.7, "num_predict": 48, "num_ctx": 512},
-    }).encode()
-    # Transport is curl, not urllib. Root cause found 2026-08-21: Little Snitch
-    # had a per-process rule allowing this app's Python only to pypi.org /
-    # pythonhosted.org (left over from the torch install) while curl had
-    # "any outgoing" - python's sockets silently stalled. Rule fixed; curl kept
-    # because it is robust to that class of drift and costs ~10ms per call.
-    proc = subprocess.run(
-        ["curl", "-s", "--max-time", str(int(timeout)),
-         f"{host}/api/chat", "-H", "Content-Type: application/json", "-d", "@-"],
-        input=body, capture_output=True, timeout=timeout + 10)
+TEACHER_TEMPERATURE = 0.7     # the shipped models' labels were made at 0.7
+TEACHER_MAX_TOKENS = 48
+TEACHER_KEY_ENV = "TEACHER_API_KEY"   # --api openai: the server's key, from the environment only (never argv)
+API_DEFAULT_HOST = {"ollama": "http://192.168.0.139:11434", "openai": None}
+
+
+def label_seed(base, index, state):
+    """the seed sent with one teacher request: derived from the run's base seed, the request's position
+    and the state line, so the same run asks the same question with the same seed however many
+    workers answer it and in whatever order (None: no seed, the server's own randomness)"""
+    if base is None:
+        return None
+    h = hashlib.sha256(f"{base}|{index}|{state}".encode()).digest()
+    return int.from_bytes(h[:4], "big") & 0x7FFFFFFF
+
+
+def teacher_request(api, host, model, state, temperature=TEACHER_TEMPERATURE, seed=None):
+    """(url, body) of one teacher question. ollama: /api/chat with a format schema (the original path;
+    with the defaults the body is byte-for-byte the one the shipped models were taught with).
+    openai: an OpenAI-compatible /chat/completions (llama.cpp's llama-server, ...) with the same
+    system prompt, the same JSON schema as a strict response_format, the same 48 tokens and no thinking."""
+    messages = [{"role": "system", "content": system_prompt()}, {"role": "user", "content": state}]
+    if api == "ollama":
+        options = {"temperature": temperature, "num_predict": TEACHER_MAX_TOKENS, "num_ctx": 512}
+        if seed is not None:
+            options["seed"] = seed
+        body = {"model": model, "messages": messages, "format": output_schema(), "stream": False,
+                "think": False, "keep_alive": "5m", "options": options}
+        return f"{host}/api/chat", json.dumps(body).encode()
+    if api == "openai":
+        body = {"model": model, "messages": messages,
+                "response_format": {"type": "json_schema",
+                                    "json_schema": {"name": "decision", "strict": True, "schema": output_schema()}},
+                "temperature": temperature, "max_tokens": TEACHER_MAX_TOKENS, "stream": False,
+                # thinking models (Gemma 4, Qwen 3) would spend the 48 tokens thinking and answer nothing
+                "chat_template_kwargs": {"enable_thinking": False}}
+        if seed is not None:
+            body["seed"] = seed
+        return f"{host.rstrip('/')}/chat/completions", json.dumps(body).encode()
+    raise ValueError(f"unknown teacher api {api!r}")
+
+
+def _post(url, body, timeout, key=None):
+    """POST with curl, the reply as JSON. Transport is curl, not urllib. Root cause found 2026-08-21:
+    Little Snitch had a per-process rule allowing this app's Python only to pypi.org /
+    pythonhosted.org (left over from the torch install) while curl had "any outgoing" - python's
+    sockets silently stalled. Rule fixed; curl kept because it is robust to that class of drift and
+    costs ~10ms per call. A key reaches curl through a pipe (-H @/dev/fd/N): never in argv, never on disk."""
+    cmd = ["curl", "-s", "--max-time", str(int(timeout)), url, "-H", "Content-Type: application/json", "-d", "@-"]
+    fds = ()
+    if key:
+        r, w = os.pipe()
+        os.write(w, f"Authorization: Bearer {key}\n".encode())
+        os.close(w)
+        cmd += ["-H", f"@/dev/fd/{r}"]
+        fds = (r,)
+    try:
+        proc = subprocess.run(cmd, input=body, capture_output=True, timeout=timeout + 10, pass_fds=fds)
+    finally:
+        for fd in fds:
+            os.close(fd)
     if proc.returncode != 0 or not proc.stdout:
         raise OSError(f"curl failed rc={proc.returncode}")
-    content = json.loads(proc.stdout)["message"]["content"]
+    return json.loads(proc.stdout)
+
+
+def parse_decision(content):
+    """the teacher's JSON reply -> "<goal> urgency <u>", or None for an unusable one
+    (a missing or out-of-range urgency is 5, as the device parser has it)"""
     obj = json.loads(content)
     goal = obj["goal"] if obj.get("goal") in goals() else None
     if goal is None:
@@ -514,12 +559,48 @@ def ask_ollama(host, model, state, timeout):
     return f"{goal} urgency {urgency}"
 
 
+def ask_teacher(api, host, model, state, timeout, temperature=TEACHER_TEMPERATURE, seed=None):
+    """one decision from the teacher as "<goal> urgency <u>", or None; transport errors raise"""
+    url, body = teacher_request(api, host, model, state, temperature, seed)
+    if api == "ollama":
+        return parse_decision(_post(url, body, timeout)["message"]["content"])
+    resp = _post(url, body, timeout, os.environ.get(TEACHER_KEY_ENV))
+    if "error" in resp:
+        err = resp["error"]
+        raise OSError(f"server: {err.get('message', err) if isinstance(err, dict) else err}"[:200])
+    return parse_decision(resp["choices"][0]["message"].get("content") or "")
+
+
+def ask_ollama(host, model, state, timeout):
+    """the original call (eval.py, teacher_vs_student.py): Ollama at temperature 0.7, no seed"""
+    return ask_teacher("ollama", host, model, state, timeout)
+
+
+def teacher_meta(api, host, model, temperature, seed_base):
+    """what made a run's labels: recorded next to the output so the run can be repeated"""
+    prompt = system_prompt()
+    return {"schema": SCHEMA, "api": api, "host": host, "model": model, "temperature": temperature,
+            "max_tokens": TEACHER_MAX_TOKENS, "label_seed": seed_base,
+            "seed_rule": "sha256(f'{label_seed}|{index}|{state}')[:4] & 0x7fffffff" if seed_base is not None else None,
+            "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
+            "output_schema": output_schema()}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--count", type=int, required=True, help="number of (state, goal) pairs")
-    ap.add_argument("--dry-run", action="store_true", help="print states, skip Ollama")
-    ap.add_argument("--host", default="http://192.168.0.139:11434", help="Ollama base URL")
+    ap.add_argument("--dry-run", action="store_true", help="print states, skip the teacher")
+    ap.add_argument("--api", choices=("ollama", "openai"), default="ollama",
+                    help="teacher API: Ollama /api/chat (default), or an OpenAI-compatible /chat/completions "
+                         f"(llama.cpp's llama-server ...; key from ${TEACHER_KEY_ENV} if the server needs one)")
+    ap.add_argument("--host", default=None, help=f"teacher base URL (ollama default {API_DEFAULT_HOST['ollama']}; "
+                    "openai: required, e.g. http://localhost:8080/v1)")
     ap.add_argument("--model", default="gemma4:26b")
+    ap.add_argument("--temperature", type=float, default=TEACHER_TEMPERATURE,
+                    help=f"teacher sampling temperature (default {TEACHER_TEMPERATURE}, as the shipped models' labels)")
+    ap.add_argument("--label-seed", type=int, default=None,
+                    help="base seed for the teacher's sampling: each request gets a seed from it, its position and "
+                         "the state, so a rerun with the same --seed and teacher repeats the labels (default: none)")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "out", "traces.jsonl"))
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--ticks-between", type=int, default=40, help="sim ticks between samples")
@@ -535,6 +616,9 @@ def main():
     args = ap.parse_args()
     global SCHEMA
     SCHEMA = args.schema
+    host = args.host or API_DEFAULT_HOST[args.api]
+    if not host and not args.dry_run:
+        ap.error("--api openai needs --host (the server's base URL, e.g. http://localhost:8080/v1)")
     deadline = time.time() + args.max_minutes * 60 if args.max_minutes else None
 
     rng = random.Random(args.seed)
@@ -546,9 +630,15 @@ def main():
     if not args.dry_run:
         os.makedirs(os.path.dirname(args.out), exist_ok=True)
         out = open(args.out, "a")
+        meta = dict(teacher_meta(args.api, host, args.model, args.temperature, args.label_seed),
+                    sim_seed=args.seed, count=args.count, ticks_between=args.ticks_between, perturb=args.perturb,
+                    repopulate=args.repopulate, started=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
+        with open(args.out + ".meta.jsonl", "a") as mf:      # one line per run appending to --out
+            mf.write(json.dumps(meta) + "\n")
 
     written = failures = 0
     fish_idx = 0
+    asked = 0          # the request's position, for its label seed (counts every question, answered or not)
     try:
         while written < args.count:
             if deadline and time.time() > deadline:
@@ -571,13 +661,16 @@ def main():
                 written += 1
                 continue
 
+            seed = label_seed(args.label_seed, asked, state)
+            asked += 1
             try:
-                goal = ask_ollama(args.host, args.model, state, args.timeout)
-            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError, OSError) as e:
+                goal = ask_teacher(args.api, host, args.model, state, args.timeout, args.temperature, seed)
+            except (urllib.error.URLError, TimeoutError, subprocess.TimeoutExpired, json.JSONDecodeError,
+                    KeyError, IndexError, OSError) as e:
                 failures += 1
                 print(f"[warn] {type(e).__name__}: {e}", file=sys.stderr)
                 if failures >= 5 and written == 0:
-                    sys.exit(f"aborting: {failures} consecutive failures reaching {args.host}")
+                    sys.exit(f"aborting: {failures} consecutive failures reaching {host}")
                 continue
             if goal is None:
                 failures += 1

@@ -10,6 +10,12 @@ conditional rates the student will inherit - ~7 minutes with 3 workers, not
   python3 prompt_check.py --schema 3                       # current v3 prompt
   python3 prompt_check.py --schema 3 --prompt-file cand.txt # a candidate prompt
   python3 prompt_check.py --schema 3 --model qwen3.5:27b   # another teacher
+  python3 prompt_check.py --schema 4 --api openai --host http://localhost:8080/v1 --model <name> \
+      --temperature 1.0 --label-seed 7 --out out/check.json  # an OpenAI-compatible server, seeded, saved
+
+--label-seed gives every question a seed (from the base seed, its place in the panel and the state),
+so the same panel, teacher and settings give the same answers in any worker order. --out writes every
+question and answer with the run's settings (gen_traces.teacher_meta) to a JSON file.
 
 Panel (per schema line, identity randomized unless the case pins it):
   social9   content fish, social 9 (expect follow_friend high)     x40
@@ -29,6 +35,7 @@ Panel (per schema line, identity randomized unless the case pins it):
 """
 import argparse
 import concurrent.futures as cf
+import json
 import os
 import random
 import sys
@@ -87,8 +94,14 @@ def panel(rng, schema, n):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--schema", type=int, choices=(2, 3, 4), default=3)
-    ap.add_argument("--host", default="http://192.168.0.139:11434")
+    ap.add_argument("--api", choices=("ollama", "openai"), default="ollama",
+                    help=f"teacher API (as gen_traces; openai key from ${gt.TEACHER_KEY_ENV})")
+    ap.add_argument("--host", default=None, help=f"teacher base URL (ollama default {gt.API_DEFAULT_HOST['ollama']}; "
+                    "openai: required)")
     ap.add_argument("--model", default="gemma4:26b")
+    ap.add_argument("--temperature", type=float, default=gt.TEACHER_TEMPERATURE)
+    ap.add_argument("--label-seed", type=int, default=None, help="base seed for the teacher's sampling (default: none)")
+    ap.add_argument("--out", default=None, help="write every question, answer and the run's settings to this JSON file")
     ap.add_argument("--prompt-file", default=None, help="candidate system prompt (default: gen_traces' prompt for the schema)")
     ap.add_argument("--n", type=int, default=40, help="calls per major case (default 40 -> ~320 calls)")
     ap.add_argument("--workers", type=int, default=3)
@@ -100,27 +113,42 @@ def main():
         gt.SYSTEM_PROMPT = txt
         gt.SYSTEM_PROMPT_V3 = txt
         gt.SYSTEM_PROMPT_V4 = txt
+    host = args.host or gt.API_DEFAULT_HOST[args.api]
+    if not host:
+        ap.error("--api openai needs --host (the server's base URL, e.g. http://localhost:8080/v1)")
     rng = random.Random(args.seed)
     P = panel(rng, args.schema, args.n)
-    print(f"{len(P)} calls to {args.model} @ {args.host} ({args.workers} workers) ...", flush=True)
+    print(f"{len(P)} calls to {args.model} @ {host} ({args.api}, {args.workers} workers, temperature "
+          f"{args.temperature}, label seed {args.label_seed}) ...", flush=True)
 
     def ask(item):
-        case, st = item
+        i, (case, st) = item
         try:
-            g = gt.ask_ollama(args.host, args.model, st, 30)
+            g = gt.ask_teacher(args.api, host, args.model, st, 30, args.temperature,
+                               gt.label_seed(args.label_seed, i, st))
         except Exception as e:  # noqa: BLE001
             g = None
-        return case, (g.split()[0] if g else None)
+        return case, st, g
 
     results = {}
+    rows = []
     fails = 0
     with cf.ThreadPoolExecutor(args.workers) as ex:
-        for case, goal in ex.map(ask, P):
+        for case, st, g in ex.map(ask, enumerate(P)):
+            rows.append({"case": case, "state": st, "answer": g})
+            goal = g.split()[0] if g else None
             if goal is None:
                 fails += 1
                 continue
             results.setdefault(case, {}).setdefault(goal, 0)
             results[case][goal] += 1
+    if args.out:
+        meta = dict(gt.teacher_meta(args.api, host, args.model, args.temperature, args.label_seed),
+                    panel_seed=args.seed, n=args.n, workers=args.workers, prompt_file=args.prompt_file)
+        os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+        with open(args.out, "w") as fh:
+            json.dump(dict(meta, rows=rows), fh, indent=1)
+        print(f"-> {args.out}")
 
     def rate(case, goal):
         d = results.get(case, {}); n = sum(d.values())
