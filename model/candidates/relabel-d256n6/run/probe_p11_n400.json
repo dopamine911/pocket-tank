@@ -1,0 +1,311 @@
+{
+ "ckpt": "/w/fish-d256-n6-decision-relabel/s1/ckpt.pt",
+ "checkpoint": {
+  "iter": 4000,
+  "val_loss": 8.009223437309265,
+  "goal_nll": 0.5767096972251318,
+  "loss": "decision",
+  "model_args": {
+   "dim": 256,
+   "n_layers": 6,
+   "n_heads": 8,
+   "n_kv_heads": 8,
+   "vocab_size": 54,
+   "multiple_of": 32,
+   "max_seq_len": 64,
+   "dropout": 0.05
+  }
+ },
+ "n": 400,
+ "seed": 11,
+ "temperature": 1.0,
+ "rows": [
+  {
+   "row": "F1  P(follow | social 9)",
+   "value": 0.5983757308362335,
+   "n": 400,
+   "threshold": ">= 0.40",
+   "result": "PASS"
+  },
+  {
+   "row": "F2  P(follow | social 1)",
+   "value": 0.006543090799924012,
+   "n": 400,
+   "threshold": "<= 0.05",
+   "result": "PASS"
+  },
+  {
+   "row": "F3  P(dart | bold 9, energetic)",
+   "value": 0.37004677020156146,
+   "n": 400,
+   "threshold": ">= 0.10",
+   "result": "PASS"
+  },
+  {
+   "row": "F4  P(dart | bold 1, energetic)",
+   "value": 0.007102778972667867,
+   "n": 400,
+   "threshold": "<= 0.03",
+   "result": "PASS"
+  },
+  {
+   "row": "F5  P(seek_food | starving)",
+   "value": 0.9929928952538294,
+   "n": 300,
+   "threshold": ">= 0.95",
+   "result": "PASS"
+  },
+  {
+   "row": "F6  P(seek_food | lonely, not hungry)",
+   "value": 0.003737583387853083,
+   "n": 300,
+   "threshold": "<= 0.05",
+   "result": "PASS"
+  },
+  {
+   "row": "F7  P(bubbles again | bored 9, last bubbles)",
+   "value": 0.0028442673644766344,
+   "n": 400,
+   "threshold": "<= 0.15",
+   "result": "PASS"
+  },
+  {
+   "row": "F8  P(explore | bored 9, last bubbles)",
+   "value": 0.873101126351513,
+   "n": 400,
+   "threshold": ">= 0.25",
+   "result": "PASS"
+  },
+  {
+   "row": "F9  P(follow again | bored 9, last follow)",
+   "value": 0.04804776002752888,
+   "n": 400,
+   "threshold": "<= 0.15",
+   "result": "PASS"
+  },
+  {
+   "row": "F10 P(bubbles kept | bored 0, last bubbles)",
+   "value": 0.4731127123809438,
+   "n": 400,
+   "threshold": ">= 0.40",
+   "result": "PASS"
+  },
+  {
+   "row": "F11 P(rest | night, bored 9, last rest)",
+   "value": 0.926876904287897,
+   "n": 300,
+   "threshold": ">= 0.70",
+   "result": "PASS"
+  },
+  {
+   "row": "F12 P(flee | any v4 case)",
+   "value": 5.638869986970471e-10,
+   "n": 4800,
+   "threshold": "== 0",
+   "result": "PASS"
+  },
+  {
+   "row": "F13 max single goal | content (visit_bubbles)",
+   "value": 0.2617085908638623,
+   "n": 400,
+   "threshold": "< 0.45",
+   "result": "PASS"
+  },
+  {
+   "row": "F14 P(seek_food | hunger 1-3, food near) (report)",
+   "value": 0.28517945876896905,
+   "n": 300,
+   "threshold": "-",
+   "result": "report"
+  }
+ ],
+ "goal_mass": {
+  "mean": 0.994955026935786,
+  "min": 0.2595353126525879
+ },
+ "cases": {
+  "social9": {
+   "n": 400,
+   "mean": {
+    "seek_food": 0.0007926608071826543,
+    "flee_shadow": 8.927177129999517e-11,
+    "visit_bubbles": 0.1385704502854963,
+    "follow_friend": 0.5983757308362336,
+    "explore": 0.078723172051816,
+    "rest": 0.11262272715696625,
+    "dart_play": 0.005678144712731234,
+    "inspect_reef": 0.06523711406030241
+   }
+  },
+  "social1": {
+   "n": 400,
+   "mean": {
+    "seek_food": 0.0010696831606647108,
+    "flee_shadow": 8.819561212396719e-10,
+    "visit_bubbles": 0.2555163577218736,
+    "follow_friend": 0.00654309079992401,
+    "explore": 0.2651842682103626,
+    "rest": 0.1744115588340792,
+    "dart_play": 0.01710930002995635,
+    "inspect_reef": 0.2801657403611828
+   }
+  },
+  "bold9": {
+   "n": 400,
+   "mean": {
+    "seek_food": 0.0012104225897103392,
+    "flee_shadow": 1.199403099564448e-09,
+    "visit_bubbles": 0.1269623322746987,
+    "follow_friend": 0.010055120953433616,
+    "explore": 0.3099098730387946,
+    "rest": 0.07142122180017531,
+    "dart_play": 0.37004677020156135,
+    "inspect_reef": 0.11039425794222321
+   }
+  },
+  "bold1": {
+   "n": 400,
+   "mean": {
+    "seek_food": 0.0009139745700634579,
+    "flee_shadow": 3.084558507347152e-10,
+    "visit_bubbles": 0.1080283848239763,
+    "follow_friend": 0.00881100938380254,
+    "explore": 0.2580823487825546,
+    "rest": 0.3719420423803093,
+    "dart_play": 0.007102778972667863,
+    "inspect_reef": 0.24511946077816982
+   }
+  },
+  "content": {
+   "n": 400,
+   "mean": {
+    "seek_food": 0.0010327322085206155,
+    "flee_shadow": 5.190058380538687e-10,
+    "visit_bubbles": 0.2617085908638623,
+    "follow_friend": 0.02023518223458866,
+    "explore": 0.24021082351252793,
+    "rest": 0.20978297560297632,
+    "dart_play": 0.019975675448656267,
+    "inspect_reef": 0.24705401960986176
+   }
+  },
+  "lonely": {
+   "n": 300,
+   "mean": {
+    "seek_food": 0.003737583387853086,
+    "flee_shadow": 1.268238466323175e-09,
+    "visit_bubbles": 0.1763566187268652,
+    "follow_friend": 0.0026317590789882695,
+    "explore": 0.3550871300163964,
+    "rest": 0.17616103005563463,
+    "dart_play": 0.0014835804794415782,
+    "inspect_reef": 0.2845422969865824
+   }
+  },
+  "starving": {
+   "n": 300,
+   "mean": {
+    "seek_food": 0.9929928952538304,
+    "flee_shadow": 7.877113255844387e-10,
+    "visit_bubbles": 0.00014746112531436573,
+    "follow_friend": 0.0054049261892552825,
+    "explore": 0.0010292718991526042,
+    "rest": 6.730108302337505e-05,
+    "dart_play": 7.502693355996074e-05,
+    "inspect_reef": 0.0002831167281537697
+   }
+  },
+  "trust9": {
+   "n": 200,
+   "mean": {
+    "seek_food": 0.0008733379229996203,
+    "flee_shadow": 1.2366234281889521e-09,
+    "visit_bubbles": 0.30195187720163025,
+    "follow_friend": 0.017809540747267323,
+    "explore": 0.28107692244075233,
+    "rest": 0.1883927209111396,
+    "dart_play": 0.022614034218990938,
+    "inspect_reef": 0.18728156532059637
+   }
+  },
+  "trust0": {
+   "n": 200,
+   "mean": {
+    "seek_food": 0.001037324150391521,
+    "flee_shadow": 1.6375812456401893e-10,
+    "visit_bubbles": 0.2135499501686417,
+    "follow_friend": 0.02674398217000059,
+    "explore": 0.21707362662672766,
+    "rest": 0.22146478785857177,
+    "dart_play": 0.016919772780643366,
+    "inspect_reef": 0.30321055608126507
+   }
+  },
+  "bored9bub": {
+   "n": 400,
+   "mean": {
+    "seek_food": 0.0001400000841064185,
+    "flee_shadow": 2.8895531153749177e-10,
+    "visit_bubbles": 0.002844267364476635,
+    "follow_friend": 0.0003758700116560713,
+    "explore": 0.8731011263515133,
+    "rest": 0.10242094685525227,
+    "dart_play": 0.001505388512917511,
+    "inspect_reef": 0.01961240053112274
+   }
+  },
+  "bored9fol": {
+   "n": 400,
+   "mean": {
+    "seek_food": 0.00016058188436024676,
+    "flee_shadow": 9.091653258698183e-11,
+    "visit_bubbles": 0.005412796336659599,
+    "follow_friend": 0.048047760027528905,
+    "explore": 0.8629636060172432,
+    "rest": 0.0482211780605277,
+    "dart_play": 0.0007732221021061197,
+    "inspect_reef": 0.03442085548065733
+   }
+  },
+  "bored0bub": {
+   "n": 400,
+   "mean": {
+    "seek_food": 0.0007384128266226172,
+    "flee_shadow": 3.548048914630684e-10,
+    "visit_bubbles": 0.4731127123809439,
+    "follow_friend": 0.03817625862559669,
+    "explore": 0.12611328903045285,
+    "rest": 0.2111813981476823,
+    "dart_play": 0.023582100005056325,
+    "inspect_reef": 0.1270958286288407
+   }
+  },
+  "nightbored": {
+   "n": 300,
+   "mean": {
+    "seek_food": 9.152255045381938e-05,
+    "flee_shadow": 3.7380857411119695e-10,
+    "visit_bubbles": 0.0025410653175961004,
+    "follow_friend": 0.000707987860830076,
+    "explore": 0.0650352181114966,
+    "rest": 0.9268769042878973,
+    "dart_play": 5.2148651365546925e-05,
+    "inspect_reef": 0.004695152846552248
+   }
+  },
+  "fedfood": {
+   "n": 300,
+   "mean": {
+    "seek_food": 0.28517945876896933,
+    "flee_shadow": 6.818200285535177e-10,
+    "visit_bubbles": 0.09340216097421934,
+    "follow_friend": 0.2726719959096806,
+    "explore": 0.06848939631124953,
+    "rest": 0.01106577217161336,
+    "dart_play": 0.0012351428490706392,
+    "inspect_reef": 0.26795607233337765
+   }
+  }
+ },
+ "passed": true
+}

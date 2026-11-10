@@ -1,0 +1,132 @@
+28948 docs -> 1200667 train / 63173 val tokens, device=cuda, loss decision
+model: 4.83M params
+/w/fish-d256-n6-decision-relabel/code/llama2.c/model.py:148: UserWarning: Flash Efficient attention on Current AMD GPU is still experimental. Enable it with TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1. (Triggered internally at /__w/TheRock/TheRock/external-builds/pytorch/pytorch/aten/src/ATen/native/transformers/hip/sdp_utils.cpp:320.)
+  output = torch.nn.functional.scaled_dot_product_attention(xq, xk, xv, attn_mask=None, dropout_p=self.dropout if self.training else 0.0, is_causal=True)
+/w/fish-d256-n6-decision-relabel/code/llama2.c/model.py:148: UserWarning: Mem Efficient attention on Current AMD GPU is still experimental. Enable it with TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1. (Triggered internally at /__w/TheRock/TheRock/external-builds/pytorch/pytorch/aten/src/ATen/native/transformers/hip/sdp_utils.cpp:377.)
+  output = torch.nn.functional.scaled_dot_product_attention(xq, xk, xv, attn_mask=None, dropout_p=self.dropout if self.training else 0.0, is_causal=True)
+iter 50/5000 loss 1.1590 (0.05s/iter)
+iter 100/5000 loss 0.9428 (0.04s/iter)
+iter 150/5000 loss 0.8656 (0.04s/iter)
+iter 200/5000 loss 0.8558 (0.04s/iter)
+iter 200 val_loss 6.8173 goal_nll 0.8866 goal_acc 0.6759 decision_loss 0.8208 -> saved ckpt.pt
+iter 250/5000 loss 0.9310 (0.04s/iter)
+iter 300/5000 loss 0.7302 (0.04s/iter)
+iter 350/5000 loss 0.8848 (0.04s/iter)
+iter 400/5000 loss 0.6946 (0.04s/iter)
+iter 400 val_loss 7.8733 goal_nll 0.7825 goal_acc 0.7243 decision_loss 0.7420 -> saved ckpt.pt
+iter 450/5000 loss 0.6794 (0.04s/iter)
+iter 500/5000 loss 0.6380 (0.04s/iter)
+iter 550/5000 loss 0.6357 (0.04s/iter)
+iter 600/5000 loss 0.7442 (0.04s/iter)
+iter 600 val_loss 7.3863 goal_nll 0.7001 goal_acc 0.7436 decision_loss 0.7130 -> saved ckpt.pt
+iter 650/5000 loss 0.6317 (0.04s/iter)
+iter 700/5000 loss 0.7436 (0.04s/iter)
+iter 750/5000 loss 0.7539 (0.04s/iter)
+iter 800/5000 loss 0.6656 (0.04s/iter)
+iter 800 val_loss 7.6821 goal_nll 0.6578 goal_acc 0.7464 decision_loss 0.6819 -> saved ckpt.pt
+iter 850/5000 loss 0.7242 (0.04s/iter)
+iter 900/5000 loss 0.7653 (0.04s/iter)
+iter 950/5000 loss 0.5973 (0.04s/iter)
+iter 1000/5000 loss 0.6219 (0.04s/iter)
+iter 1000 val_loss 7.9974 goal_nll 0.6587 goal_acc 0.7429 decision_loss 0.6807
+iter 1050/5000 loss 0.6673 (0.04s/iter)
+iter 1100/5000 loss 0.7222 (0.04s/iter)
+iter 1150/5000 loss 0.8040 (0.04s/iter)
+iter 1200/5000 loss 0.5766 (0.04s/iter)
+iter 1200 val_loss 8.1842 goal_nll 0.6509 goal_acc 0.7436 decision_loss 0.6574 -> saved ckpt.pt
+iter 1250/5000 loss 0.6271 (0.04s/iter)
+iter 1300/5000 loss 0.6497 (0.04s/iter)
+iter 1350/5000 loss 0.5903 (0.04s/iter)
+iter 1400/5000 loss 0.6791 (0.04s/iter)
+iter 1400 val_loss 8.2454 goal_nll 0.6388 goal_acc 0.7381 decision_loss 0.6551 -> saved ckpt.pt
+iter 1450/5000 loss 0.7443 (0.04s/iter)
+iter 1500/5000 loss 0.7083 (0.04s/iter)
+iter 1550/5000 loss 0.5875 (0.04s/iter)
+iter 1600/5000 loss 0.5777 (0.04s/iter)
+iter 1600 val_loss 7.7210 goal_nll 0.6303 goal_acc 0.7547 decision_loss 0.6533 -> saved ckpt.pt
+iter 1650/5000 loss 0.5885 (0.04s/iter)
+iter 1700/5000 loss 0.6511 (0.04s/iter)
+iter 1750/5000 loss 0.6000 (0.04s/iter)
+iter 1800/5000 loss 0.7276 (0.04s/iter)
+iter 1800 val_loss 8.0708 goal_nll 0.6181 goal_acc 0.7595 decision_loss 0.6406 -> saved ckpt.pt
+iter 1850/5000 loss 0.6270 (0.04s/iter)
+iter 1900/5000 loss 0.6403 (0.04s/iter)
+iter 1950/5000 loss 0.6246 (0.04s/iter)
+iter 2000/5000 loss 0.5851 (0.04s/iter)
+iter 2000 val_loss 7.9330 goal_nll 0.6093 goal_acc 0.7643 decision_loss 0.6430 -> saved ckpt.pt
+iter 2050/5000 loss 0.5220 (0.04s/iter)
+iter 2100/5000 loss 0.5898 (0.04s/iter)
+iter 2150/5000 loss 0.6445 (0.04s/iter)
+iter 2200/5000 loss 0.6650 (0.04s/iter)
+iter 2200 val_loss 8.2388 goal_nll 0.6123 goal_acc 0.7547 decision_loss 0.6386
+iter 2250/5000 loss 0.5351 (0.04s/iter)
+iter 2300/5000 loss 0.6954 (0.04s/iter)
+iter 2350/5000 loss 0.6440 (0.04s/iter)
+iter 2400/5000 loss 0.6080 (0.04s/iter)
+iter 2400 val_loss 7.9827 goal_nll 0.5943 goal_acc 0.7706 decision_loss 0.6246 -> saved ckpt.pt
+iter 2450/5000 loss 0.5511 (0.04s/iter)
+iter 2500/5000 loss 0.5679 (0.04s/iter)
+iter 2550/5000 loss 0.5998 (0.04s/iter)
+iter 2600/5000 loss 0.5284 (0.04s/iter)
+iter 2600 val_loss 8.1411 goal_nll 0.5902 goal_acc 0.7664 decision_loss 0.6171 -> saved ckpt.pt
+iter 2650/5000 loss 0.5140 (0.04s/iter)
+iter 2700/5000 loss 0.6227 (0.04s/iter)
+iter 2750/5000 loss 0.5804 (0.04s/iter)
+iter 2800/5000 loss 0.5490 (0.04s/iter)
+iter 2800 val_loss 8.0746 goal_nll 0.5941 goal_acc 0.7699 decision_loss 0.6233
+iter 2850/5000 loss 0.5905 (0.04s/iter)
+iter 2900/5000 loss 0.5980 (0.04s/iter)
+iter 2950/5000 loss 0.5396 (0.04s/iter)
+iter 3000/5000 loss 0.5195 (0.04s/iter)
+iter 3000 val_loss 8.1999 goal_nll 0.5983 goal_acc 0.7602 decision_loss 0.6198
+iter 3050/5000 loss 0.5257 (0.04s/iter)
+iter 3100/5000 loss 0.5424 (0.04s/iter)
+iter 3150/5000 loss 0.6162 (0.04s/iter)
+iter 3200/5000 loss 0.4752 (0.04s/iter)
+iter 3200 val_loss 8.0144 goal_nll 0.5960 goal_acc 0.7623 decision_loss 0.6186
+iter 3250/5000 loss 0.4035 (0.04s/iter)
+iter 3300/5000 loss 0.6200 (0.04s/iter)
+iter 3350/5000 loss 0.5611 (0.04s/iter)
+iter 3400/5000 loss 0.5625 (0.04s/iter)
+iter 3400 val_loss 7.9523 goal_nll 0.5950 goal_acc 0.7699 decision_loss 0.6184
+iter 3450/5000 loss 0.5745 (0.04s/iter)
+iter 3500/5000 loss 0.5758 (0.04s/iter)
+iter 3550/5000 loss 0.5734 (0.04s/iter)
+iter 3600/5000 loss 0.5511 (0.04s/iter)
+iter 3600 val_loss 7.9160 goal_nll 0.5884 goal_acc 0.7664 decision_loss 0.6165 -> saved ckpt.pt
+iter 3650/5000 loss 0.4594 (0.04s/iter)
+iter 3700/5000 loss 0.6611 (0.04s/iter)
+iter 3750/5000 loss 0.4575 (0.04s/iter)
+iter 3800/5000 loss 0.4831 (0.04s/iter)
+iter 3800 val_loss 7.9083 goal_nll 0.5830 goal_acc 0.7706 decision_loss 0.6091 -> saved ckpt.pt
+iter 3850/5000 loss 0.5128 (0.04s/iter)
+iter 3900/5000 loss 0.5833 (0.04s/iter)
+iter 3950/5000 loss 0.5262 (0.04s/iter)
+iter 4000/5000 loss 0.5513 (0.04s/iter)
+iter 4000 val_loss 8.0092 goal_nll 0.5767 goal_acc 0.7761 decision_loss 0.6073 -> saved ckpt.pt
+iter 4050/5000 loss 0.5683 (0.04s/iter)
+iter 4100/5000 loss 0.5162 (0.04s/iter)
+iter 4150/5000 loss 0.5604 (0.04s/iter)
+iter 4200/5000 loss 0.5446 (0.04s/iter)
+iter 4200 val_loss 7.9056 goal_nll 0.5867 goal_acc 0.7740 decision_loss 0.6132
+iter 4250/5000 loss 0.5456 (0.04s/iter)
+iter 4300/5000 loss 0.4539 (0.04s/iter)
+iter 4350/5000 loss 0.5191 (0.04s/iter)
+iter 4400/5000 loss 0.5534 (0.04s/iter)
+iter 4400 val_loss 7.9404 goal_nll 0.5912 goal_acc 0.7685 decision_loss 0.6150
+iter 4450/5000 loss 0.4542 (0.04s/iter)
+iter 4500/5000 loss 0.4739 (0.04s/iter)
+iter 4550/5000 loss 0.4579 (0.04s/iter)
+iter 4600/5000 loss 0.4485 (0.04s/iter)
+iter 4600 val_loss 7.9735 goal_nll 0.5845 goal_acc 0.7713 decision_loss 0.6100
+iter 4650/5000 loss 0.4857 (0.04s/iter)
+iter 4700/5000 loss 0.5842 (0.04s/iter)
+iter 4750/5000 loss 0.5698 (0.04s/iter)
+iter 4800/5000 loss 0.5493 (0.04s/iter)
+iter 4800 val_loss 7.9698 goal_nll 0.5843 goal_acc 0.7713 decision_loss 0.6101
+iter 4850/5000 loss 0.5107 (0.04s/iter)
+iter 4900/5000 loss 0.6087 (0.04s/iter)
+iter 4950/5000 loss 0.4362 (0.04s/iter)
+iter 5000/5000 loss 0.5398 (0.04s/iter)
+iter 5000 val_loss 7.9694 goal_nll 0.5843 goal_acc 0.7726 decision_loss 0.6101
+done: kept iter 4000: val_loss 8.0092 goal_nll 0.5767 goal_acc 0.7761 decision_loss 0.6073, checkpoint /w/fish-d256-n6-decision-relabel/s1/ckpt.pt, 4.83M params, peak GPU memory 631 MiB
