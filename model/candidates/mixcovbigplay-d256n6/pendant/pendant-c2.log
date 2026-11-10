@@ -1,0 +1,849 @@
+I (13167) advisor: zone 2 hunger 6 energy 1 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 0 food none friend near 5 bubble mid 10 reef far 12 wall mid 5 last explore time day -> rest urgency 8 p=0.47  [1791 ms, 24.0 tok/s]
+I (13177) advisor: prof ms: matmul 1100 attn 423 norm/quant 72 rope 14 swiglu 173 decode 0
+I (14949) advisor: zone 2 hunger 6 energy 2 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 0 food none friend near 10 bubble mid 10 reef far 11 wall mid 5 last explore time day -> rest urgency 6 p=0.73  [1720 ms, 25.0 tok/s]
+I (14960) advisor: prof ms: matmul 1037 attn 410 norm/quant 74 rope 15 swiglu 174 decode 0
+I (15310) pocket-tank: loading: the boot show is over, the tank is the tank after 5513 ms (55 frames, 10.8 fps; the loop whole 4199 ms in)
+I (19301) advisor: zone 1 hunger 6 energy 3 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 0 food none friend near 9 bubble mid 10 reef far 12 wall mid 6 last rest time day -> rest urgency 6 p=0.21  [1475 ms, 29.1 tok/s]
+I (19311) advisor: prof ms: matmul 903 attn 310 norm/quant 61 rope 17 swiglu 174 decode 0
+I (19768) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (19769) display: 17.1 fps | render 29.4 ms flush 17.3 ms | scene 3.6 shafts 0.0 veg 0.2 fd/bub 0.7 fish 0.0 vig 1.0 algae 1.4 | card 0.0 ms x0 | veg 0.19 0.13 0.21
+I (19780) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 88 bakes
+I (19788) display: grass loop: a bake 24.1 ms (on core 1)
+I (19793) display: grass loop: core 1 baked 191 slices in 374 takes (2.0 ms a take, waited 0.0 ms a take, 2008 timeouts, 0 waits for a decision)
+I (19806) display: swim depth: 0.08 ms a frame (0.05 ms a hidden fish, 1.4 of them a frame)
+I (19814) display: frame 58.5 ms = polls 1.0 + tick 1.8 + prefetch wait 0.0 + render 29.4 + flush 17.3 + tail 0.0 + sleep 9.0 | flush: fill 14.4, wire wait 0.0, send calls 2.8
+I (19829) display: the fish stage split: fish 1.2 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (19844) pocket-tank: t=63s 3 fish goals: visit_bubbles rest rest | asks 4 decisions 4 last 1475 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 69% 4026 mV bright 255
+I (22312) advisor: zone 2 hunger 6 energy 3 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 1 food none friend near 4 bubble near 10 reef mid 12 wall clear last rest time day -> visit_bubbles urgency 3 p=0.54  [1473 ms, 28.5 tok/s]
+I (22323) advisor: prof ms: matmul 926 attn 291 norm/quant 60 rope 16 swiglu 170 decode 0
+I (28121) advisor: zone 2 hunger 6 energy 6 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 1 food far 8 friend near 9 bubble near 10 reef mid 1 wall mid 3 last rest time day -> seek_food urgency 6 p=0.83  [1533 ms, 28.7 tok/s]
+I (28131) advisor: prof ms: matmul 930 attn 327 norm/quant 64 rope 17 swiglu 185 decode 0
+I (28607) touch: toolbox tap at 119,360 -> SPONGE
+I (29717) advisor: zone 2 hunger 4 energy 1 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 2 food mid 12 friend near 3 bubble mid 3 reef far 4 wall mid 9 last visit_bubbles time day -> seek_food urgency 5 p=0.61  [1541 ms, 28.5 tok/s]
+I (29728) advisor: prof ms: matmul 943 attn 326 norm/quant 63 rope 17 swiglu 182 decode 0
+I (29796) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (29797) display: 24.9 fps | render 9.3 ms flush 16.0 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.3 algae 1.8 | card 13.6 ms x30 | veg 0.19 0.13 0.21
+I (29808) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (29817) display: swim depth: 0.07 ms a frame (0.07 ms a hidden fish, 1.1 of them a frame)
+I (29825) display: frame 40.1 ms = polls 1.1 + tick 1.8 + prefetch wait 0.0 + render 9.3 + flush 16.0 + tail 0.4 + sleep 11.5 | flush: fill 13.2, wire wait 0.0, send calls 2.8
+I (29840) display: the fish stage split: fish 1.6 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (29855) pocket-tank: t=73s 3 fish goals: seek_food visit_bubbles seek_food | asks 8 decisions 7 last 1541 ms 28.5 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 70% 4027 mV bright 255
+I (31260) advisor: zone 2 hunger 6 energy 3 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 1 food mid 11 friend near 3 bubble near 3 reef far 4 wall mid 8 last visit_bubbles time day -> seek_food urgency 6 p=0.93  [1490 ms, 29.5 tok/s]
+I (31272) advisor: prof ms: matmul 922 attn 309 norm/quant 56 rope 17 swiglu 177 decode 0
+I (33341) advisor: zone 2 hunger 4 energy 1 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 0 food near 12 friend near 5 bubble mid 4 reef far 4 wall mid 9 last seek_food time day -> seek_food urgency 5 p=0.91  [1475 ms, 29.8 tok/s]
+I (33352) advisor: prof ms: matmul 919 attn 296 norm/quant 60 rope 16 swiglu 174 decode 0
+I (34867) advisor: zone 3 hunger 6 energy 3 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 0 food near 12 friend near 9 bubble mid 5 reef far 5 wall mid 12 last seek_food time day -> seek_food urgency 5 p=0.99  [1477 ms, 29.8 tok/s]
+I (34878) advisor: prof ms: matmul 919 attn 302 norm/quant 56 rope 16 swiglu 174 decode 0
+I (35096) touch: tool chip tapped at 140,71: back to bare hands
+I (36342) advisor: zone 3 hunger 6 energy 6 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 0 food none friend near 10 bubble mid 5 reef far 4 wall near 12 last seek_food time day -> visit_bubbles urgency 4 p=0.21  [1426 ms, 30.1 tok/s]
+I (36353) advisor: prof ms: matmul 908 attn 269 norm/quant 52 rope 18 swiglu 171 decode 0
+I (37872) advisor: zone 3 hunger 4 energy 1 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 0 food mid 2 friend near 9 bubble far 11 reef far 11 wall near 6 last seek_food time day -> follow_friend urgency 3 p=0.18  [1474 ms, 29.8 tok/s]
+I (37884) advisor: prof ms: matmul 917 attn 302 norm/quant 56 rope 16 swiglu 174 decode 0
+I (39391) advisor: zone 3 hunger 0 energy 6 stress 0 curiosity 1 bold 8 social 3 stage juv trust 6 bored 0 food mid 12 friend near 7 bubble far 10 reef far 9 wall near 5 last seek_food time day -> follow_friend urgency 4 p=0.45  [1471 ms, 29.9 tok/s]
+I (39402) advisor: prof ms: matmul 915 attn 299 norm/quant 57 rope 16 swiglu 174 decode 0
+I (39819) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (39820) display: 25.4 fps | render 7.2 ms flush 18.4 ms | scene 1.0 shafts 0.0 veg 0.0 fd/bub 0.6 fish 0.0 vig 1.8 algae 0.6 | card 0.0 ms x0 | veg 0.19 0.13 0.21
+I (39831) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (39840) display: swim depth: 0.00 ms a frame (0.09 ms a hidden fish, 0.0 of them a frame)
+I (39848) display: frame 39.3 ms = polls 1.2 + tick 2.0 + prefetch wait 0.0 + render 7.2 + flush 18.4 + tail 0.3 + sleep 10.1 | flush: fill 15.8, wire wait 0.0, send calls 2.6
+I (39863) display: the fish stage split: fish 1.6 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (39878) pocket-tank: t=83s 3 fish goals: follow_friend follow_friend visit_bubbles | asks 17 decisions 13 last 1471 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 70% 4030 mV bright 255
+I (40942) advisor: zone 3 hunger 6 energy 6 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 0 food mid 1 friend mid 1 bubble mid 11 reef far 10 wall mid 6 last visit_bubbles time day -> seek_food urgency 6 p=0.92  [1499 ms, 29.3 tok/s]
+I (40953) advisor: prof ms: matmul 921 attn 316 norm/quant 60 rope 17 swiglu 175 decode 0
+I (42477) advisor: zone 2 hunger 0 energy 3 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 0 food mid 3 friend near 11 bubble mid 1 reef far 1 wall near 6 last follow_friend time day -> visit_bubbles urgency 4 p=0.02  [1482 ms, 29.7 tok/s]
+I (42488) advisor: prof ms: matmul 921 attn 303 norm/quant 58 rope 16 swiglu 174 decode 0
+I (44025) advisor: zone 2 hunger 0 energy 3 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 0 food mid 5 friend near 7 bubble mid 1 reef far 1 wall mid 6 last follow_friend time day -> follow_friend urgency 3 p=0.49  [1506 ms, 29.2 tok/s]
+I (44037) advisor: prof ms: matmul 918 attn 322 norm/quant 61 rope 17 swiglu 177 decode 0
+I (45562) advisor: zone 2 hunger 6 energy 6 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 0 food near 12 friend mid 7 bubble mid 9 reef far 9 wall mid 3 last seek_food time day -> seek_food urgency 5 p=0.91  [1481 ms, 29.7 tok/s]
+I (45573) advisor: prof ms: matmul 923 attn 302 norm/quant 56 rope 17 swiglu 174 decode 0
+I (47085) advisor: zone 2 hunger 0 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 0 food near 2 friend mid 10 bubble mid 11 reef far 12 wall mid 5 last visit_bubbles time day -> rest urgency 4 p=0.05  [1481 ms, 29.7 tok/s]
+I (47096) advisor: prof ms: matmul 918 attn 303 norm/quant 59 rope 16 swiglu 175 decode 0
+I (49104) advisor: zone 5 hunger 0 energy 3 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 0 food far 8 friend mid 6 bubble mid 7 reef far 6 wall mid 3 last follow_friend time day -> follow_friend urgency 3 p=0.73  [1507 ms, 29.2 tok/s]
+I (49116) advisor: prof ms: matmul 915 attn 328 norm/quant 62 rope 16 swiglu 177 decode 0
+I (49843) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (49844) display: 25.4 fps | render 7.5 ms flush 18.1 ms | scene 1.0 shafts 0.0 veg 0.1 fd/bub 1.2 fish 0.0 vig 1.6 algae 0.5 | card 0.0 ms x0 | veg 0.19 0.13 0.21
+I (49855) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (49864) display: swim depth: 0.23 ms a frame (0.18 ms a hidden fish, 1.3 of them a frame)
+I (49872) display: frame 39.3 ms = polls 1.1 + tick 2.3 + prefetch wait 0.0 + render 7.5 + flush 18.1 + tail 0.3 + sleep 10.0 | flush: fill 15.4, wire wait 0.0, send calls 2.6
+I (49887) display: the fish stage split: fish 2.0 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (49902) pocket-tank: t=93s 3 fish goals: follow_friend follow_friend rest | asks 22 decisions 19 last 1507 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 70% 4033 mV bright 255
+I (59861) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (59862) display: 25.4 fps | render 5.3 ms flush 14.0 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.5 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.21
+I (59873) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (59882) display: swim depth: 0.06 ms a frame (0.12 ms a hidden fish, 0.5 of them a frame)
+I (59890) display: frame 39.3 ms = polls 1.2 + tick 2.0 + prefetch wait 0.0 + render 5.3 + flush 14.0 + tail 0.3 + sleep 16.4 | flush: fill 10.9, wire wait 0.0, send calls 3.1
+I (59906) display: the fish stage split: fish 1.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (59920) pocket-tank: t=103s 3 fish goals: follow_friend follow_friend rest | asks 22 decisions 19 last 1507 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 70% 4033 mV bright 255
+I (69883) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (69884) display: 25.4 fps | render 5.7 ms flush 13.9 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.7 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.21
+I (69895) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (69904) display: swim depth: 0.05 ms a frame (0.08 ms a hidden fish, 0.7 of them a frame)
+I (69912) display: frame 39.3 ms = polls 1.1 + tick 1.8 + prefetch wait 0.0 + render 5.7 + flush 13.9 + tail 0.3 + sleep 16.5 | flush: fill 10.8, wire wait 0.0, send calls 3.1
+I (69927) display: the fish stage split: fish 1.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (69942) pocket-tank: t=113s 3 fish goals: follow_friend follow_friend rest | asks 22 decisions 19 last 1507 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 70% 4037 mV bright 255
+I (78572) advisor: zone 2 hunger 0 energy 6 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 3 food near 3 friend near 4 bubble near 7 reef far 10 wall mid 3 last follow_friend time day -> dart_play urgency 6 p=0.22  [1509 ms, 29.1 tok/s]
+I (78584) advisor: prof ms: matmul 930 attn 312 norm/quant 61 rope 17 swiglu 179 decode 0
+I (79904) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (79905) display: 25.4 fps | render 5.8 ms flush 15.3 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.5 fish 0.0 vig 1.4 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.21
+I (79916) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (79925) display: frame 39.4 ms = polls 1.2 + tick 2.6 + prefetch wait 0.0 + render 5.8 + flush 15.3 + tail 0.3 + sleep 14.2 | flush: fill 12.3, wire wait 0.0, send calls 2.9
+I (79940) display: the fish stage split: fish 1.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (79955) pocket-tank: t=123s 3 fish goals: follow_friend dart_play rest | asks 25 decisions 20 last 1509 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 70% 4037 mV bright 255
+I (80117) advisor: zone 2 hunger 0 energy 6 stress 0 curiosity 1 bold 3 social 6 stage juv trust 6 bored 3 food mid 6 friend near 10 bubble near 8 reef far 10 wall mid 3 last follow_friend time day -> seek_food urgency 6 p=0.45  [1492 ms, 29.5 tok/s]
+I (80129) advisor: prof ms: matmul 917 attn 309 norm/quant 61 rope 17 swiglu 178 decode 0
+I (81682) advisor: zone 2 hunger 0 energy 5 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 0 food mid 5 friend near 3 bubble near 7 reef far 9 wall mid 2 last dart_play time day -> seek_food urgency 6 p=0.44  [1510 ms, 29.1 tok/s]
+I (81693) advisor: prof ms: matmul 928 attn 314 norm/quant 61 rope 17 swiglu 179 decode 0
+I (89359) touch: page tap at 337,75 (release 337,75) -> nothing
+I (89924) display: fb mid 0x8200 corner 0x8200 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (89925) display: 25.4 fps | render 6.8 ms flush 14.6 ms | scene 0.6 shafts 0.0 veg 0.0 fd/bub 0.5 fish 0.0 vig 1.2 algae 0.3 | card 10.4 ms x31 | veg 0.19 0.13 0.21
+I (89936) display: keeper page: 37 frames kept, 2 drawn whole (not its buffer 2, a box out 0, changed 0, drawn over 0, a frame without it 0, out now 0)
+I (89949) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (89958) display: swim depth: 0.02 ms a frame (0.07 ms a hidden fish, 0.3 of them a frame)
+I (89966) display: frame 39.3 ms = polls 1.1 + tick 2.2 + prefetch wait 0.0 + render 6.8 + flush 14.6 + tail 0.3 + sleep 14.2 | flush: fill 11.2, wire wait 0.0, send calls 3.4
+I (89982) display: the fish stage split: fish 1.1 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (89997) pocket-tank: t=133s 3 fish goals: seek_food explore rest | asks 27 decisions 22 last 1510 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 70% 4040 mV bright 255
+I (90116) advisor: zone 5 hunger 0 energy 7 stress 0 curiosity 1 bold 8 social 3 stage juv trust 6 bored 0 food near 12 friend mid 7 bubble mid 5 reef far 4 wall mid 11 last explore time day -> dart_play urgency 6 p=0.08  [1225 ms, 35.9 tok/s]
+I (90126) advisor: prof ms: matmul 795 attn 208 norm/quant 46 rope 12 swiglu 155 decode 0
+I (90426) touch: page tap at 259,204 (release 259,204) -> detail
+I (91578) advisor: zone 5 hunger 0 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 2 food mid 12 friend mid 7 bubble near 7 reef mid 1 wall mid 11 last rest time day -> follow_friend urgency 4 p=0.54  [1405 ms, 31.3 tok/s]
+I (91589) advisor: prof ms: matmul 881 attn 267 norm/quant 56 rope 14 swiglu 177 decode 0
+I (93860) touch: page tap at 440,161 (release 440,161) -> detail
+I (94727) advisor: zone 3 hunger 0 energy 7 stress 0 curiosity 2 bold 3 social 6 stage juv trust 6 bored 0 food near 8 friend mid 5 bubble mid 5 reef far 5 wall mid 10 last visit_bubbles time day -> visit_bubbles urgency 4 p=0.57  [1296 ms, 33.9 tok/s]
+I (94739) advisor: prof ms: matmul 824 attn 238 norm/quant 49 rope 13 swiglu 162 decode 0
+I (94953) touch: page tap at 424,154 (release 424,154) -> detail
+I (95306) touch: page tap at 349,55 (release 349,55) -> detail
+I (97807) touch: page tap at 368,219 (release 368,219) -> nothing
+I (98408) touch: page tap at 253,227 (release 253,227) -> detail
+I (99883) touch: page tap at 392,138 (release 392,138) -> detail
+I (99945) display: fb mid 0xa300 corner 0x4100 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (99946) display: 24.1 fps | render 10.0 ms flush 12.5 ms | scene 0.0 shafts 0.0 veg 0.0 fd/bub 0.0 fish 0.0 vig 0.0 algae 0.0 | card 0.0 ms x0 | veg 0.19 0.13 0.21
+I (99957) display: keeper page: 222 frames kept, 19 drawn whole (not its buffer 0, a box out 0, changed 6, drawn over 0, a frame without it 0, out now 13)
+I (99970) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (99979) display: frame 41.6 ms = polls 1.0 + tick 2.1 + prefetch wait 0.0 + render 10.0 + flush 12.5 + tail 0.4 + sleep 15.6 | flush: fill 6.4, wire wait 0.0, send calls 6.1
+I (99995) display: the fish stage split: fish 0.0 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (100009) pocket-tank: t=143s 3 fish goals: visit_bubbles dart_play follow_friend | asks 28 decisions 25 last 1296 ms 33.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 71% 4043 mV bright 255
+I (100498) touch: page tap at 316,25 (release 316,25) -> detail
+I (101165) touch: page tap at 249,229 (release 249,229) -> detail
+I (102895) touch: page tap at 397,120 (release 397,120) -> detail
+I (103519) touch: page tap at 412,117 (release 412,117) -> detail
+I (104686) touch: page tap at 400,120 (release 400,120) -> detail
+I (105179) touch: page tap at 399,120 (release 399,120) -> detail
+I (105429) touch: page tap at 322,51 (release 322,51) -> detail
+I (107349) touch: page tap at 339,390 (release 339,390) -> CLOSE
+I (109955) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (109956) display: 25.0 fps | render 8.1 ms flush 12.7 ms | scene 0.2 shafts 0.0 veg 0.0 fd/bub 0.2 fish 0.0 vig 0.4 algae 0.1 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (109967) display: keeper page: 172 frames kept, 11 drawn whole (not its buffer 0, a box out 0, changed 6, drawn over 0, a frame without it 0, out now 5)
+I (109980) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (109990) display: swim depth: 0.02 ms a frame (0.04 ms a hidden fish, 0.5 of them a frame)
+I (109998) display: frame 40.0 ms = polls 1.0 + tick 2.0 + prefetch wait 0.0 + render 8.1 + flush 12.7 + tail 0.4 + sleep 15.9 | flush: fill 7.1, wire wait 0.0, send calls 5.6
+I (110013) display: the fish stage split: fish 0.4 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (110028) pocket-tank: t=153s 3 fish goals: visit_bubbles dart_play follow_friend | asks 28 decisions 25 last 1296 ms 33.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 71% 4044 mV bright 255
+I (112605) touch: page tap at 154,382 (release 154,382) -> SHOP
+I (114705) touch: shop tap at 339,391 -> CLOSE
+I (116213) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 3 food mid 7 friend near 1 bubble near 1 reef far 2 wall mid 7 last follow_friend time day -> follow_friend urgency 3 p=0.48  [1227 ms, 35.8 tok/s]
+I (116225) advisor: prof ms: matmul 796 attn 209 norm/quant 46 rope 12 swiglu 155 decode 0
+I (117176) touch: page tap at 349,387 (release 349,387) -> CLOSE
+I (118532) advisor: zone 5 hunger 0 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 2 food mid 6 friend mid 1 bubble near 4 reef far 3 wall clear last follow_friend time day -> follow_friend urgency 3 p=0.29  [1438 ms, 29.9 tok/s]
+I (118543) advisor: prof ms: matmul 894 attn 285 norm/quant 58 rope 16 swiglu 175 decode 0
+I (119972) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (119973) display: 25.4 fps | render 9.9 ms flush 13.7 ms | scene 0.4 shafts 0.0 veg 0.0 fd/bub 0.5 fish 0.0 vig 0.7 algae 0.2 | card 10.1 ms x35 | veg 0.19 0.13 0.22
+I (119984) display: keeper page: 75 frames kept, 4 drawn whole (not its buffer 0, a box out 0, changed 2, drawn over 2, a frame without it 0, out now 0)
+I (119998) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (120007) display: swim depth: 0.14 ms a frame (0.15 ms a hidden fish, 0.9 of them a frame)
+I (120015) display: frame 39.4 ms = polls 1.0 + tick 2.4 + prefetch wait 0.0 + render 9.9 + flush 13.7 + tail 0.4 + sleep 12.2 | flush: fill 9.0, wire wait 0.0, send calls 4.6
+I (120030) display: the fish stage split: fish 0.8 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (120045) pocket-tank: t=163s 3 fish goals: visit_bubbles dart_play follow_friend | asks 30 decisions 27 last 1438 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 71% 4047 mV bright 255
+I (126495) advisor: zone 5 hunger 0 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 3 food mid 9 friend near 5 bubble mid 7 reef far 5 wall mid 2 last follow_friend time day -> seek_food urgency 9 p=0.45  [1511 ms, 29.1 tok/s]
+I (126506) advisor: prof ms: matmul 919 attn 327 norm/quant 62 rope 17 swiglu 176 decode 0
+I (128055) advisor: zone 5 hunger 0 energy 8 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 3 food mid 12 friend near 4 bubble near 12 reef mid 9 wall mid 7 last visit_bubbles time day -> visit_bubbles urgency 3 p=0.41  [1505 ms, 29.2 tok/s]
+I (128067) advisor: prof ms: matmul 915 attn 325 norm/quant 62 rope 16 swiglu 177 decode 0
+I (129618) advisor: zone 6 hunger 0 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 0 food near 12 friend mid 8 bubble mid 8 reef far 7 wall mid 2 last seek_food time day -> follow_friend urgency 4 p=0.81  [1507 ms, 29.2 tok/s]
+I (129629) advisor: prof ms: matmul 916 attn 323 norm/quant 62 rope 17 swiglu 178 decode 0
+I (130003) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (130004) display: 25.4 fps | render 6.8 ms flush 15.9 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 1.0 fish 0.0 vig 1.5 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (130015) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (130024) display: swim depth: 0.20 ms a frame (0.11 ms a hidden fish, 1.8 of them a frame)
+I (130032) display: frame 39.3 ms = polls 1.0 + tick 2.3 + prefetch wait 0.0 + render 6.8 + flush 15.9 + tail 0.4 + sleep 12.9 | flush: fill 13.1, wire wait 0.0, send calls 2.8
+I (130048) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (130063) pocket-tank: t=173s 3 fish goals: visit_bubbles dart_play follow_friend | asks 33 decisions 30 last 1507 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 71% 4047 mV bright 255
+I (135416) advisor: zone 3 hunger 0 energy 8 stress 0 curiosity 1 bold 8 social 3 stage juv trust 6 bored 0 food mid 9 friend mid 12 bubble mid 11 reef far 11 wall mid 6 last dart_play time day -> seek_food urgency 9 p=0.52  [1507 ms, 29.2 tok/s]
+I (135428) advisor: prof ms: matmul 916 attn 325 norm/quant 61 rope 17 swiglu 177 decode 0
+E (137559) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (137559) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+I (140029) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (140029) display: 25.4 fps | render 5.9 ms flush 14.4 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (140041) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (140050) display: swim depth: 0.11 ms a frame (0.06 ms a hidden fish, 1.8 of them a frame)
+I (140058) display: frame 39.3 ms = polls 1.0 + tick 2.1 + prefetch wait 0.0 + render 5.9 + flush 14.4 + tail 0.3 + sleep 15.5 | flush: fill 11.4, wire wait 0.0, send calls 3.0
+I (140073) display: the fish stage split: fish 1.5 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (140088) pocket-tank: t=183s 3 fish goals: visit_bubbles explore follow_friend | asks 34 decisions 31 last 1507 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 71% 4052 mV bright 255
+I (150057) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (150058) display: 25.4 fps | render 5.4 ms flush 13.8 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.3 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (150069) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (150078) display: swim depth: 0.06 ms a frame (0.06 ms a hidden fish, 1.0 of them a frame)
+I (150086) display: frame 39.3 ms = polls 0.9 + tick 2.0 + prefetch wait 0.0 + render 5.4 + flush 13.8 + tail 0.3 + sleep 16.9 | flush: fill 10.7, wire wait 0.0, send calls 3.1
+I (150102) display: the fish stage split: fish 1.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (150117) pocket-tank: t=193s 3 fish goals: visit_bubbles explore follow_friend | asks 35 decisions 31 last 1507 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 71% 4054 mV bright 255
+I (151262) advisor: zone 2 hunger 0 energy 7 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 7 food far 7 friend mid 4 bubble mid 7 reef far 8 wall mid 1 last visit_bubbles time day -> explore urgency 6 p=1.00  [1466 ms, 30.0 tok/s]
+I (151273) advisor: prof ms: matmul 916 attn 288 norm/quant 60 rope 16 swiglu 176 decode 0
+I (153299) advisor: zone 2 hunger 0 energy 7 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 3 food far 9 friend near 7 bubble mid 9 reef far 10 wall mid 3 last explore time day -> explore urgency 4 p=0.15  [1479 ms, 29.7 tok/s]
+I (153309) advisor: prof ms: matmul 920 attn 301 norm/quant 58 rope 16 swiglu 175 decode 0
+I (154843) advisor: zone 4 hunger 0 energy 9 stress 0 curiosity 3 bold 8 social 3 stage juv trust 6 bored 1 food mid 8 friend far 3 bubble mid 4 reef near 11 wall mid 9 last explore time day -> visit_bubbles urgency 3 p=0.25  [1500 ms, 29.3 tok/s]
+I (154854) advisor: prof ms: matmul 911 attn 328 norm/quant 60 rope 16 swiglu 175 decode 0
+I (156370) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 3 food far 10 friend near 1 bubble mid 10 reef far 11 wall mid 4 last follow_friend time day -> rest urgency 6 p=0.31  [1505 ms, 29.2 tok/s]
+I (156381) advisor: prof ms: matmul 915 attn 328 norm/quant 61 rope 16 swiglu 174 decode 0
+I (157898) advisor: zone 1 hunger 0 energy 7 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 2 food far 9 friend near 6 bubble mid 8 reef far 9 wall mid 3 last explore time day -> follow_friend urgency 3 p=0.36  [1508 ms, 29.2 tok/s]
+I (157909) advisor: prof ms: matmul 917 attn 326 norm/quant 61 rope 17 swiglu 176 decode 0
+I (159456) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 0 food far 12 friend mid 3 bubble mid 11 reef far 1 wall mid 6 last rest time day -> explore urgency 4 p=0.40  [1505 ms, 29.2 tok/s]
+I (159466) advisor: prof ms: matmul 912 attn 329 norm/quant 61 rope 16 swiglu 176 decode 0
+I (160078) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (160079) display: 25.4 fps | render 7.2 ms flush 18.0 ms | scene 1.0 shafts 0.0 veg 0.1 fd/bub 1.1 fish 0.0 vig 1.5 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (160090) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (160099) display: swim depth: 0.09 ms a frame (0.09 ms a hidden fish, 0.9 of them a frame)
+I (160107) display: frame 39.3 ms = polls 1.0 + tick 2.6 + prefetch wait 0.0 + render 7.2 + flush 18.0 + tail 0.3 + sleep 10.0 | flush: fill 15.4, wire wait 0.0, send calls 2.6
+I (160122) display: the fish stage split: fish 1.8 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (160137) pocket-tank: t=203s 3 fish goals: follow_friend visit_bubbles explore | asks 41 decisions 37 last 1505 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 71% 4054 mV bright 255
+I (164552) advisor: zone 5 hunger 0 energy 9 stress 0 curiosity 3 bold 8 social 3 stage juv trust 6 bored 1 food far 4 friend near 9 bubble near 1 reef mid 5 wall clear last visit_bubbles time day -> dart_play urgency 6 p=0.94  [1427 ms, 30.1 tok/s]
+I (164564) advisor: prof ms: matmul 908 attn 275 norm/quant 48 rope 17 swiglu 168 decode 0
+I (170092) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (170092) display: 25.5 fps | render 5.2 ms flush 14.3 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.4 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (170104) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (170113) display: frame 39.3 ms = polls 0.9 + tick 2.1 + prefetch wait 0.0 + render 5.2 + flush 14.3 + tail 0.3 + sleep 16.4 | flush: fill 11.2, wire wait 0.0, send calls 3.0
+I (170128) display: the fish stage split: fish 1.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (170143) pocket-tank: t=213s 3 fish goals: follow_friend dart_play explore | asks 42 decisions 38 last 1427 ms 30.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 72% 4057 mV bright 255
+I (180101) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (180102) display: 25.5 fps | render 4.9 ms flush 13.6 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.4 fish 0.0 vig 1.2 algae 0.3 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (180113) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (180122) display: frame 39.3 ms = polls 0.9 + tick 1.9 + prefetch wait 0.0 + render 4.9 + flush 13.6 + tail 0.3 + sleep 17.6 | flush: fill 10.5, wire wait 0.0, send calls 3.1
+I (180137) display: the fish stage split: fish 1.2 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (180152) pocket-tank: t=223s 3 fish goals: follow_friend dart_play explore | asks 42 decisions 38 last 1427 ms 30.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 72% 4058 mV bright 255
+I (182775) advisor: zone 1 hunger 1 energy 7 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 3 food far 3 friend mid 12 bubble mid 1 reef mid 3 wall mid 6 last follow_friend time day -> follow_friend urgency 3 p=0.31  [1470 ms, 29.9 tok/s]
+I (182787) advisor: prof ms: matmul 914 attn 296 norm/quant 59 rope 17 swiglu 174 decode 0
+I (185002) advisor: zone 4 hunger 1 energy 7 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 2 food far 12 friend mid 11 bubble mid 9 reef mid 12 wall mid 3 last follow_friend time day -> follow_friend urgency 3 p=0.32  [1470 ms, 29.9 tok/s]
+I (185013) advisor: prof ms: matmul 916 attn 296 norm/quant 57 rope 16 swiglu 174 decode 0
+I (187382) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 2 bold 1 social 5 stage juv trust 4 bored 3 food none friend near 5 bubble mid 4 reef far 4 wall mid 9 last explore time day -> rest urgency 6 p=0.10  [1428 ms, 30.1 tok/s]
+I (187392) advisor: prof ms: matmul 897 attn 272 norm/quant 57 rope 18 swiglu 175 decode 0
+I (190118) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (190119) display: 25.5 fps | render 5.8 ms flush 15.8 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 0.5 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (190130) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (190139) display: swim depth: 0.02 ms a frame (0.06 ms a hidden fish, 0.3 of them a frame)
+I (190147) display: frame 39.3 ms = polls 1.0 + tick 2.3 + prefetch wait 0.0 + render 5.8 + flush 15.8 + tail 0.3 + sleep 14.1 | flush: fill 12.9, wire wait 0.0, send calls 2.8
+I (190162) display: the fish stage split: fish 1.4 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (190177) pocket-tank: t=233s 3 fish goals: follow_friend dart_play rest | asks 45 decisions 41 last 1428 ms 30.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 72% 4060 mV bright 255
+I (200134) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (200135) display: 25.5 fps | render 5.3 ms flush 13.7 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.1 algae 0.3 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (200146) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (200155) display: swim depth: 0.07 ms a frame (0.07 ms a hidden fish, 1.0 of them a frame)
+I (200163) display: frame 39.3 ms = polls 0.9 + tick 2.0 + prefetch wait 0.0 + render 5.3 + flush 13.7 + tail 0.3 + sleep 17.0 | flush: fill 10.6, wire wait 0.0, send calls 3.1
+I (200179) display: the fish stage split: fish 1.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (200194) pocket-tank: t=243s 3 fish goals: follow_friend dart_play rest | asks 45 decisions 41 last 1428 ms 30.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 72% 4063 mV bright 255
+I (202629) advisor: zone 5 hunger 1 energy 6 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 1 food none friend near 2 bubble mid 2 reef far 12 wall mid 10 last follow_friend time day -> rest urgency 8 p=0.60  [1437 ms, 29.9 tok/s]
+I (202640) advisor: prof ms: matmul 905 attn 285 norm/quant 53 rope 17 swiglu 168 decode 0
+I (204114) advisor: zone 5 hunger 1 energy 8 stress 0 curiosity 2 bold 8 social 3 stage juv trust 6 bored 3 food none friend near 11 bubble near 9 reef mid 3 wall clear last dart_play time day -> visit_bubbles urgency 3 p=0.11  [1439 ms, 29.2 tok/s]
+I (204125) advisor: prof ms: matmul 930 attn 267 norm/quant 51 rope 16 swiglu 165 decode 0
+I (205592) advisor: zone 5 hunger 1 energy 7 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 0 food none friend near 2 bubble near 2 reef far 12 wall mid 10 last rest time day -> explore urgency 4 p=0.19  [1433 ms, 30.0 tok/s]
+I (205602) advisor: prof ms: matmul 910 attn 278 norm/quant 50 rope 17 swiglu 168 decode 0
+I (210156) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (210157) display: 25.4 fps | render 6.2 ms flush 15.8 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (210168) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (210177) display: swim depth: 0.11 ms a frame (0.07 ms a hidden fish, 1.5 of them a frame)
+I (210185) display: frame 39.3 ms = polls 1.0 + tick 2.3 + prefetch wait 0.0 + render 6.2 + flush 15.8 + tail 0.3 + sleep 13.6 | flush: fill 12.9, wire wait 0.0, send calls 2.8
+I (210201) display: the fish stage split: fish 1.6 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (210216) pocket-tank: t=253s 3 fish goals: explore visit_bubbles rest | asks 48 decisions 44 last 1433 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 72% 4063 mV bright 255
+I (220186) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (220186) display: 25.5 fps | render 5.6 ms flush 14.0 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (220197) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (220206) display: swim depth: 0.15 ms a frame (0.15 ms a hidden fish, 1.0 of them a frame)
+I (220215) display: frame 39.3 ms = polls 0.9 + tick 2.0 + prefetch wait 0.0 + render 5.6 + flush 14.0 + tail 0.3 + sleep 16.4 | flush: fill 11.0, wire wait 0.0, send calls 3.0
+I (220230) display: the fish stage split: fish 1.4 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (220245) pocket-tank: t=263s 3 fish goals: explore visit_bubbles rest | asks 49 decisions 44 last 1433 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 72% 4067 mV bright 255
+I (220750) advisor: zone 5 hunger 1 energy 9 stress 0 curiosity 1 bold 1 social 5 stage juv trust 4 bored 7 food none friend mid 5 bubble mid 6 reef mid 2 wall mid 11 last rest time day -> explore urgency 6 p=0.84  [1455 ms, 29.6 tok/s]
+I (220761) advisor: prof ms: matmul 896 attn 308 norm/quant 52 rope 18 swiglu 171 decode 0
+I (225449) advisor: zone 4 hunger 1 energy 9 stress 0 curiosity 1 bold 1 social 5 stage juv trust 4 bored 6 food none friend mid 2 bubble mid 4 reef near 11 wall mid 9 last explore time day -> visit_bubbles urgency 3 p=0.18  [1435 ms, 29.9 tok/s]
+I (225461) advisor: prof ms: matmul 904 attn 285 norm/quant 52 rope 16 swiglu 168 decode 0
+I (226943) advisor: zone 2 hunger 2 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 7 food none friend mid 9 bubble near 7 reef far 7 wall mid 12 last visit_bubbles time day -> explore urgency 7 p=0.99  [1443 ms, 29.8 tok/s]
+I (226954) advisor: prof ms: matmul 906 attn 287 norm/quant 54 rope 16 swiglu 169 decode 0
+I (228428) advisor: zone 4 hunger 1 energy 9 stress 0 curiosity 2 bold 1 social 5 stage juv trust 4 bored 2 food none friend mid 1 bubble mid 3 reef near 9 wall mid 8 last visit_bubbles time day -> rest urgency 9 p=0.80  [1439 ms, 29.9 tok/s]
+I (228438) advisor: prof ms: matmul 903 attn 287 norm/quant 54 rope 16 swiglu 170 decode 0
+I (229910) advisor: zone 2 hunger 2 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 3 food none friend mid 10 bubble mid 8 reef far 9 wall mid 3 last explore time day -> dart_play urgency 6 p=0.64  [1438 ms, 29.9 tok/s]
+I (229920) advisor: prof ms: matmul 909 attn 284 norm/quant 52 rope 16 swiglu 168 decode 0
+I (230217) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (230218) display: 25.4 fps | render 6.9 ms flush 17.0 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 1.0 fish 0.0 vig 1.4 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (230229) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (230239) display: swim depth: 0.24 ms a frame (0.24 ms a hidden fish, 1.0 of them a frame)
+I (230247) display: frame 39.3 ms = polls 1.0 + tick 2.5 + prefetch wait 0.0 + render 6.9 + flush 17.0 + tail 0.3 + sleep 11.6 | flush: fill 14.3, wire wait 0.0, send calls 2.7
+I (230262) display: the fish stage split: fish 1.9 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (230277) pocket-tank: t=273s 3 fish goals: explore dart_play rest | asks 54 decisions 49 last 1438 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 72% 4067 mV bright 255
+I (231381) advisor: zone 2 hunger 2 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 3 food none friend far 5 bubble mid 3 reef far 4 wall mid 9 last explore time day -> explore urgency 4 p=0.16  [1427 ms, 30.1 tok/s]
+I (231391) advisor: prof ms: matmul 903 attn 277 norm/quant 52 rope 17 swiglu 168 decode 0
+I (232870) advisor: zone 1 hunger 2 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 0 food none friend near 3 bubble mid 11 reef mid 2 wall mid 5 last dart_play time day -> inspect_reef urgency 3 p=0.48  [1439 ms, 29.9 tok/s]
+I (232881) advisor: prof ms: matmul 905 attn 287 norm/quant 52 rope 17 swiglu 168 decode 0
+I (240237) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (240238) display: 25.4 fps | render 6.0 ms flush 15.0 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (240249) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (240258) display: swim depth: 0.22 ms a frame (0.12 ms a hidden fish, 1.9 of them a frame)
+I (240267) display: frame 39.3 ms = polls 0.9 + tick 2.1 + prefetch wait 0.0 + render 6.0 + flush 15.0 + tail 0.3 + sleep 14.9 | flush: fill 12.0, wire wait 0.0, send calls 2.9
+I (240282) display: the fish stage split: fish 1.6 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (240297) pocket-tank: t=283s 3 fish goals: explore inspect_reef rest | asks 55 decisions 51 last 1439 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 73% 4069 mV bright 255
+I (249754) advisor: zone 3 hunger 1 energy 7 stress 0 curiosity 3 bold 3 social 6 stage juv trust 6 bored 0 food mid 10 friend far 4 bubble mid 5 reef far 5 wall mid 12 last explore time day -> seek_food urgency 3 p=0.97  [1513 ms, 29.1 tok/s]
+I (249765) advisor: prof ms: matmul 925 attn 323 norm/quant 59 rope 18 swiglu 178 decode 0
+I (250258) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (250259) display: 25.4 fps | render 6.1 ms flush 14.5 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (250270) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (250279) display: swim depth: 0.33 ms a frame (0.17 ms a hidden fish, 2.0 of them a frame)
+I (250287) display: frame 39.3 ms = polls 1.0 + tick 2.1 + prefetch wait 0.0 + render 6.1 + flush 14.5 + tail 0.3 + sleep 15.3 | flush: fill 11.4, wire wait 0.0, send calls 3.0
+I (250303) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (250318) pocket-tank: t=293s 3 fish goals: seek_food inspect_reef rest | asks 56 decisions 52 last 1513 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 73% 4072 mV bright 255
+I (251850) advisor: zone 6 hunger 2 energy 7 stress 0 curiosity 3 bold 3 social 6 stage juv trust 6 bored 0 food mid 8 friend far 3 bubble mid 4 reef far 3 wall mid 10 last seek_food time day -> seek_food urgency 2 p=0.93  [1512 ms, 29.1 tok/s]
+I (251861) advisor: prof ms: matmul 925 attn 323 norm/quant 59 rope 17 swiglu 178 decode 0
+I (253414) advisor: zone 5 hunger 1 energy 9 stress 0 curiosity 1 bold 1 social 5 stage juv trust 4 bored 3 food far 4 friend near 9 bubble mid 4 reef near 11 wall mid 9 last rest time day -> seek_food urgency 5 p=0.57  [1509 ms, 29.1 tok/s]
+I (253425) advisor: prof ms: matmul 925 attn 315 norm/quant 64 rope 17 swiglu 178 decode 0
+I (254984) advisor: zone 6 hunger 2 energy 7 stress 0 curiosity 3 bold 3 social 6 stage juv trust 6 bored 0 food far 7 friend mid 2 bubble mid 4 reef far 2 wall mid 12 last seek_food time day -> seek_food urgency 2 p=0.05  [1515 ms, 29.0 tok/s]
+I (254994) advisor: prof ms: matmul 925 attn 326 norm/quant 60 rope 17 swiglu 176 decode 0
+I (256548) advisor: zone 5 hunger 1 energy 9 stress 0 curiosity 1 bold 1 social 5 stage juv trust 4 bored 0 food far 12 friend mid 3 bubble mid 12 reef mid 7 wall mid 5 last seek_food time day -> seek_food urgency 5 p=0.69  [1510 ms, 29.1 tok/s]
+I (256559) advisor: prof ms: matmul 924 attn 320 norm/quant 62 rope 17 swiglu 176 decode 0
+I (260298) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (260299) display: 25.4 fps | render 7.4 ms flush 16.7 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 1.1 fish 0.0 vig 1.6 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (260310) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (260319) display: swim depth: 0.50 ms a frame (0.29 ms a hidden fish, 1.7 of them a frame)
+I (260327) display: frame 39.3 ms = polls 1.0 + tick 2.6 + prefetch wait 0.0 + render 7.4 + flush 16.7 + tail 0.3 + sleep 11.2 | flush: fill 14.0, wire wait 0.0, send calls 2.7
+I (260343) display: the fish stage split: fish 2.1 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (260358) pocket-tank: t=303s 3 fish goals: seek_food inspect_reef seek_food | asks 61 decisions 56 last 1510 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 73% 4073 mV bright 255
+I (261510) advisor: zone 6 hunger 2 energy 6 stress 0 curiosity 3 bold 3 social 6 stage juv trust 6 bored 0 food mid 12 friend mid 9 bubble mid 8 reef far 7 wall mid 2 last seek_food time day -> follow_friend urgency 3 p=0.55  [1473 ms, 29.9 tok/s]
+I (261521) advisor: prof ms: matmul 923 attn 289 norm/quant 58 rope 17 swiglu 176 decode 0
+I (263105) advisor: zone 5 hunger 2 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 3 food far 3 friend far 4 bubble mid 2 reef mid 11 wall near 8 last inspect_reef time day -> visit_bubbles urgency 3 p=0.54  [1552 ms, 28.3 tok/s]
+I (263117) advisor: prof ms: matmul 927 attn 355 norm/quant 65 rope 17 swiglu 178 decode 0
+I (264672) advisor: zone 6 hunger 0 energy 8 stress 0 curiosity 4 bold 3 social 6 stage juv trust 6 bored 0 food near 2 friend mid 12 bubble mid 11 reef far 11 wall mid 5 last follow_friend time day -> follow_friend urgency 4 p=0.59  [1512 ms, 29.1 tok/s]
+I (264684) advisor: prof ms: matmul 923 attn 317 norm/quant 65 rope 18 swiglu 179 decode 0
+I (266239) advisor: zone 5 hunger 2 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 0 food far 2 friend mid 1 bubble mid 1 reef mid 9 wall mid 6 last visit_bubbles time day -> visit_bubbles urgency 5 p=0.37  [1513 ms, 29.1 tok/s]
+I (266250) advisor: prof ms: matmul 923 attn 324 norm/quant 61 rope 17 swiglu 177 decode 0
+I (270329) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (270330) display: 25.3 fps | render 7.2 ms flush 16.6 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 1.0 fish 0.0 vig 1.4 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (270341) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (270350) display: swim depth: 0.34 ms a frame (0.36 ms a hidden fish, 0.9 of them a frame)
+I (270358) display: frame 39.5 ms = polls 1.0 + tick 2.7 + prefetch wait 0.0 + render 7.2 + flush 16.6 + tail 0.3 + sleep 11.7 | flush: fill 13.7, wire wait 0.0, send calls 2.8
+I (270374) display: the fish stage split: fish 1.9 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (270389) pocket-tank: t=313s 3 fish goals: follow_friend visit_bubbles explore | asks 64 decisions 60 last 1513 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 73% 4076 mV bright 255
+I (273050) advisor: zone 5 hunger 0 energy 9 stress 0 curiosity 3 bold 1 social 5 stage juv trust 4 bored 1 food far 7 friend near 8 bubble near 6 reef mid 10 wall clear last explore time day -> visit_bubbles urgency 5 p=0.47  [1429 ms, 30.1 tok/s]
+I (273061) advisor: prof ms: matmul 905 attn 271 norm/quant 53 rope 17 swiglu 172 decode 0
+I (278478) advisor: zone 2 hunger 2 energy 6 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 0 food far 5 friend near 10 bubble near 5 reef mid 8 wall mid 1 last visit_bubbles time day -> visit_bubbles urgency 3 p=0.74  [1470 ms, 29.9 tok/s]
+I (278490) advisor: prof ms: matmul 917 attn 294 norm/quant 58 rope 17 swiglu 174 decode 0
+I (280002) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 3 bold 1 social 5 stage juv trust 4 bored 0 food far 3 friend near 5 bubble near 4 reef far 6 wall mid 11 last visit_bubbles time day -> dart_play urgency 6 p=0.19  [1470 ms, 29.9 tok/s]
+I (280013) advisor: prof ms: matmul 917 attn 294 norm/quant 57 rope 17 swiglu 174 decode 0
+I (280348) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (280349) display: 25.5 fps | render 5.7 ms flush 15.8 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 0.5 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (280360) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (280369) display: frame 39.3 ms = polls 1.0 + tick 2.4 + prefetch wait 0.0 + render 5.7 + flush 15.8 + tail 0.3 + sleep 14.1 | flush: fill 12.9, wire wait 0.0, send calls 2.8
+I (280385) display: the fish stage split: fish 1.4 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (280400) pocket-tank: t=323s 3 fish goals: follow_friend visit_bubbles dart_play | asks 67 decisions 63 last 1470 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 73% 4076 mV bright 255
+I (286379) advisor: zone 2 hunger 0 energy 8 stress 0 curiosity 3 bold 3 social 6 stage juv trust 6 bored 3 food far 3 friend near 9 bubble near 6 reef far 5 wall mid 10 last follow_friend time day -> dart_play urgency 6 p=0.12  [1469 ms, 29.9 tok/s]
+I (286390) advisor: prof ms: matmul 916 attn 293 norm/quant 59 rope 17 swiglu 174 decode 0
+I (288444) advisor: zone 2 hunger 0 energy 8 stress 0 curiosity 3 bold 3 social 6 stage juv trust 6 bored 0 food far 8 friend near 1 bubble near 10 reef far 10 wall mid 3 last dart_play time day -> visit_bubbles urgency 3 p=0.14  [1505 ms, 29.2 tok/s]
+I (288456) advisor: prof ms: matmul 911 attn 330 norm/quant 60 rope 17 swiglu 176 decode 0
+I (290355) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (290356) display: 25.5 fps | render 5.5 ms flush 15.1 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.6 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (290367) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (290376) display: swim depth: 0.02 ms a frame (0.09 ms a hidden fish, 0.2 of them a frame)
+I (290384) display: frame 39.2 ms = polls 1.0 + tick 2.3 + prefetch wait 0.0 + render 5.5 + flush 15.1 + tail 0.3 + sleep 15.1 | flush: fill 12.2, wire wait 0.0, send calls 2.9
+I (290400) display: the fish stage split: fish 1.4 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (290415) pocket-tank: t=333s 3 fish goals: visit_bubbles visit_bubbles dart_play | asks 69 decisions 65 last 1505 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 73% 4079 mV bright 255
+I (292606) advisor: zone 2 hunger 0 energy 8 stress 0 curiosity 3 bold 3 social 6 stage juv trust 6 bored 0 food far 6 friend mid 12 bubble near 10 reef far 9 wall clear last visit_bubbles time day -> inspect_reef urgency 4 p=0.00  [1465 ms, 29.3 tok/s]
+I (292618) advisor: prof ms: matmul 939 attn 276 norm/quant 55 rope 16 swiglu 170 decode 0
+I (298036) advisor: zone 2 hunger 3 energy 6 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 3 food far 10 friend near 9 bubble mid 11 reef far 12 wall mid 5 last visit_bubbles time day -> follow_friend urgency 3 p=0.52  [1510 ms, 29.1 tok/s]
+I (298048) advisor: prof ms: matmul 918 attn 325 norm/quant 62 rope 17 swiglu 177 decode 0
+I (300067) advisor: zone 2 hunger 3 energy 6 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 0 food mid 5 friend mid 12 bubble near 10 reef far 12 wall mid 5 last follow_friend time day -> seek_food urgency 4 p=0.61  [1510 ms, 29.1 tok/s]
+I (300079) advisor: prof ms: matmul 923 attn 317 norm/quant 64 rope 17 swiglu 179 decode 0
+I (300375) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (300375) display: 25.4 fps | render 6.3 ms flush 15.9 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.4 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (300387) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (300396) display: swim depth: 0.07 ms a frame (0.07 ms a hidden fish, 1.0 of them a frame)
+I (300404) display: frame 39.4 ms = polls 1.0 + tick 2.6 + prefetch wait 0.0 + render 6.3 + flush 15.9 + tail 0.3 + sleep 13.2 | flush: fill 13.1, wire wait 0.0, send calls 2.8
+I (300419) display: the fish stage split: fish 1.5 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (300434) pocket-tank: t=343s 3 fish goals: inspect_reef seek_food dart_play | asks 72 decisions 68 last 1510 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 74% 4082 mV bright 255
+I (304035) advisor: zone 2 hunger 0 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 0 food near 12 friend near 3 bubble mid 5 reef far 6 wall near 11 last visit_bubbles time day -> rest urgency 6 p=0.03  [1512 ms, 29.1 tok/s]
+I (304046) advisor: prof ms: matmul 925 attn 318 norm/quant 64 rope 17 swiglu 178 decode 0
+I (310396) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (310397) display: 25.4 fps | render 6.3 ms flush 14.4 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (310408) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (310418) display: swim depth: 0.20 ms a frame (0.12 ms a hidden fish, 1.6 of them a frame)
+I (310426) display: frame 39.3 ms = polls 1.0 + tick 2.1 + prefetch wait 0.0 + render 6.3 + flush 14.4 + tail 0.3 + sleep 15.2 | flush: fill 11.4, wire wait 0.0, send calls 3.0
+I (310441) display: the fish stage split: fish 1.6 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (310456) pocket-tank: t=353s 3 fish goals: inspect_reef rest dart_play | asks 73 decisions 69 last 1512 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 74% 4082 mV bright 255
+I (316005) advisor: zone 6 hunger 0 energy 8 stress 0 curiosity 1 bold 1 social 5 stage juv trust 4 bored 3 food mid 1 friend far 5 bubble mid 5 reef far 4 wall mid 10 last dart_play time day -> explore urgency 4 p=0.20  [1510 ms, 29.1 tok/s]
+I (316015) advisor: prof ms: matmul 917 attn 323 norm/quant 64 rope 16 swiglu 179 decode 0
+E (317157) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (317157) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+E (317844) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (317844) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+I (318024) advisor: zone 3 hunger 1 energy 8 stress 0 curiosity 1 bold 1 social 5 stage juv trust 4 bored 0 food mid 1 friend mid 12 bubble mid 12 reef far 10 wall mid 6 last explore time day -> seek_food urgency 3 p=0.91  [1495 ms, 29.4 tok/s]
+I (318035) advisor: prof ms: matmul 907 attn 323 norm/quant 61 rope 17 swiglu 178 decode 0
+I (320410) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (320411) display: 25.4 fps | render 6.4 ms flush 15.3 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.4 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (320422) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (320431) display: swim depth: 0.28 ms a frame (0.14 ms a hidden fish, 2.0 of them a frame)
+I (320439) display: frame 39.4 ms = polls 1.0 + tick 2.2 + prefetch wait 0.0 + render 6.4 + flush 15.3 + tail 0.3 + sleep 14.2 | flush: fill 12.4, wire wait 0.0, send calls 2.9
+I (320454) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (320469) pocket-tank: t=363s 3 fish goals: inspect_reef rest seek_food | asks 75 decisions 71 last 1495 ms 29.4 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 74% 4083 mV bright 255
+I (324266) advisor: zone 4 hunger 0 energy 8 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 3 food mid 11 friend mid 12 bubble mid 11 reef near 3 wall mid 7 last inspect_reef time day -> visit_bubbles urgency 3 p=0.17  [1510 ms, 29.1 tok/s]
+I (324278) advisor: prof ms: matmul 917 attn 325 norm/quant 63 rope 17 swiglu 177 decode 0
+I (330439) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (330439) display: 25.4 fps | render 6.1 ms flush 14.7 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (330451) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (330460) display: swim depth: 0.26 ms a frame (0.15 ms a hidden fish, 1.8 of them a frame)
+I (330468) display: frame 39.3 ms = polls 0.9 + tick 2.3 + prefetch wait 0.0 + render 6.1 + flush 14.7 + tail 0.3 + sleep 15.0 | flush: fill 11.7, wire wait 0.0, send calls 3.0
+I (330483) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (330498) pocket-tank: t=373s 3 fish goals: visit_bubbles rest visit_bubbles | asks 77 decisions 72 last 1510 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 74% 4088 mV bright 255
+I (331245) advisor: zone 5 hunger 0 energy 7 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 3 food near 1 friend mid 5 bubble mid 1 reef mid 6 wall mid 8 last visit_bubbles time day -> visit_bubbles urgency 3 p=0.64  [1498 ms, 29.4 tok/s]
+I (331257) advisor: prof ms: matmul 912 attn 323 norm/quant 61 rope 17 swiglu 176 decode 0
+I (338942) advisor: zone 5 hunger 0 energy 9 stress 0 curiosity 2 bold 8 social 3 stage juv trust 6 bored 3 food far 4 friend far 4 bubble mid 4 reef near 12 wall near 9 last rest time day -> dart_play urgency 6 p=0.11  [1512 ms, 29.1 tok/s]
+I (338953) advisor: prof ms: matmul 924 attn 322 norm/quant 62 rope 17 swiglu 177 decode 0
+I (340467) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (340467) display: 25.4 fps | render 6.7 ms flush 15.3 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.4 algae 0.4 | card 13.3 ms x6 | veg 0.19 0.13 0.22
+I (340479) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (340488) display: swim depth: 0.32 ms a frame (0.32 ms a hidden fish, 1.0 of them a frame)
+I (340496) display: frame 39.4 ms = polls 1.0 + tick 2.3 + prefetch wait 0.0 + render 6.7 + flush 15.3 + tail 0.3 + sleep 13.9 | flush: fill 12.3, wire wait 0.0, send calls 2.9
+I (340511) display: the fish stage split: fish 1.8 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (340526) pocket-tank: t=384s 3 fish goals: visit_bubbles dart_play visit_bubbles | asks 79 decisions 74 last 1512 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 74% 4086 mV bright 255
+I (340991) advisor: zone 5 hunger 0 energy 9 stress 0 curiosity 2 bold 8 social 3 stage juv trust 6 bored 0 food far 1 friend far 2 bubble mid 2 reef near 10 wall near 7 last dart_play time day -> visit_bubbles urgency 3 p=0.42  [1526 ms, 28.8 tok/s]
+I (341003) advisor: prof ms: matmul 925 attn 327 norm/quant 65 rope 17 swiglu 181 decode 0
+I (344300) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 3 food mid 4 friend near 5 bubble near 11 reef far 12 wall mid 5 last visit_bubbles time day -> explore urgency 5 p=0.08  [1543 ms, 28.5 tok/s]
+I (344311) advisor: prof ms: matmul 941 attn 327 norm/quant 64 rope 16 swiglu 186 decode 0
+I (345455) touch: page tap at 253,201 (release 253,201) -> detail
+I (346124) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 0 food mid 5 friend near 6 bubble near 10 reef far 1 wall mid 6 last explore time day -> seek_food urgency 6 p=0.49  [1336 ms, 32.9 tok/s]
+I (346135) advisor: prof ms: matmul 847 attn 248 norm/quant 50 rope 13 swiglu 168 decode 0
+I (346728) touch: page tap at 401,156 (release 401,156) -> detail
+I (347120) touch: page tap at 390,149 (release 390,149) -> detail
+I (347584) touch: page tap at 407,145 (release 407,145) -> detail
+I (348018) touch: page tap at 405,152 (release 405,152) -> detail
+I (348393) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 3 food near 5 friend mid 10 bubble mid 10 reef far 11 wall mid 4 last visit_bubbles time day -> explore urgency 4 p=0.20  [1315 ms, 33.5 tok/s]
+I (348404) advisor: prof ms: matmul 830 attn 248 norm/quant 51 rope 13 swiglu 163 decode 0
+I (348600) touch: page tap at 405,155 (release 405,155) -> detail
+I (349266) touch: page tap at 334,41 (release 334,41) -> detail
+I (350125) touch: page tap at 241,200 (release 241,200) -> detail
+I (350458) display: fb mid 0xa300 corner 0x4100 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (350459) display: 23.9 fps | render 11.1 ms flush 14.0 ms | scene 0.3 shafts 0.0 veg 0.0 fd/bub 0.4 fish 0.0 vig 0.6 algae 0.1 | card 13.0 ms x36 | veg 0.19 0.13 0.22
+I (350471) display: keeper page: 137 frames kept, 14 drawn whole (not its buffer 0, a box out 0, changed 8, drawn over 0, a frame without it 0, out now 6)
+I (350484) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (350493) display: swim depth: 0.10 ms a frame (0.26 ms a hidden fish, 0.4 of them a frame)
+I (350501) display: frame 41.9 ms = polls 1.0 + tick 2.6 + prefetch wait 0.0 + render 11.1 + flush 14.0 + tail 0.4 + sleep 12.8 | flush: fill 9.2, wire wait 0.0, send calls 4.7
+I (350517) display: the fish stage split: fish 0.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (350532) pocket-tank: t=394s 3 fish goals: seek_food visit_bubbles explore | asks 82 decisions 78 last 1315 ms 33.5 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 74% 4089 mV bright 255
+I (351638) touch: page tap at 418,156 (release 418,156) -> detail
+I (352009) touch: page tap at 411,146 (release 411,146) -> detail
+I (352500) touch: page tap at 457,249 (release 457,249) -> detail
+E (353046) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (353046) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+I (353229) touch: page tap at 234,222 (release 234,222) -> detail
+I (356011) touch: page tap at 453,238 (release 453,238) -> detail
+I (357004) advisor: zone 1 hunger 0 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 3 food near 9 friend far 8 bubble mid 8 reef far 9 wall mid 3 last explore time day -> visit_bubbles urgency 3 p=0.30  [1270 ms, 34.6 tok/s]
+I (357015) advisor: prof ms: matmul 808 attn 227 norm/quant 52 rope 13 swiglu 161 decode 0
+I (357546) touch: page tap at 340,393 (release 340,393) -> CLOSE
+I (359257) advisor: zone 1 hunger 0 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 3 food near 11 friend mid 9 bubble mid 10 reef far 11 wall mid 5 last visit_bubbles time day -> visit_bubbles urgency 3 p=0.39  [1512 ms, 29.1 tok/s]
+I (359269) advisor: prof ms: matmul 924 attn 320 norm/quant 62 rope 17 swiglu 178 decode 0
+I (360465) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (360466) display: 24.5 fps | render 9.5 ms flush 13.6 ms | scene 0.3 shafts 0.0 veg 0.0 fd/bub 0.3 fish 0.0 vig 0.5 algae 0.1 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (360477) display: keeper page: 152 frames kept, 18 drawn whole (not its buffer 0, a box out 0, changed 6, drawn over 0, a frame without it 0, out now 12)
+I (360491) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (360500) display: swim depth: 0.12 ms a frame (0.38 ms a hidden fish, 0.3 of them a frame)
+I (360508) display: frame 40.8 ms = polls 1.1 + tick 2.3 + prefetch wait 0.0 + render 9.5 + flush 13.6 + tail 0.4 + sleep 13.9 | flush: fill 8.4, wire wait 0.0, send calls 5.2
+I (360523) display: the fish stage split: fish 0.6 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (360538) pocket-tank: t=404s 3 fish goals: visit_bubbles visit_bubbles visit_bubbles | asks 84 decisions 80 last 1512 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 75% 4091 mV bright 255
+I (370495) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (370495) display: 25.4 fps | render 5.0 ms flush 13.6 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.5 fish 0.0 vig 1.2 algae 0.3 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (370507) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (370516) display: swim depth: 0.01 ms a frame (0.13 ms a hidden fish, 0.1 of them a frame)
+I (370524) display: frame 39.3 ms = polls 0.9 + tick 2.1 + prefetch wait 0.0 + render 5.0 + flush 13.6 + tail 0.4 + sleep 17.3 | flush: fill 10.5, wire wait 0.0, send calls 3.1
+I (370539) display: the fish stage split: fish 1.2 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (370554) pocket-tank: t=414s 3 fish goals: visit_bubbles visit_bubbles visit_bubbles | asks 84 decisions 80 last 1512 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 75% 4094 mV bright 255
+I (375903) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 3 food mid 4 friend near 2 bubble near 8 reef far 10 wall mid 3 last visit_bubbles time day -> visit_bubbles urgency 3 p=0.15  [1503 ms, 29.3 tok/s]
+I (375915) advisor: prof ms: matmul 923 attn 312 norm/quant 62 rope 17 swiglu 180 decode 0
+I (377314) touch: page tap at 150,377 (release 150,377) -> SHOP
+I (380124) touch: shop tap at 394,86 -> modal
+I (380513) display: fb mid 0x8200 corner 0x8200 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (380513) display: 25.2 fps | render 10.7 ms flush 13.8 ms | scene 0.4 shafts 0.0 veg 0.0 fd/bub 0.3 fish 0.0 vig 0.8 algae 0.2 | card 12.3 ms x22 | veg 0.19 0.13 0.22
+I (380525) display: keeper page: 23 frames kept, 2 drawn whole (not its buffer 0, a box out 0, changed 2, drawn over 0, a frame without it 0, out now 0)
+I (380538) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (380547) display: frame 39.7 ms = polls 1.0 + tick 2.2 + prefetch wait 0.0 + render 10.7 + flush 13.8 + tail 0.3 + sleep 11.8 | flush: fill 9.2, wire wait 0.0, send calls 4.5
+I (380563) display: the fish stage split: fish 0.8 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (380578) pocket-tank: t=424s 3 fish goals: visit_bubbles visit_bubbles visit_bubbles | asks 86 decisions 81 last 1503 ms 29.3 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 75% 4095 mV bright 255
+I (381379) touch: shop tap at 315,68 -> modal
+I (381878) advisor: zone 2 hunger 0 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 7 food near 10 friend near 7 bubble mid 3 reef far 3 wall mid 8 last visit_bubbles time day -> explore urgency 6 p=0.99  [1440 ms, 30.5 tok/s]
+I (381889) advisor: prof ms: matmul 880 attn 309 norm/quant 56 rope 15 swiglu 171 decode 0
+I (386704) touch: shop tap at 395,83 -> modal
+I (387801) touch: shop tap at 328,70 -> modal
+I (388261) touch: shop tap at 334,76 -> modal
+I (389155) advisor: zone 5 hunger 0 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 6 food mid 7 friend near 6 bubble near 8 reef mid 1 wall clear last explore time day -> seek_food urgency 6 p=0.07  [1430 ms, 30.1 tok/s]
+I (389166) advisor: prof ms: matmul 876 attn 302 norm/quant 58 rope 15 swiglu 169 decode 0
+I (390540) display: fb mid 0x8200 corner 0x8200 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (390541) display: 24.8 fps | render 20.1 ms flush 12.4 ms | scene 0.0 shafts 0.0 veg 0.0 fd/bub 0.0 fish 0.0 vig 0.0 algae 0.0 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (390552) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (390561) display: frame 40.3 ms = polls 1.0 + tick 2.3 + prefetch wait 0.0 + render 20.1 + flush 12.4 + tail 0.4 + sleep 4.1 | flush: fill 6.4, wire wait 0.0, send calls 6.0
+I (390576) display: the fish stage split: fish 0.0 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (390591) pocket-tank: t=434s 3 fish goals: visit_bubbles visit_bubbles seek_food | asks 89 decisions 83 last 1430 ms 30.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 75% 4096 mV bright 255
+I (391163) advisor: zone 5 hunger 0 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 2 food mid 12 friend mid 10 bubble near 11 reef mid 6 wall clear last seek_food time day -> follow_friend urgency 3 p=0.50  [1411 ms, 30.5 tok/s]
+I (391175) advisor: prof ms: matmul 869 attn 295 norm/quant 54 rope 14 swiglu 170 decode 0
+I (392653) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 3 food mid 11 friend near 3 bubble mid 1 reef far 2 wall mid 7 last visit_bubbles time day -> seek_food urgency 6 p=0.55  [1468 ms, 30.0 tok/s]
+I (392664) advisor: prof ms: matmul 878 attn 323 norm/quant 62 rope 16 swiglu 180 decode 0
+I (394182) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 3 food mid 3 friend near 6 bubble mid 5 reef far 6 wall mid 11 last visit_bubbles time day -> explore urgency 4 p=0.07  [1469 ms, 29.9 tok/s]
+I (394193) advisor: prof ms: matmul 882 attn 322 norm/quant 61 rope 16 swiglu 178 decode 0
+I (395402) touch: shop tap at 393,74 -> modal
+I (395702) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 6 bored 0 food near 12 friend near 4 bubble mid 2 reef far 2 wall mid 7 last seek_food time day -> dart_play urgency 6 p=0.29  [1463 ms, 30.1 tok/s]
+I (395713) advisor: prof ms: matmul 879 attn 320 norm/quant 61 rope 16 swiglu 178 decode 0
+I (396441) touch: shop tap at 322,60 -> modal
+I (396792) touch: shop tap at 330,70 -> modal
+I (398020) touch: shop tap at 201,380 -> nothing
+I (399195) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 7 food mid 7 friend near 7 bubble near 8 reef far 9 wall mid 2 last visit_bubbles time day -> explore urgency 5 p=0.98  [1466 ms, 30.0 tok/s]
+I (399206) advisor: prof ms: matmul 880 attn 321 norm/quant 62 rope 16 swiglu 178 decode 0
+I (399715) touch: shop tap at 218,382 -> modal
+I (400570) display: fb mid 0x8200 corner 0x8200 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (400571) display: 24.0 fps | render 23.0 ms flush 12.6 ms | scene 0.0 shafts 0.0 veg 0.0 fd/bub 0.0 fish 0.0 vig 0.0 algae 0.0 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (400582) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (400591) display: frame 41.6 ms = polls 1.0 + tick 2.5 + prefetch wait 0.0 + render 23.0 + flush 12.6 + tail 0.3 + sleep 2.1 | flush: fill 7.3, wire wait 0.0, send calls 5.3
+I (400607) display: the fish stage split: fish 0.0 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (400622) pocket-tank: t=444s 3 fish goals: dart_play explore follow_friend | asks 93 decisions 88 last 1466 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 75% 4098 mV bright 255
+I (401217) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 0 bold 8 social 3 stage juv trust 6 bored 3 food mid 8 friend near 7 bubble mid 9 reef far 10 wall mid 3 last explore time day -> follow_friend urgency 5 p=0.16  [1455 ms, 30.2 tok/s]
+I (401228) advisor: prof ms: matmul 883 attn 317 norm/quant 57 rope 15 swiglu 174 decode 0
+I (404829) touch: shop tap at 343,403 -> CLOSE
+I (406279) touch: page tap at 359,382 (release 359,382) -> CLOSE
+I (410556) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (410557) display: 25.3 fps | render 10.9 ms flush 12.9 ms | scene 0.3 shafts 0.0 veg 0.0 fd/bub 0.2 fish 0.0 vig 0.6 algae 0.1 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (410568) display: keeper page: 35 frames kept, 2 drawn whole (not its buffer 0, a box out 0, changed 2, drawn over 0, a frame without it 0, out now 0)
+I (410582) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (410591) display: frame 39.5 ms = polls 1.0 + tick 2.0 + prefetch wait 0.0 + render 10.9 + flush 12.9 + tail 0.3 + sleep 12.3 | flush: fill 7.9, wire wait 0.0, send calls 5.0
+I (410606) display: the fish stage split: fish 0.5 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (410621) pocket-tank: t=454s 3 fish goals: dart_play follow_friend follow_friend | asks 93 decisions 89 last 1455 ms 30.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 75% 4103 mV bright 255
+I (416055) advisor: zone 2 hunger 1 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 4 bored 3 food far 10 friend near 10 bubble near 12 reef far 12 wall mid 5 last follow_friend time day -> follow_friend urgency 3 p=0.46  [1508 ms, 29.2 tok/s]
+I (416067) advisor: prof ms: matmul 930 attn 308 norm/quant 64 rope 17 swiglu 179 decode 0
+I (419453) advisor: zone 5 hunger 1 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 2 food far 11 friend near 9 bubble near 3 reef mid 1 wall clear last follow_friend time day -> visit_bubbles urgency 3 p=0.04  [1470 ms, 29.2 tok/s]
+I (419465) advisor: prof ms: matmul 912 attn 295 norm/quant 60 rope 17 swiglu 175 decode 0
+I (420580) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (420581) display: 25.4 fps | render 5.7 ms flush 15.5 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.4 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (420592) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (420601) display: frame 39.3 ms = polls 1.2 + tick 2.8 + prefetch wait 0.0 + render 5.7 + flush 15.5 + tail 0.4 + sleep 13.8 | flush: fill 12.5, wire wait 0.0, send calls 2.9
+I (420616) display: the fish stage split: fish 1.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (420631) pocket-tank: t=464s 3 fish goals: dart_play follow_friend visit_bubbles | asks 95 decisions 91 last 1470 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 76% 4102 mV bright 255
+I (430590) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (430591) display: 25.5 fps | render 4.9 ms flush 13.8 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.4 fish 0.0 vig 1.2 algae 0.3 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (430602) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (430611) display: frame 39.3 ms = polls 1.0 + tick 2.3 + prefetch wait 0.0 + render 4.9 + flush 13.8 + tail 0.3 + sleep 16.9 | flush: fill 10.7, wire wait 0.0, send calls 3.1
+I (430626) display: the fish stage split: fish 1.2 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (430641) pocket-tank: t=474s 3 fish goals: dart_play follow_friend visit_bubbles | asks 95 decisions 91 last 1470 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 76% 4104 mV bright 255
+I (440410) advisor: zone 6 hunger 0 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 1 food mid 3 friend near 4 bubble mid 7 reef far 5 wall mid 2 last dart_play time day -> follow_friend urgency 4 p=0.54  [1469 ms, 29.9 tok/s]
+I (440422) advisor: prof ms: matmul 917 attn 294 norm/quant 58 rope 16 swiglu 174 decode 0
+I (440602) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (440603) display: 25.5 fps | render 5.1 ms flush 14.3 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.4 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (440614) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (440623) display: swim depth: 0.00 ms a frame (0.10 ms a hidden fish, 0.0 of them a frame)
+I (440631) display: frame 39.3 ms = polls 0.9 + tick 2.2 + prefetch wait 0.0 + render 5.1 + flush 14.3 + tail 0.3 + sleep 16.4 | flush: fill 11.3, wire wait 0.0, send calls 3.0
+I (440646) display: the fish stage split: fish 1.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (440662) pocket-tank: t=484s 3 fish goals: follow_friend follow_friend visit_bubbles | asks 96 decisions 92 last 1469 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 76% 4106 mV bright 255
+I (444353) advisor: zone 2 hunger 1 energy 7 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food far 7 friend mid 7 bubble near 8 reef far 9 wall mid 2 last visit_bubbles time day -> seek_food urgency 7 p=0.24  [1481 ms, 29.7 tok/s]
+I (444364) advisor: prof ms: matmul 921 attn 300 norm/quant 59 rope 16 swiglu 175 decode 0
+I (446294) advisor: zone 6 hunger 1 energy 8 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 2 food mid 3 friend near 8 bubble mid 7 reef far 5 wall mid 3 last follow_friend time day -> seek_food urgency 6 p=0.83  [1506 ms, 29.2 tok/s]
+I (446305) advisor: prof ms: matmul 916 attn 327 norm/quant 61 rope 17 swiglu 175 decode 0
+I (447855) advisor: zone 2 hunger 1 energy 7 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 0 food far 12 friend mid 12 bubble near 12 reef far 2 wall mid 7 last seek_food time day -> seek_food urgency 8 p=0.59  [1505 ms, 29.2 tok/s]
+I (447866) advisor: prof ms: matmul 915 attn 326 norm/quant 61 rope 17 swiglu 176 decode 0
+I (450625) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (450625) display: 25.4 fps | render 6.3 ms flush 15.9 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (450637) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (450646) display: swim depth: 0.14 ms a frame (0.14 ms a hidden fish, 1.0 of them a frame)
+I (450654) display: frame 39.3 ms = polls 1.0 + tick 2.4 + prefetch wait 0.0 + render 6.3 + flush 15.9 + tail 0.3 + sleep 13.3 | flush: fill 13.1, wire wait 0.0, send calls 2.8
+I (450669) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (450684) pocket-tank: t=494s 3 fish goals: follow_friend seek_food seek_food | asks 99 decisions 95 last 1505 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 76% 4107 mV bright 255
+I (460638) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (460638) display: 25.5 fps | render 5.4 ms flush 13.7 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.1 algae 0.3 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (460650) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (460659) display: swim depth: 0.14 ms a frame (0.14 ms a hidden fish, 1.0 of them a frame)
+I (460667) display: frame 39.3 ms = polls 0.9 + tick 1.9 + prefetch wait 0.0 + render 5.4 + flush 13.7 + tail 0.3 + sleep 17.0 | flush: fill 10.5, wire wait 0.0, send calls 3.1
+I (460682) display: the fish stage split: fish 1.4 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (460697) pocket-tank: t=504s 3 fish goals: follow_friend seek_food seek_food | asks 99 decisions 95 last 1505 ms 29.2 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 76% 4109 mV bright 255
+I (465235) advisor: zone 6 hunger 0 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 3 food none friend near 9 bubble mid 7 reef far 6 wall mid 1 last follow_friend time day -> follow_friend urgency 5 p=0.04  [1434 ms, 30.0 tok/s]
+I (465247) advisor: prof ms: matmul 905 attn 279 norm/quant 55 rope 17 swiglu 169 decode 0
+I (470653) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (470654) display: 25.5 fps | render 5.6 ms flush 14.4 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (470665) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (470674) display: swim depth: 0.08 ms a frame (0.08 ms a hidden fish, 1.0 of them a frame)
+I (470683) display: frame 39.3 ms = polls 0.9 + tick 2.0 + prefetch wait 0.0 + render 5.6 + flush 14.4 + tail 0.3 + sleep 16.0 | flush: fill 11.4, wire wait 0.0, send calls 3.0
+I (470698) display: the fish stage split: fish 1.4 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (470713) pocket-tank: t=514s 3 fish goals: follow_friend seek_food seek_food | asks 100 decisions 96 last 1434 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 76% 4109 mV bright 255
+E (473094) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (473094) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+I (480680) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (480680) display: 25.4 fps | render 5.4 ms flush 13.7 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.3 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (480692) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (480701) display: swim depth: 0.07 ms a frame (0.07 ms a hidden fish, 1.0 of them a frame)
+I (480709) display: frame 39.3 ms = polls 1.0 + tick 1.9 + prefetch wait 0.0 + render 5.4 + flush 13.7 + tail 0.3 + sleep 17.0 | flush: fill 10.6, wire wait 0.0, send calls 3.1
+I (480724) display: the fish stage split: fish 1.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (480739) pocket-tank: t=524s 3 fish goals: follow_friend seek_food seek_food | asks 100 decisions 96 last 1434 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 77% 4113 mV bright 255
+I (482885) advisor: zone 3 hunger 1 energy 6 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 0 food none friend near 11 bubble far 12 reef far 11 wall near 6 last seek_food time day -> rest urgency 8 p=0.52  [1460 ms, 29.4 tok/s]
+I (482896) advisor: prof ms: matmul 897 attn 314 norm/quant 55 rope 16 swiglu 168 decode 0
+I (484886) advisor: zone 3 hunger 1 energy 7 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 0 food none friend near 11 bubble far 1 reef far 12 wall near 7 last rest time day -> rest urgency 8 p=0.41  [1433 ms, 30.0 tok/s]
+I (484896) advisor: prof ms: matmul 905 attn 283 norm/quant 51 rope 17 swiglu 167 decode 0
+E (489797) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (489797) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+I (490715) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (490716) display: 25.4 fps | render 6.2 ms flush 15.5 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (490727) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (490736) display: swim depth: 0.10 ms a frame (0.06 ms a hidden fish, 1.8 of them a frame)
+I (490744) display: frame 39.3 ms = polls 1.1 + tick 2.3 + prefetch wait 0.0 + render 6.2 + flush 15.5 + tail 0.3 + sleep 14.0 | flush: fill 12.6, wire wait 0.0, send calls 2.9
+I (490760) display: the fish stage split: fish 1.6 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (490775) pocket-tank: t=534s 3 fish goals: follow_friend seek_food rest | asks 103 decisions 98 last 1433 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 77% 4115 mV bright 255
+I (491286) advisor: zone 1 hunger 2 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 0 food none friend far 10 bubble mid 10 reef mid 12 wall near 4 last seek_food time day -> inspect_reef urgency 3 p=0.58  [1459 ms, 29.5 tok/s]
+I (491297) advisor: prof ms: matmul 894 attn 308 norm/quant 56 rope 17 swiglu 174 decode 0
+I (500727) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (500728) display: 25.4 fps | render 5.8 ms flush 14.0 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.1 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (500739) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (500749) display: swim depth: 0.44 ms a frame (0.15 ms a hidden fish, 2.9 of them a frame)
+I (500757) display: frame 39.3 ms = polls 0.9 + tick 2.2 + prefetch wait 0.0 + render 5.8 + flush 14.0 + tail 0.3 + sleep 16.0 | flush: fill 10.9, wire wait 0.0, send calls 3.0
+I (500772) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (500787) pocket-tank: t=544s 3 fish goals: follow_friend inspect_reef rest | asks 103 decisions 99 last 1459 ms 29.5 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 77% 4117 mV bright 255
+I (508637) advisor: zone 5 hunger 1 energy 8 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 7 food none friend near 11 bubble mid 1 reef mid 11 wall near 8 last follow_friend time day -> explore urgency 6 p=0.98  [1468 ms, 29.3 tok/s]
+I (508649) advisor: prof ms: matmul 903 attn 311 norm/quant 55 rope 17 swiglu 172 decode 0
+I (510643) advisor: zone 5 hunger 1 energy 8 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 3 food none friend near 11 bubble mid 2 reef mid 11 wall near 9 last explore time day -> follow_friend urgency 3 p=0.12  [1443 ms, 29.8 tok/s]
+I (510655) advisor: prof ms: matmul 911 attn 287 norm/quant 51 rope 17 swiglu 168 decode 0
+I (510747) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (510748) display: 25.5 fps | render 6.5 ms flush 15.1 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (510759) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (510768) display: swim depth: 0.59 ms a frame (0.20 ms a hidden fish, 3.0 of them a frame)
+I (510776) display: frame 39.3 ms = polls 1.0 + tick 2.2 + prefetch wait 0.0 + render 6.5 + flush 15.1 + tail 0.3 + sleep 14.2 | flush: fill 12.2, wire wait 0.0, send calls 2.9
+I (510792) display: the fish stage split: fish 2.0 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (510807) pocket-tank: t=554s 3 fish goals: follow_friend inspect_reef rest | asks 105 decisions 101 last 1443 ms 29.8 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 77% 4120 mV bright 255
+I (512670) advisor: zone 5 hunger 1 energy 8 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 3 food none friend near 12 bubble mid 1 reef mid 10 wall mid 7 last follow_friend time day -> rest urgency 8 p=0.47  [1452 ms, 29.6 tok/s]
+I (512681) advisor: prof ms: matmul 907 attn 293 norm/quant 54 rope 17 swiglu 170 decode 0
+I (514684) advisor: zone 5 hunger 1 energy 8 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 0 food none friend near 2 bubble mid 3 reef mid 12 wall mid 9 last rest time day -> inspect_reef urgency 3 p=0.37  [1463 ms, 29.4 tok/s]
+I (514695) advisor: prof ms: matmul 900 attn 312 norm/quant 55 rope 16 swiglu 170 decode 0
+I (517735) advisor: zone 5 hunger 2 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food none friend near 9 bubble mid 5 reef mid 1 wall mid 11 last rest time day -> inspect_reef urgency 5 p=0.24  [1468 ms, 29.3 tok/s]
+I (517745) advisor: prof ms: matmul 904 attn 309 norm/quant 57 rope 16 swiglu 172 decode 0
+I (519738) advisor: zone 5 hunger 2 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 0 food none friend near 8 bubble mid 3 reef mid 11 wall mid 8 last inspect_reef time day -> rest urgency 6 p=0.10  [1441 ms, 29.8 tok/s]
+I (519749) advisor: prof ms: matmul 908 attn 286 norm/quant 53 rope 16 swiglu 169 decode 0
+I (520781) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (520781) display: 25.4 fps | render 7.2 ms flush 16.6 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 1.0 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (520793) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (520802) display: swim depth: 0.72 ms a frame (0.24 ms a hidden fish, 3.0 of them a frame)
+I (520810) display: frame 39.3 ms = polls 1.0 + tick 2.5 + prefetch wait 0.0 + render 7.2 + flush 16.6 + tail 0.3 + sleep 11.8 | flush: fill 13.8, wire wait 0.0, send calls 2.8
+I (520825) display: the fish stage split: fish 2.3 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (520840) pocket-tank: t=564s 3 fish goals: inspect_reef inspect_reef rest | asks 109 decisions 105 last 1441 ms 29.8 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 77% 4122 mV bright 255
+I (527523) advisor: zone 4 hunger 2 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 3 food none friend near 7 bubble mid 5 reef near 8 wall mid 12 last inspect_reef time day -> visit_bubbles urgency 3 p=0.28  [1470 ms, 29.2 tok/s]
+I (527534) advisor: prof ms: matmul 902 attn 310 norm/quant 58 rope 17 swiglu 173 decode 0
+I (529530) advisor: zone 4 hunger 2 energy 7 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 0 food none friend near 3 bubble mid 12 reef near 4 wall mid 8 last visit_bubbles time day -> explore urgency 5 p=0.08  [1444 ms, 29.8 tok/s]
+I (529541) advisor: prof ms: matmul 913 attn 283 norm/quant 51 rope 17 swiglu 169 decode 0
+I (530806) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (530806) display: 25.4 fps | render 6.5 ms flush 15.1 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (530818) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (530827) display: swim depth: 0.59 ms a frame (0.20 ms a hidden fish, 3.0 of them a frame)
+I (530835) display: frame 39.3 ms = polls 1.0 + tick 2.3 + prefetch wait 0.0 + render 6.5 + flush 15.1 + tail 0.3 + sleep 14.1 | flush: fill 12.2, wire wait 0.0, send calls 2.9
+I (530850) display: the fish stage split: fish 2.0 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (530865) pocket-tank: t=574s 3 fish goals: inspect_reef explore rest | asks 111 decisions 107 last 1444 ms 29.8 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 77% 4122 mV bright 255
+I (540818) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (540819) display: 25.5 fps | render 5.6 ms flush 13.7 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.1 algae 0.3 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (540830) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (540839) display: swim depth: 0.39 ms a frame (0.16 ms a hidden fish, 2.5 of them a frame)
+I (540847) display: frame 39.3 ms = polls 0.9 + tick 2.0 + prefetch wait 0.0 + render 5.6 + flush 13.7 + tail 0.3 + sleep 16.7 | flush: fill 10.6, wire wait 0.0, send calls 3.1
+I (540863) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (540878) pocket-tank: t=584s 3 fish goals: inspect_reef explore rest | asks 111 decisions 107 last 1444 ms 29.8 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 78% 4128 mV bright 255
+I (542597) advisor: zone 5 hunger 2 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food none friend near 12 bubble mid 3 reef near 11 wall mid 9 last rest time day -> inspect_reef urgency 4 p=0.81  [1465 ms, 29.3 tok/s]
+I (542608) advisor: prof ms: matmul 897 attn 313 norm/quant 56 rope 17 swiglu 171 decode 0
+E (546970) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (546970) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+I (548554) advisor: zone 4 hunger 1 energy 8 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 3 food none friend mid 6 bubble mid 4 reef near 8 wall mid 12 last inspect_reef time day -> inspect_reef urgency 3 p=0.02  [1439 ms, 29.9 tok/s]
+I (548565) advisor: prof ms: matmul 907 attn 286 norm/quant 52 rope 16 swiglu 168 decode 0
+I (550852) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (550852) display: 25.4 fps | render 6.4 ms flush 15.6 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (550864) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (550873) display: swim depth: 0.38 ms a frame (0.19 ms a hidden fish, 2.0 of them a frame)
+I (550881) display: frame 39.3 ms = polls 1.1 + tick 2.2 + prefetch wait 0.0 + render 6.4 + flush 15.6 + tail 0.3 + sleep 13.7 | flush: fill 12.7, wire wait 0.0, send calls 2.9
+I (550896) display: the fish stage split: fish 1.9 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (550911) pocket-tank: t=594s 3 fish goals: inspect_reef explore inspect_reef | asks 115 decisions 109 last 1439 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 78% 4125 mV bright 255
+I (551120) advisor: zone 4 hunger 2 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food none friend near 12 bubble mid 4 reef near 11 wall mid 9 last inspect_reef time day -> inspect_reef urgency 4 p=0.22  [1428 ms, 30.1 tok/s]
+I (551131) advisor: prof ms: matmul 903 attn 279 norm/quant 50 rope 17 swiglu 169 decode 0
+I (552610) advisor: zone 3 hunger 3 energy 6 stress 0 curiosity 1 bold 8 social 3 stage juv trust 7 bored 1 food none friend far 10 bubble mid 10 reef far 10 wall mid 2 last explore time day -> visit_bubbles urgency 3 p=0.91  [1441 ms, 29.8 tok/s]
+I (552621) advisor: prof ms: matmul 910 attn 285 norm/quant 50 rope 17 swiglu 169 decode 0
+I (554122) advisor: zone 4 hunger 2 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food none friend near 10 bubble mid 2 reef near 8 wall mid 7 last inspect_reef time day -> explore urgency 5 p=0.33  [1466 ms, 29.3 tok/s]
+I (554133) advisor: prof ms: matmul 902 attn 308 norm/quant 58 rope 17 swiglu 171 decode 0
+I (555652) advisor: zone 4 hunger 2 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 0 food none friend near 4 bubble mid 6 reef near 12 wall mid 11 last explore time day -> visit_bubbles urgency 4 p=0.35  [1433 ms, 30.0 tok/s]
+I (555663) advisor: prof ms: matmul 909 attn 280 norm/quant 50 rope 17 swiglu 168 decode 0
+I (560876) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (560876) display: 25.4 fps | render 6.6 ms flush 16.0 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (560888) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (560897) display: swim depth: 0.33 ms a frame (0.17 ms a hidden fish, 1.9 of them a frame)
+I (560905) display: frame 39.3 ms = polls 1.0 + tick 2.4 + prefetch wait 0.0 + render 6.6 + flush 16.0 + tail 0.3 + sleep 12.9 | flush: fill 13.2, wire wait 0.0, send calls 2.8
+I (560920) display: the fish stage split: fish 1.9 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (560935) pocket-tank: t=604s 3 fish goals: inspect_reef visit_bubbles visit_bubbles | asks 117 decisions 113 last 1433 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 78% 4128 mV bright 255
+I (565797) advisor: zone 2 hunger 3 energy 6 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 1 food none friend mid 3 bubble mid 2 reef far 3 wall mid 8 last visit_bubbles time day -> explore urgency 4 p=0.62  [1443 ms, 29.8 tok/s]
+I (565809) advisor: prof ms: matmul 909 attn 289 norm/quant 51 rope 16 swiglu 168 decode 0
+I (570902) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (570903) display: 25.4 fps | render 5.9 ms flush 14.6 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (570914) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (570923) display: swim depth: 0.22 ms a frame (0.14 ms a hidden fish, 1.5 of them a frame)
+I (570931) display: frame 39.3 ms = polls 0.9 + tick 2.1 + prefetch wait 0.0 + render 5.9 + flush 14.6 + tail 0.3 + sleep 15.4 | flush: fill 11.6, wire wait 0.0, send calls 3.0
+I (570947) display: the fish stage split: fish 1.6 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (570962) pocket-tank: t=614s 3 fish goals: inspect_reef explore visit_bubbles | asks 119 decisions 114 last 1443 ms 29.8 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 78% 4131 mV bright 255
+I (571876) advisor: zone 4 hunger 1 energy 8 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 7 food none friend mid 3 bubble mid 3 reef near 8 wall mid 8 last inspect_reef time day -> explore urgency 6 p=0.99  [1430 ms, 30.1 tok/s]
+I (571887) advisor: prof ms: matmul 910 attn 275 norm/quant 51 rope 17 swiglu 168 decode 0
+I (573927) advisor: zone 4 hunger 1 energy 8 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 3 food none friend mid 2 bubble mid 3 reef near 7 wall mid 10 last explore time day -> rest urgency 8 p=0.76  [1461 ms, 29.4 tok/s]
+I (573938) advisor: prof ms: matmul 901 attn 306 norm/quant 56 rope 17 swiglu 170 decode 0
+I (580918) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (580918) display: 25.4 fps | render 6.1 ms flush 14.9 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (580930) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (580939) display: swim depth: 0.28 ms a frame (0.14 ms a hidden fish, 2.0 of them a frame)
+I (580947) display: frame 39.3 ms = polls 0.9 + tick 2.2 + prefetch wait 0.0 + render 6.1 + flush 14.9 + tail 0.3 + sleep 14.8 | flush: fill 11.9, wire wait 0.0, send calls 2.9
+I (580962) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (580977) pocket-tank: t=624s 3 fish goals: rest explore visit_bubbles | asks 120 decisions 116 last 1461 ms 29.4 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 78% 4134 mV bright 255
+I (588276) advisor: zone 2 hunger 2 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food none friend far 4 bubble mid 4 reef far 6 wall mid 11 last visit_bubbles time day -> explore urgency 4 p=0.32  [1466 ms, 29.3 tok/s]
+I (588287) advisor: prof ms: matmul 898 attn 308 norm/quant 60 rope 17 swiglu 173 decode 0
+I (590929) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (590929) display: 25.5 fps | render 6.0 ms flush 14.4 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (590941) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (590950) display: swim depth: 0.47 ms a frame (0.24 ms a hidden fish, 2.0 of them a frame)
+I (590958) display: frame 39.3 ms = polls 0.9 + tick 2.1 + prefetch wait 0.0 + render 6.0 + flush 14.4 + tail 0.3 + sleep 15.5 | flush: fill 11.4, wire wait 0.0, send calls 3.0
+I (590973) display: the fish stage split: fish 1.8 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (590988) pocket-tank: t=634s 3 fish goals: rest explore explore | asks 121 decisions 117 last 1466 ms 29.3 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 78% 4135 mV bright 255
+I (597681) advisor: zone 3 hunger 3 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food none friend far 3 bubble mid 5 reef far 5 wall mid 9 last explore time day -> visit_bubbles urgency 3 p=0.62  [1444 ms, 29.8 tok/s]
+I (597692) advisor: prof ms: matmul 906 attn 290 norm/quant 53 rope 16 swiglu 169 decode 0
+I (599714) advisor: zone 3 hunger 3 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food none friend far 2 bubble mid 4 reef far 4 wall mid 8 last visit_bubbles time day -> visit_bubbles urgency 3 p=0.49  [1440 ms, 29.9 tok/s]
+I (599725) advisor: prof ms: matmul 909 attn 285 norm/quant 51 rope 17 swiglu 168 decode 0
+I (600950) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (600951) display: 25.4 fps | render 6.3 ms flush 15.1 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (600962) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (600971) display: swim depth: 0.49 ms a frame (0.24 ms a hidden fish, 2.0 of them a frame)
+I (600979) display: frame 39.3 ms = polls 1.0 + tick 2.0 + prefetch wait 0.0 + render 6.3 + flush 15.1 + tail 0.3 + sleep 14.5 | flush: fill 12.2, wire wait 0.0, send calls 2.9
+I (600994) display: the fish stage split: fish 1.9 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (601009) pocket-tank: t=644s 3 fish goals: rest explore visit_bubbles | asks 123 decisions 119 last 1440 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 79% 4135 mV bright 255
+I (608779) advisor: zone 5 hunger 2 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 3 food none friend far 4 bubble mid 3 reef mid 12 wall near 9 last rest time day -> inspect_reef urgency 3 p=0.64  [1462 ms, 29.4 tok/s]
+I (608790) advisor: prof ms: matmul 895 attn 312 norm/quant 57 rope 17 swiglu 171 decode 0
+I (610813) advisor: zone 5 hunger 2 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 0 food none friend far 2 bubble mid 2 reef mid 11 wall near 8 last inspect_reef time day -> visit_bubbles urgency 3 p=0.52  [1467 ms, 29.3 tok/s]
+I (610824) advisor: prof ms: matmul 897 attn 307 norm/quant 61 rope 16 swiglu 175 decode 0
+I (610973) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (610974) display: 25.5 fps | render 6.3 ms flush 15.2 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (610985) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (610994) display: swim depth: 0.38 ms a frame (0.19 ms a hidden fish, 2.0 of them a frame)
+I (611002) display: frame 39.3 ms = polls 1.0 + tick 2.1 + prefetch wait 0.0 + render 6.3 + flush 15.2 + tail 0.3 + sleep 14.4 | flush: fill 12.3, wire wait 0.0, send calls 2.9
+I (611018) display: the fish stage split: fish 1.8 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (611033) pocket-tank: t=654s 3 fish goals: visit_bubbles explore visit_bubbles | asks 126 decisions 121 last 1467 ms 29.3 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 79% 4138 mV bright 255
+E (611707) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (611707) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+I (612310) advisor: zone 3 hunger 4 energy 6 stress 0 curiosity 3 bold 8 social 3 stage juv trust 7 bored 1 food none friend mid 8 bubble mid 7 reef far 7 wall mid 11 last explore time day -> visit_bubbles urgency 3 p=0.95  [1443 ms, 29.8 tok/s]
+I (612321) advisor: prof ms: matmul 901 attn 301 norm/quant 49 rope 16 swiglu 166 decode 0
+I (613800) advisor: zone 3 hunger 4 energy 5 stress 0 curiosity 3 bold 8 social 3 stage juv trust 7 bored 1 food none friend mid 11 bubble mid 11 reef far 10 wall mid 3 last explore time day -> visit_bubbles urgency 3 p=0.91  [1437 ms, 29.9 tok/s]
+I (613811) advisor: prof ms: matmul 909 attn 281 norm/quant 52 rope 16 swiglu 169 decode 0
+I (617978) advisor: zone 2 hunger 4 energy 5 stress 0 curiosity 3 bold 8 social 3 stage juv trust 7 bored 0 food none friend near 11 bubble mid 9 reef far 10 wall mid 2 last visit_bubbles time day -> visit_bubbles urgency 3 p=0.90  [1438 ms, 29.9 tok/s]
+I (617990) advisor: prof ms: matmul 910 attn 282 norm/quant 51 rope 17 swiglu 169 decode 0
+I (620978) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (620979) display: 25.4 fps | render 6.6 ms flush 16.1 ms | scene 0.9 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (620990) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (620999) display: swim depth: 0.31 ms a frame (0.31 ms a hidden fish, 1.0 of them a frame)
+I (621007) display: frame 39.4 ms = polls 1.0 + tick 2.2 + prefetch wait 0.0 + render 6.6 + flush 16.1 + tail 0.3 + sleep 13.1 | flush: fill 13.3, wire wait 0.0, send calls 2.8
+I (621023) display: the fish stage split: fish 1.9 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (621038) pocket-tank: t=664s 3 fish goals: visit_bubbles visit_bubbles visit_bubbles | asks 129 decisions 124 last 1438 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 79% 4143 mV bright 255
+I (621550) advisor: zone 2 hunger 3 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 7 food none friend near 8 bubble near 4 reef far 5 wall mid 9 last visit_bubbles time day -> explore urgency 6 p=0.99  [1418 ms, 30.3 tok/s]
+I (621561) advisor: prof ms: matmul 900 attn 263 norm/quant 54 rope 17 swiglu 174 decode 0
+I (630228) advisor: zone 1 hunger 3 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 6 food none friend near 7 bubble mid 8 reef far 9 wall mid 3 last explore time day -> explore urgency 5 p=0.20  [1431 ms, 30.0 tok/s]
+I (630239) advisor: prof ms: matmul 907 attn 275 norm/quant 53 rope 17 swiglu 169 decode 0
+I (631009) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (631010) display: 25.4 fps | render 5.7 ms flush 14.8 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (631021) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (631030) display: swim depth: 0.06 ms a frame (0.06 ms a hidden fish, 0.9 of them a frame)
+I (631038) display: frame 39.3 ms = polls 0.9 + tick 2.0 + prefetch wait 0.0 + render 5.7 + flush 14.8 + tail 0.3 + sleep 15.5 | flush: fill 11.8, wire wait 0.0, send calls 3.0
+I (631054) display: the fish stage split: fish 1.4 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (631069) pocket-tank: t=674s 3 fish goals: visit_bubbles visit_bubbles explore | asks 131 decisions 126 last 1431 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 79% 4143 mV bright 255
+I (632246) advisor: zone 1 hunger 3 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 7 food none friend near 6 bubble mid 7 reef far 9 wall mid 12 last explore time day -> rest urgency 6 p=0.32  [1417 ms, 30.3 tok/s]
+I (632256) advisor: prof ms: matmul 904 attn 267 norm/quant 51 rope 16 swiglu 170 decode 0
+I (634286) advisor: zone 1 hunger 3 energy 8 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food none friend mid 7 bubble mid 8 reef far 10 wall mid 1 last rest time day -> explore urgency 4 p=0.45  [1433 ms, 30.0 tok/s]
+I (634296) advisor: prof ms: matmul 907 attn 279 norm/quant 52 rope 17 swiglu 169 decode 0
+I (635765) advisor: zone 2 hunger 4 energy 5 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 3 food none friend near 11 bubble mid 12 reef far 1 wall mid 6 last visit_bubbles time day -> visit_bubbles urgency 3 p=0.66  [1427 ms, 30.1 tok/s]
+I (635776) advisor: prof ms: matmul 903 attn 270 norm/quant 54 rope 18 swiglu 172 decode 0
+I (637250) advisor: zone 1 hunger 3 energy 9 stress 0 curiosity 0 bold 1 social 5 stage juv trust 5 bored 3 food none friend mid 11 bubble mid 12 reef far 2 wall mid 5 last explore time day -> visit_bubbles urgency 3 p=0.23  [1428 ms, 30.1 tok/s]
+I (637261) advisor: prof ms: matmul 902 attn 272 norm/quant 54 rope 17 swiglu 172 decode 0
+I (638731) advisor: zone 1 hunger 3 energy 9 stress 0 curiosity 1 bold 1 social 5 stage juv trust 5 bored 4 food none friend mid 11 bubble mid 12 reef far 3 wall mid 5 last explore time day -> explore urgency 4 p=0.16  [1426 ms, 30.2 tok/s]
+I (638741) advisor: prof ms: matmul 905 attn 270 norm/quant 52 rope 18 swiglu 171 decode 0
+I (640380) advisor: zone 1 hunger 3 energy 9 stress 0 curiosity 1 bold 1 social 5 stage juv trust 5 bored 0 food none friend near 11 bubble mid 1 reef far 3 wall mid 6 last explore time day -> explore urgency 4 p=0.46  [1436 ms, 29.9 tok/s]
+I (640391) advisor: prof ms: matmul 905 attn 284 norm/quant 53 rope 16 swiglu 168 decode 0
+I (641035) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (641036) display: 25.4 fps | render 6.7 ms flush 17.8 ms | scene 1.0 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.4 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (641047) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (641056) display: swim depth: 0.05 ms a frame (0.09 ms a hidden fish, 0.6 of them a frame)
+I (641064) display: frame 39.3 ms = polls 1.0 + tick 2.5 + prefetch wait 0.0 + render 6.7 + flush 17.8 + tail 0.3 + sleep 10.9 | flush: fill 15.1, wire wait 0.0, send calls 2.6
+I (641079) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (641094) pocket-tank: t=684s 3 fish goals: visit_bubbles visit_bubbles explore | asks 136 decisions 132 last 1436 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 79% 4143 mV bright 255
+I (645631) advisor: zone 2 hunger 2 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 3 food none friend near 2 bubble mid 5 reef far 6 wall mid 11 last visit_bubbles time day -> explore urgency 4 p=0.38  [1430 ms, 30.1 tok/s]
+I (645642) advisor: prof ms: matmul 909 attn 276 norm/quant 50 rope 17 swiglu 169 decode 0
+I (647662) advisor: zone 2 hunger 2 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 0 food none friend near 9 bubble mid 11 reef far 12 wall mid 5 last explore time day -> rest urgency 5 p=0.08  [1430 ms, 30.1 tok/s]
+I (647672) advisor: prof ms: matmul 909 attn 275 norm/quant 50 rope 17 swiglu 170 decode 0
+E (650476) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (650476) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+I (651063) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (651064) display: 25.4 fps | render 6.0 ms flush 15.1 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (651075) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (651084) display: swim depth: 0.08 ms a frame (0.06 ms a hidden fish, 1.3 of them a frame)
+I (651092) display: frame 39.3 ms = polls 1.0 + tick 2.0 + prefetch wait 0.0 + render 6.0 + flush 15.1 + tail 0.3 + sleep 14.9 | flush: fill 12.1, wire wait 0.0, send calls 2.9
+I (651108) display: the fish stage split: fish 1.5 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (651123) pocket-tank: t=694s 3 fish goals: rest visit_bubbles explore | asks 138 decisions 134 last 1430 ms 30.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 80% 4144 mV bright 255
+I (658594) advisor: zone 2 hunger 5 energy 5 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 7 food none friend mid 4 bubble mid 3 reef far 3 wall mid 8 last visit_bubbles time day -> explore urgency 6 p=1.00  [1431 ms, 30.0 tok/s]
+I (658605) advisor: prof ms: matmul 905 attn 278 norm/quant 52 rope 17 swiglu 169 decode 0
+I (661086) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (661087) display: 25.4 fps | render 5.7 ms flush 14.4 ms | scene 0.7 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (661098) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (661107) display: swim depth: 0.13 ms a frame (0.07 ms a hidden fish, 2.0 of them a frame)
+I (661115) display: frame 39.3 ms = polls 0.9 + tick 1.9 + prefetch wait 0.0 + render 5.7 + flush 14.4 + tail 0.3 + sleep 16.0 | flush: fill 11.3, wire wait 0.0, send calls 3.0
+I (661130) display: the fish stage split: fish 1.5 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (661145) pocket-tank: t=704s 3 fish goals: rest explore explore | asks 139 decisions 135 last 1431 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 80% 4145 mV bright 255
+I (664124) advisor: zone 1 hunger 5 energy 5 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 6 food none friend mid 9 bubble mid 8 reef far 10 wall mid 3 last explore time day -> visit_bubbles urgency 3 p=0.96  [1434 ms, 30.0 tok/s]
+I (664135) advisor: prof ms: matmul 905 attn 282 norm/quant 51 rope 17 swiglu 169 decode 0
+E (665803) i2c.master: s_i2c_synchronous_transaction(924): I2C transaction failed
+E (665803) i2c.master: i2c_master_multi_buffer_transmit(1186): I2C transaction failed
+I (671122) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (671123) display: 25.4 fps | render 6.1 ms flush 14.8 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.8 fish 0.0 vig 1.2 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (671134) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (671143) display: swim depth: 0.28 ms a frame (0.14 ms a hidden fish, 2.0 of them a frame)
+I (671151) display: frame 39.3 ms = polls 0.9 + tick 2.1 + prefetch wait 0.0 + render 6.1 + flush 14.8 + tail 0.3 + sleep 15.0 | flush: fill 11.9, wire wait 0.0, send calls 2.9
+I (671167) display: the fish stage split: fish 1.7 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (671182) pocket-tank: t=714s 3 fish goals: rest visit_bubbles explore | asks 141 decisions 136 last 1434 ms 30.0 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 80% 4147 mV bright 255
+I (671460) advisor: zone 6 hunger 3 energy 8 stress 0 curiosity 3 bold 1 social 5 stage juv trust 5 bored 2 food none friend near 12 bubble mid 2 reef far 12 wall mid 9 last explore time day -> explore urgency 4 p=0.38  [1460 ms, 29.4 tok/s]
+I (671471) advisor: prof ms: matmul 905 attn 306 norm/quant 53 rope 17 swiglu 169 decode 0
+I (678611) advisor: zone 5 hunger 5 energy 4 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 7 food none friend near 6 bubble near 12 reef mid 9 wall mid 7 last visit_bubbles time day -> explore urgency 6 p=1.00  [1439 ms, 29.9 tok/s]
+I (678623) advisor: prof ms: matmul 911 attn 284 norm/quant 50 rope 17 swiglu 168 decode 0
+I (680095) advisor: zone 5 hunger 3 energy 8 stress 0 curiosity 4 bold 1 social 5 stage juv trust 5 bored 3 food none friend near 9 bubble mid 2 reef mid 12 wall mid 9 last explore time day -> inspect_reef urgency 5 p=0.78  [1437 ms, 29.9 tok/s]
+I (680106) advisor: prof ms: matmul 902 attn 287 norm/quant 53 rope 17 swiglu 168 decode 0
+I (681154) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (681155) display: 25.4 fps | render 6.6 ms flush 15.7 ms | scene 0.8 shafts 0.0 veg 0.0 fd/bub 0.9 fish 0.0 vig 1.3 algae 0.4 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (681166) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (681175) display: swim depth: 0.51 ms a frame (0.25 ms a hidden fish, 2.0 of them a frame)
+I (681183) display: frame 39.3 ms = polls 1.0 + tick 2.1 + prefetch wait 0.0 + render 6.6 + flush 15.7 + tail 0.3 + sleep 13.6 | flush: fill 12.8, wire wait 0.0, send calls 2.9
+I (681199) display: the fish stage split: fish 2.0 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (681214) pocket-tank: t=724s 3 fish goals: rest explore inspect_reef | asks 144 decisions 139 last 1437 ms 29.9 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 80% 4150 mV bright 255
+I (681718) advisor: zone 5 hunger 4 energy 8 stress 0 curiosity 4 bold 1 social 5 stage juv trust 5 bored 0 food none friend near 9 bubble mid 2 reef mid 12 wall mid 9 last inspect_reef time day -> explore urgency 4 p=0.49  [1454 ms, 29.6 tok/s]
+I (681729) advisor: prof ms: matmul 895 attn 308 norm/quant 54 rope 17 swiglu 171 decode 0
+I (684432) advisor: zone 4 hunger 5 energy 4 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 6 food none friend mid 8 bubble mid 6 reef mid 11 wall mid 10 last explore time day -> visit_bubbles urgency 5 p=0.94  [1441 ms, 29.8 tok/s]
+I (684443) advisor: prof ms: matmul 906 attn 286 norm/quant 54 rope 16 swiglu 169 decode 0
+I (687548) advisor: zone 5 hunger 4 energy 8 stress 0 curiosity 4 bold 1 social 5 stage juv trust 5 bored 0 food far 3 friend near 8 bubble mid 3 reef mid 12 wall mid 9 last explore time day -> seek_food urgency 4 p=0.71  [1508 ms, 29.2 tok/s]
+I (687559) advisor: prof ms: matmul 921 attn 316 norm/quant 64 rope 18 swiglu 179 decode 0
+I (689117) advisor: zone 5 hunger 3 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 3 food far 2 friend near 2 bubble mid 3 reef mid 12 wall near 9 last rest time day -> follow_friend urgency 3 p=0.41  [1513 ms, 29.1 tok/s]
+I (689128) advisor: prof ms: matmul 924 attn 326 norm/quant 60 rope 17 swiglu 176 decode 0
+I (690682) advisor: zone 5 hunger 5 energy 4 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 7 food mid 11 friend mid 4 bubble near 1 reef mid 5 wall mid 8 last visit_bubbles time day -> seek_food urgency 5 p=0.33  [1511 ms, 29.1 tok/s]
+I (690694) advisor: prof ms: matmul 923 attn 324 norm/quant 60 rope 17 swiglu 177 decode 0
+I (691151) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (691152) display: 25.4 fps | render 7.6 ms flush 17.2 ms | scene 1.0 shafts 0.0 veg 0.0 fd/bub 1.1 fish 0.0 vig 1.6 algae 0.5 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (691164) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (691173) display: swim depth: 0.57 ms a frame (0.30 ms a hidden fish, 1.9 of them a frame)
+I (691181) display: frame 39.4 ms = polls 1.0 + tick 2.4 + prefetch wait 0.0 + render 7.6 + flush 17.2 + tail 0.3 + sleep 10.8 | flush: fill 14.4, wire wait 0.0, send calls 2.7
+I (691196) display: the fish stage split: fish 2.2 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (691211) pocket-tank: t=734s 3 fish goals: follow_friend seek_food seek_food | asks 151 decisions 144 last 1511 ms 29.1 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 80% 4150 mV bright 255
+I (692232) advisor: zone 5 hunger 3 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 0 food far 12 friend mid 12 bubble mid 12 reef mid 9 wall near 6 last follow_friend time day -> follow_friend urgency 3 p=0.89  [1495 ms, 29.4 tok/s]
+I (692244) advisor: prof ms: matmul 916 attn 315 norm/quant 61 rope 17 swiglu 177 decode 0
+I (693835) advisor: zone 2 hunger 5 energy 4 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 1 food mid 12 friend near 7 bubble near 5 reef far 7 wall mid 1 last seek_food time day -> follow_friend urgency 4 p=0.16  [1546 ms, 28.4 tok/s]
+I (693847) advisor: prof ms: matmul 926 attn 323 norm/quant 58 rope 17 swiglu 213 decode 0
+I (695406) advisor: zone 2 hunger 4 energy 8 stress 0 curiosity 4 bold 1 social 5 stage juv trust 5 bored 0 food near 1 friend near 12 bubble mid 5 reef far 7 wall mid 1 last seek_food time day -> seek_food urgency 5 p=0.89  [1515 ms, 29.0 tok/s]
+I (695417) advisor: prof ms: matmul 926 attn 316 norm/quant 67 rope 18 swiglu 179 decode 0
+I (696964) advisor: zone 1 hunger 1 energy 5 stress 0 curiosity 0 bold 8 social 3 stage juv trust 7 bored 0 food near 4 friend near 6 bubble mid 6 reef far 7 wall mid 1 last follow_friend time day -> seek_food urgency 5 p=0.88  [1510 ms, 29.1 tok/s]
+I (696975) advisor: prof ms: matmul 922 attn 319 norm/quant 63 rope 17 swiglu 178 decode 0
+I (698530) advisor: zone 2 hunger 0 energy 9 stress 0 curiosity 5 bold 1 social 5 stage juv trust 5 bored 0 food mid 11 friend near 3 bubble mid 2 reef far 3 wall mid 8 last visit_bubbles time day -> seek_food urgency 6 p=0.32  [1512 ms, 29.1 tok/s]
+I (698541) advisor: prof ms: matmul 926 attn 320 norm/quant 60 rope 17 swiglu 179 decode 0
+I (700064) advisor: zone 1 hunger 3 energy 9 stress 0 curiosity 0 bold 3 social 6 stage juv trust 7 bored 0 food far 5 friend near 2 bubble mid 6 reef far 9 wall mid 2 last follow_friend time day -> dart_play urgency 6 p=0.07  [1479 ms, 29.7 tok/s]
+I (700075) advisor: prof ms: matmul 921 attn 297 norm/quant 60 rope 16 swiglu 175 decode 0
+I (701182) display: fb mid 0x0509 corner 0x0000 | scene mid 0x0509 ep 1 | night 0 prefetch 0
+I (701182) display: 25.3 fps | render 8.1 ms flush 18.0 ms | scene 1.0 shafts 0.0 veg 0.1 fd/bub 1.2 fish 0.0 vig 1.7 algae 0.5 | card 0.0 ms x0 | veg 0.19 0.13 0.22
+I (701194) display: grass loop: 88 moments, band 210 rows, diffs 143 of 852 KB, 0 bakes (all current)
+I (701203) display: swim depth: 0.17 ms a frame (0.19 ms a hidden fish, 0.9 of them a frame)
+I (701211) display: frame 39.5 ms = polls 1.0 + tick 2.7 + prefetch wait 0.0 + render 8.1 + flush 18.0 + tail 0.3 + sleep 9.3 | flush: fill 15.3, wire wait 0.0, send calls 2.6
+I (701226) display: the fish stage split: fish 1.9 | snail+urchin 0.0 | front pieces back 0.0 | front grass 0.0 | front overlays 0.0 | front lanes 0.0 | arch shade 0.0 ms
+I (701241) pocket-tank: t=744s 3 fish goals: dart_play seek_food seek_food | asks 156 decisions 150 last 1479 ms 29.7 tok/s | starve-ignored 0 | heap int 62 KB psram 1591 KB | battery 80% 4151 mV bright 255
