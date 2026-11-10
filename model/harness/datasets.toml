@@ -14,3 +14,18 @@ sha256 = "ef2dd667acf3bb5ce5492c2c994a3fca31c35dade2cf71d0bf20f7ce9577ecfc"   # 
 # the phase-2 generator runs (a few hundred labels): proves the plumbing, not a model
 schema = "4"
 traces = ["out/phase2/gen-*.jsonl"]
+
+["fish-v4-26b"]
+# issue #1 teacher-mix experiment: the same generator settings and procedure as fish-v4-31b, labelled by
+# Gemma 4 26B-A4B (Google QAT Q4_0; upstream's teacher model) at T 0.7, seeded, one request at a time per card.
+schema = "4"
+traces = ["out/data/fish26b/gen-*-n[0-9]*[0-9].jsonl"]
+# sha256 pinned once the fold is done
+
+["fish-v4-mix"]
+# 50/50: half the 31B shards and half the 26B shards, ~29,000 pairs like the other two
+schema = "4"
+traces = ["out/data/fish31b/gen-*-ls110[12]-*-n[0-9]*[0-9].jsonl", "out/data/fish31b/gen-*-ls111[12]-*-n[0-9]*[0-9].jsonl",
+          "out/data/fish31b/gen-*-ls1121-*-n[0-9]*[0-9].jsonl",
+          "out/data/fish26b/gen-*-ls220[123]-*-n[0-9]*[0-9].jsonl", "out/data/fish26b/gen-*-ls221[12]-*-n[0-9]*[0-9].jsonl"]
+# sha256 pinned once the fold is done
