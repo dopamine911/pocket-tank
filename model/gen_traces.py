@@ -482,7 +482,8 @@ def encode(tank, f):
 
 
 TEACHER_TEMPERATURE = 0.7     # the shipped models' labels were made at 0.7
-TEACHER_MAX_TOKENS = 48
+TEACHER_MAX_TOKENS = 48       # --max-tokens; a reasoning teacher (gpt-oss) needs room to think first
+TEACHER_REASONING = None      # --reasoning-effort (openai): None = thinking off; low/medium/high = let it think
 TEACHER_KEY_ENV = "TEACHER_API_KEY"   # --api openai: the server's key, from the environment only (never argv)
 API_DEFAULT_HOST = {"ollama": "http://192.168.0.139:11434", "openai": None}
 
@@ -515,8 +516,10 @@ def teacher_request(api, host, model, state, temperature=TEACHER_TEMPERATURE, se
                 "response_format": {"type": "json_schema",
                                     "json_schema": {"name": "decision", "strict": True, "schema": output_schema()}},
                 "temperature": temperature, "max_tokens": TEACHER_MAX_TOKENS, "stream": False,
-                # thinking models (Gemma 4, Qwen 3) would spend the 48 tokens thinking and answer nothing
-                "chat_template_kwargs": {"enable_thinking": False}}
+                # thinking models (Gemma 4, Qwen 3) would spend the 48 tokens thinking and answer nothing;
+                # a model that always reasons (gpt-oss) is told how much instead (--reasoning-effort)
+                "chat_template_kwargs": ({"enable_thinking": False} if TEACHER_REASONING is None
+                                         else {"reasoning_effort": TEACHER_REASONING})}
         if seed is not None:
             body["seed"] = seed
         return f"{host.rstrip('/')}/chat/completions", json.dumps(body).encode()
@@ -580,7 +583,7 @@ def teacher_meta(api, host, model, temperature, seed_base):
     """what made a run's labels: recorded next to the output so the run can be repeated"""
     prompt = system_prompt()
     return {"schema": SCHEMA, "api": api, "host": host, "model": model, "temperature": temperature,
-            "max_tokens": TEACHER_MAX_TOKENS, "label_seed": seed_base,
+            "max_tokens": TEACHER_MAX_TOKENS, "reasoning_effort": TEACHER_REASONING, "label_seed": seed_base,
             "seed_rule": "sha256(f'{label_seed}|{index}|{state}')[:4] & 0x7fffffff" if seed_base is not None else None,
             "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
             "output_schema": output_schema()}
@@ -598,6 +601,10 @@ def main():
     ap.add_argument("--model", default="gemma4:26b")
     ap.add_argument("--temperature", type=float, default=TEACHER_TEMPERATURE,
                     help=f"teacher sampling temperature (default {TEACHER_TEMPERATURE}, as the shipped models' labels)")
+    ap.add_argument("--max-tokens", type=int, default=TEACHER_MAX_TOKENS,
+                    help=f"the teacher's answer budget (default {TEACHER_MAX_TOKENS}; more for a reasoning teacher)")
+    ap.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default=None,
+                    help="openai: let a reasoning teacher think at this effort (default: thinking off)")
     ap.add_argument("--label-seed", type=int, default=None,
                     help="base seed for the teacher's sampling: each request gets a seed from it, its position and "
                          "the state, so a rerun with the same --seed and teacher repeats the labels (default: none)")
@@ -616,6 +623,7 @@ def main():
     args = ap.parse_args()
     global SCHEMA
     SCHEMA = args.schema
+    globals().update(TEACHER_MAX_TOKENS=args.max_tokens, TEACHER_REASONING=args.reasoning_effort)
     host = args.host or API_DEFAULT_HOST[args.api]
     if not host and not args.dry_run:
         ap.error("--api openai needs --host (the server's base URL, e.g. http://localhost:8080/v1)")
