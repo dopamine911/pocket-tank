@@ -29,3 +29,11 @@ traces = ["out/data/fish31b/gen-*-ls110[12]-*-n[0-9]*[0-9].jsonl", "out/data/fis
           "out/data/fish31b/gen-*-ls1121-*-n[0-9]*[0-9].jsonl",
           "out/data/fish26b/gen-*-ls220[123]-*-n[0-9]*[0-9].jsonl", "out/data/fish26b/gen-*-ls221[12]-*-n[0-9]*[0-9].jsonl"]
 sha256 = "5f55d52a2282d7d5a95c9c3dca843d63903af988bdfa849961afbf8187b83c1e"   # 28,996 pairs (4 duplicates), 2026-11-10 05:18
+
+["fish-v4-26b-cov"]
+# issue #1 coverage experiment: fish-v4-26b with 3 of its 10 shards (205, 214, 215) replaced by ~9,000 26B
+# labels made with gen_traces.py --no-food 0.6 (66% of states without food in view); ~29,000 pairs
+schema = "4"
+traces = ["out/data/fish26b/gen-*-ls220[1234]-*-n[0-9]*[0-9].jsonl", "out/data/fish26b/gen-*-ls221[123]-*-n[0-9]*[0-9].jsonl",
+          "out/data/fish26b-cov/gen-*-nofood0.6.jsonl"]
+# sha256 pinned once the fold is done
