@@ -46,4 +46,4 @@ traces = ["out/data/fish26b/gen-*-ls220[12]-*-n[0-9]*[0-9].jsonl", "out/data/fis
           "out/data/fish26b-cov/gen-*-ls2301-*-nofood0.6.jsonl", "out/data/fish26b-cov/gen-*-ls2311-*-nofood0.6.jsonl",
           "out/data/fish31b/gen-*-ls110[12]-*-n[0-9]*[0-9].jsonl", "out/data/fish31b/gen-*-ls1111-*-n[0-9]*[0-9].jsonl",
           "out/data/fish31b-cov/gen-*-nofood0.6.jsonl"]
-# sha256 pinned once the fold is done
+sha256 = "d76fd64adfbae2bb15420023f19f20902bfe24000de3f337780e7fbdb3bce402"   # 26,698 pairs, food none 24.5%, seek_food 36.5%, 2026-11-10 09:31
