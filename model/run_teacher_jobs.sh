@@ -17,6 +17,8 @@ WORKERS=${WORKERS:-1}
 EXTRA=()   # MAX_TOKENS=512 REASONING=low: a reasoning teacher (gpt-oss)
 [ -n "${MAX_TOKENS:-}" ] && EXTRA+=(--max-tokens "$MAX_TOKENS")
 [ -n "${REASONING:-}" ] && EXTRA+=(--reasoning-effort "$REASONING")
+GEN_EXTRA=()   # NO_FOOD=0.6: that share of generator samples with the pellets cleared
+[ -n "${NO_FOOD:-}" ] && GEN_EXTRA+=(--no-food "$NO_FOOD")
 mkdir -p "$OUT"
 log() { echo "[$(date '+%F %T')] $MODEL: $*" | tee -a "$OUT/jobs.log"; }
 rc_all=0
@@ -32,12 +34,12 @@ for job in "$@"; do
         rc=$?
         ;;
     gen)
-        res="$OUT/gen-$MODEL-T$t-ls$ls-sim$sim-n$count.jsonl"
+        res="$OUT/gen-$MODEL-T$t-ls$ls-sim$sim-n$count${NO_FOOD:+-nofood$NO_FOOD}.jsonl"
         [ -s "$res" ] && { log "skip $job (done)"; continue; }
         log "start $job"
         rm -f "$res.part" "$res.part.meta.jsonl"
         python3 gen_traces.py --schema 4 --api openai --host "$HOST" --model "$MODEL" --temperature "$t" \
-            --label-seed "$ls" --seed "$sim" --count "$count" "${EXTRA[@]}" --out "$res.part" > "${res%.jsonl}.log" 2>&1
+            --label-seed "$ls" --seed "$sim" --count "$count" "${EXTRA[@]}" "${GEN_EXTRA[@]}" --out "$res.part" > "${res%.jsonl}.log" 2>&1
         rc=$?
         [ $rc -eq 0 ] && mv "$res.part.meta.jsonl" "$res.meta.jsonl"
         ;;

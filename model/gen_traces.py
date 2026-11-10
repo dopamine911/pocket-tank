@@ -612,6 +612,9 @@ def main():
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--ticks-between", type=int, default=40, help="sim ticks between samples")
     ap.add_argument("--perturb", type=float, default=0.45, help="edge-case perturbation probability")
+    ap.add_argument("--no-food", type=float, default=0.0,
+                    help="share of samples taken with the tank's pellets cleared first (default 0: as before). "
+                         "The sim shows food in ~96%% of states, so calm no-food states are rare (issue #1)")
     ap.add_argument("--timeout", type=float, default=30.0, help="per-request timeout, seconds")
     ap.add_argument("--max-minutes", type=float, default=None,
                     help="hard wall-clock cap; stop cleanly when exceeded")
@@ -640,7 +643,7 @@ def main():
         out = open(args.out, "a")
         meta = dict(teacher_meta(args.api, host, args.model, args.temperature, args.label_seed),
                     sim_seed=args.seed, count=args.count, ticks_between=args.ticks_between, perturb=args.perturb,
-                    repopulate=args.repopulate, started=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
+                    repopulate=args.repopulate, no_food=args.no_food, started=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
         with open(args.out + ".meta.jsonl", "a") as mf:      # one line per run appending to --out
             mf.write(json.dumps(meta) + "\n")
 
@@ -662,6 +665,8 @@ def main():
             fish_idx += 1
             if rng.random() < args.perturb:
                 tank.perturb(f)
+            if args.no_food and rng.random() < args.no_food:
+                tank.food.clear()      # no food in view: the fish really sees none, the label feeds back as usual
             state = encode(tank, f)
 
             if args.dry_run:
