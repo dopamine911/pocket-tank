@@ -1,0 +1,16 @@
+# Named datasets for harness.py: trace globs (relative to model/, expanded and sorted per pattern, in
+# pattern order) folded by fold_traces.py --schema <schema> into out/harness/data/<name>.jsonl. sha256,
+# when given, pins the folded file: a fold that comes out different stops the run.
+
+["fish-v4-31b"]
+# issue #1 phase 3: schema-4 labels from Gemma 4 31B (Google QAT Q4_0) on llama.cpp, upstream's v4
+# prompt unchanged, seeded (--label-seed), one request at a time per server; shards in
+# out/data/fish31b/ with a .meta.jsonl each (teacher, temperature, seeds, prompt sha256).
+schema = "4"
+traces = ["out/data/fish31b/*.jsonl"]
+# sha256 = "..."   # pinned once the fold is done (issue #1)
+
+["fish-smoke"]
+# the phase-2 generator runs (a few hundred labels): proves the plumbing, not a model
+schema = "4"
+traces = ["out/phase2/gen-*.jsonl"]

@@ -1,0 +1,21 @@
+# issue #1 size sweep: fish-d256-n8, loss on every token (as the shipped model),
+# three seeds, the same data, iterations, batch and learning rate for every size; probes n=400 per case
+# on panel seeds 11 and 23 (the decision rules: issue #1 comment, 2026-11-09 21:35).
+model = "fish-d256-n8"
+dataset = "fish-v4-31b"
+iters = 5000
+batch = 64
+lr = 6e-4
+seeds = [1, 2, 3]
+loss = "all"
+mode = "training"
+cpu = false
+export = true
+
+[[probes]]
+n = 400
+seed = 11
+
+[[probes]]
+n = 400
+seed = 23
