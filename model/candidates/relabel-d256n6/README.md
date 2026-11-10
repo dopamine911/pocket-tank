@@ -60,7 +60,27 @@ at hunger 1-3 with food near, against the 26B's 34%), and candidate 2 copied it 
 - Counted the same way, this model misses 3 bars, candidate 2 4, the shipped model 6.
 - The dart cliff is an average over 6 hand-written states and swings by seed: seeds 1 / 2 / 3 score 0.15 / 0.35 / 0.28
   (`acceptance/probe_dist-relabel-s{2,3}.txt`, from the fp32 checkpoints). Seed 1 is the harness's pick and is kept as picked.
-- Not yet run on the pendant.
+
+## On the pendant (same 1.75C board, 2026-11-10 16:30; `pendant/pendant-c3.log`)
+
+| | stock 14M | candidate 1 | candidate 2 | **this model** |
+|---|---|---|---|---|
+| log | 16.1 min, 3 fish | 12.5 min, 2-3 fish | 11.5 min, 3 fish | 9.3 min, 3 fish |
+| time per decision, median (range) | 3,644 ms | 1,474 ms | 1,466 ms | **1,472 ms** (1,268-1,876) |
+| tokens/s | 11.8 | 29.8 | 29.8 | 29.3 |
+| internal heap / PSRAM free (flat) | 35 / 1,227 KB | 62 / 1,669 KB | 62 / 1,591 KB | 62 / 1,675 KB |
+| asks / decisions | 259 / 209 | 119 / 119 | 156 / 150 | 153 / 150 |
+| goal changes per fish-minute | 2.16 | 2.10 | 2.17 | 2.07 |
+| dart decisions (the fish's bold) | 4 / 210 (1, 8, 8, 8) | 6 / 111 (all 8) | 9 / 149 (1, 3, 3, 3, 8 x5) | **12 / 147 (all 8)** |
+| fed (hunger 0-2), food in view: seek_food | 2 / 38 | 16 / 56 | 18 / 70 | **9 / 61** |
+
+Replaying this session's 147 states (`pendant_replay.py`):
+
+| | fed, food in view: seek_food | timid dart |
+|---|---|---|
+| stock | 0.018 | 0.024 |
+| candidate 2 | 0.249 | 0.019 |
+| this model | 0.156 | 0.015 |
 
 ## Repeat
 
