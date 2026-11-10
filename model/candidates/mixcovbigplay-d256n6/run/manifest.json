@@ -1,0 +1,100 @@
+{
+ "run": {
+  "model": "fish-d256-n6",
+  "dataset": "fish-v4-mix-cov-bigplay",
+  "iters": 5000,
+  "batch": 64,
+  "lr": 0.0006,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "loss": "decision",
+  "mode": "training",
+  "cpu": false,
+  "export": true,
+  "probes": [
+   {
+    "n": 400,
+    "seed": 11
+   },
+   {
+    "n": 400,
+    "seed": 23
+   }
+  ],
+  "name": "fish-d256-n6-decision-mixcovbigplay"
+ },
+ "model": {
+  "schema": "4",
+  "dim": 256,
+  "n_layers": 6,
+  "n_heads": 8,
+  "max_seq_len": 64,
+  "mem_mib": 2560
+ },
+ "dataset": "fish-v4-mix-cov-bigplay",
+ "dataset_sha256": "a52e8648dd8a4c1610d8d716144f2c12300d37759d0ea745ffbe07a08b397028",
+ "seed": 1,
+ "host": "marvin",
+ "card": "marvin-8060s",
+ "arch": "gfx1151",
+ "image": "sha256:bf76ed9ec6d71178d22468d8429a59e82bfd61103a64db864d2c76b4d86cca49",
+ "image_tag": "pt-train-rocm:gfx1151",
+ "git": {
+  "sha": "cf0175ec287ce00352b38aed7e8b1e5638a97e7e",
+  "dirty": false
+ },
+ "attempts": 1,
+ "wall_s": 215.8,
+ "card_mem_used_before_mib": 17,
+ "card_mem_used_peak_mib": 1465,
+ "stages": [
+  {
+   "stage": "train",
+   "exit": 0,
+   "wall_s": 208.8
+  },
+  {
+   "stage": "probe_p11_n400",
+   "exit": 0,
+   "wall_s": 2.2
+  },
+  {
+   "stage": "probe_p23_n400",
+   "exit": 0,
+   "wall_s": 2.5
+  },
+  {
+   "stage": "export_q4",
+   "exit": 0,
+   "wall_s": 1.1
+  },
+  {
+   "stage": "export_fp32",
+   "exit": 0,
+   "wall_s": 1.2
+  }
+ ],
+ "train": {
+  "docs": 28948,
+  "iters_done": 5000,
+  "loss": 0.5687,
+  "s_per_iter": 0.04,
+  "kept_iter": 3600,
+  "best_val": 8.7056,
+  "goal_nll": 0.591,
+  "goal_acc": 0.763,
+  "decision_loss": 0.6309,
+  "params_m": 4.83,
+  "peak_gpu_mib": 631
+ },
+ "versions": {
+  "torch": "2.10.0+rocm7.13.0a20260513",
+  "hip": "7.13.26183",
+  "cuda_available": true,
+  "device_name": "Radeon 8060S Graphics",
+  "device_count": 1
+ }
+}
