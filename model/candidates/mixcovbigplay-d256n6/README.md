@@ -62,7 +62,7 @@ The 4 timid darts were energetic (8-9) juvenile fish; the model gives dart 0.07-
 logged, reproduced by `pendant_replay.py` on the q4 file). Replaying each session's states through all three models,
 mean P(dart) for timid fish: candidate-1 session stock 0.004 / c1 0.004 / **c2 0.001**; this session stock 0.050 /
 c1 0.006 / **c2 0.024**; stock session stock 0.006 / c1 0.003 / **c2 0.002**: at or below the shipped model's in every
-session (this session's timid fish were dart-prone for every model). PSRAM 78 KB lower than candidate 1 with the same
+session (this session's timid fish drew dart from stock 0.050 and from this model 0.024; candidate 1 barely, 0.006). PSRAM 78 KB lower than candidate 1 with the same
 model shape: not explained (different tank state, 3 fish throughout).
 
 ## Repeat
