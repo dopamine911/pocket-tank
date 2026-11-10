@@ -14,6 +14,9 @@ set -uo pipefail
 cd "$(dirname "$0")"
 : "${HOST:?set HOST, the base URL of the server}" "${MODEL:?set MODEL}" "${OUT:?set OUT, a directory}"
 WORKERS=${WORKERS:-1}
+EXTRA=()   # MAX_TOKENS=512 REASONING=low: a reasoning teacher (gpt-oss)
+[ -n "${MAX_TOKENS:-}" ] && EXTRA+=(--max-tokens "$MAX_TOKENS")
+[ -n "${REASONING:-}" ] && EXTRA+=(--reasoning-effort "$REASONING")
 mkdir -p "$OUT"
 log() { echo "[$(date '+%F %T')] $MODEL: $*" | tee -a "$OUT/jobs.log"; }
 rc_all=0
@@ -25,7 +28,7 @@ for job in "$@"; do
         [ -s "$res" ] && { log "skip $job (done)"; continue; }
         log "start $job"
         python3 prompt_check.py --schema 4 --api openai --host "$HOST" --model "$MODEL" --workers "$WORKERS" \
-            --temperature "$t" --label-seed "$ls" --out "$res.part" > "${res%.json}.log" 2>&1
+            --temperature "$t" --label-seed "$ls" "${EXTRA[@]}" --out "$res.part" > "${res%.json}.log" 2>&1
         rc=$?
         ;;
     gen)
@@ -34,7 +37,7 @@ for job in "$@"; do
         log "start $job"
         rm -f "$res.part" "$res.part.meta.jsonl"
         python3 gen_traces.py --schema 4 --api openai --host "$HOST" --model "$MODEL" --temperature "$t" \
-            --label-seed "$ls" --seed "$sim" --count "$count" --out "$res.part" > "${res%.jsonl}.log" 2>&1
+            --label-seed "$ls" --seed "$sim" --count "$count" "${EXTRA[@]}" --out "$res.part" > "${res%.jsonl}.log" 2>&1
         rc=$?
         [ $rc -eq 0 ] && mv "$res.part.meta.jsonl" "$res.meta.jsonl"
         ;;

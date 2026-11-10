@@ -177,6 +177,9 @@ def main():
     ap.add_argument("--model", default="gemma4:26b")
     ap.add_argument("--temperature", type=float, default=gt.TEACHER_TEMPERATURE)
     ap.add_argument("--label-seed", type=int, default=None, help="base seed for the teacher's sampling (default: none)")
+    ap.add_argument("--max-tokens", type=int, default=gt.TEACHER_MAX_TOKENS, help="the teacher's answer budget (as gen_traces)")
+    ap.add_argument("--reasoning-effort", choices=("low", "medium", "high"), default=None,
+                    help="openai: let a reasoning teacher think at this effort (default: thinking off)")
     ap.add_argument("--out", default=None, help="write every question, answer and the run's settings to this JSON file")
     ap.add_argument("--prompt-file", default=None, help="candidate system prompt (default: gen_traces' prompt for the schema)")
     ap.add_argument("--n", type=int, default=40, help="calls per major case (default 40 -> ~320 calls)")
@@ -188,6 +191,7 @@ def main():
                     help="schema 4: print the v4 table for a saved --out file and stop (no teacher calls)")
     args = ap.parse_args()
     gt.SCHEMA = args.schema
+    gt.TEACHER_MAX_TOKENS, gt.TEACHER_REASONING = args.max_tokens, args.reasoning_effort
     if args.rescore:
         d = json.load(open(args.rescore))
         print(f"{args.rescore}: {d.get('model')} T={d.get('temperature')} label_seed={d.get('label_seed')}, "
