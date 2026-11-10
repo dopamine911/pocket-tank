@@ -1,0 +1,15 @@
+# The desktop sim and the 4-bit runner, built on Linux without installing anything on the host (issue #1):
+# fishsim (sim/, SDL2 + LVGL v9.2.2 as README.md says) for `--selftest-llm`, and model/runq4 + python3/curl for eval.py.
+#
+#   docker build -t pt-sim:1 -f model/docker/Dockerfile.sim model/docker
+#   docker run --rm -u $(id -u):$(id -g) -v $PWD:/w -w /w pt-sim:1 bash model/docker/build_sim.sh
+#
+# The source tree is mounted, not copied: the image only carries the compilers, SDL2 and LVGL.
+FROM ubuntu@sha256:0e73b71479e7bc5f006bca872e25c3cd680dc052a0116f90d63ae363537db0dd
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        build-essential libsdl2-dev git ca-certificates python3 curl \
+    && rm -rf /var/lib/apt/lists/*
+# LVGL v9.2.2 (commit 7f07a129), outside the mounted tree; build_sim.sh links it in as sim/lvgl
+RUN git clone --depth 1 --branch v9.2.2 https://github.com/lvgl/lvgl.git /opt/lvgl \
+    && test "$(git -C /opt/lvgl rev-parse HEAD)" = 7f07a129e8d77f4984fff8e623fd5be18ff42e74
+ENV SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
