@@ -78,3 +78,4 @@ traces = ["out/data/fish26b/gen-*-ls220[12]-*-n[0-9]*[0-9].jsonl", "out/data/fis
           "out/data/fish26b-cov/gen-*-ls2301-*-nofood0.6.jsonl", "out/data/fish26b-cov/gen-*-ls2311-*-nofood0.6.jsonl",
           "out/data/fish31b-relabel/kept-31b-h1-3food.jsonl", "out/data/fish31b-relabel/relabel26b-h1-3food-s[01]of2.jsonl",
           "out/data/big-play/gen-*-ls3611-*-play0.6.jsonl"]
+sha256 = "f16bd193045bebdcd29110e07ed2b7c35877a8331b698aaecdb66cfadab1f589"   # 28,948 pairs, 2026-11-10 15:41
