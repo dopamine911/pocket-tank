@@ -72,7 +72,7 @@ def main():
             if not goal:
                 failed += 1; continue
             f.write(json.dumps({"state": p["state"], "goal": goal}) + "\n"); f.flush()
-            done += 1; changed += goal.split()[0] != p["goal"].split()[0]
+            done += 1; changed += goal.split()[0] != (p["goal"].split() or [""])[0]   # (an unlabelled input counts as changed)
             if done % 200 == 0:
                 print(f"{done}/{len(mine)}", flush=True)
     print(f"done: {done} relabelled ({changed} changed goal), {failed} never answered -> {a.out}")

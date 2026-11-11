@@ -4109,6 +4109,7 @@ static int selftest_llm(int minutes) {
     advisor_llm_debug(&tank, 1);
     int changes = 0, torn = 0;
     int ticks = minutes > 0 ? minutes * 3600 : 3600;
+    int lights_off_at = getenv("POCKET_SIM_LIGHTS_OFF_AT") ? atoi(getenv("POCKET_SIM_LIGHTS_OFF_AT")) * 60 : 0;   /* seconds -> ticks */
     int feed_every = getenv("POCKET_SIM_FEED_EVERY") ? atoi(getenv("POCKET_SIM_FEED_EVERY")) * 60 : 0;   /* seconds -> ticks (issue #1 feeding patterns) */
     if (getenv("POCKET_SIM_SEED")) srand((unsigned)atol(getenv("POCKET_SIM_SEED")));
     int delay = minutes > 0 && !getenv("POCKET_SIM_FAST") ? 16 : 2;   /* 16ms = real-time 60fps (POCKET_SIM_FAST: long runs at the 2 ms pace) */
@@ -4123,6 +4124,7 @@ static int selftest_llm(int minutes) {
     uint8_t zmask[N_FISH_MAX] = {0}; long zones_sum = 0, zone_windows = 0;
     float streak[N_FISH_MAX] = {0}, longest_streak = 0; double bored_sum = 0;
     for (int i = 0; i < ticks; i++) {
+        if (lights_off_at > 0 && i == lights_off_at) tank_toggle_light(&tank);   /* POCKET_SIM_LIGHTS_OFF_AT: the keeper turns the light off */
         if (feed_every > 0 && i > 0 && i % feed_every == 0) {   /* POCKET_SIM_FEED_EVERY: a keeper's surface tap (3 pellets) */
             float y = tank_glass_top(TANK_W / 2.0f) + 10.0f;
             float x0 = tank_glass_x0(y) + 30.0f, x1 = tank_glass_x1(y) - 30.0f;

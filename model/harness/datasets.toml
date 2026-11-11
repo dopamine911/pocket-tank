@@ -79,3 +79,12 @@ traces = ["out/data/fish26b/gen-*-ls220[12]-*-n[0-9]*[0-9].jsonl", "out/data/fis
           "out/data/fish31b-relabel/kept-31b-h1-3food.jsonl", "out/data/fish31b-relabel/relabel26b-h1-3food-s[01]of2.jsonl",
           "out/data/big-play/gen-*-ls3611-*-play0.6.jsonl"]
 sha256 = "f16bd193045bebdcd29110e07ed2b7c35877a8331b698aaecdb66cfadab1f589"   # 28,948 pairs, 2026-11-10 15:41
+
+["fish-v4-csim"]
+# issue #1: candidate 3's recipe on states from the device's own tank code: 28,045 states from 72 round-sim runs
+# (sim/fishsim-round --selftest-llm 20, POCKET_DUMP_STATES; keeper every 60 s / 600 s; candidate 3 / stock driving;
+# seeds 101-118; light off at 10 min in a third). 26B labels seeds 101-109 (ls 6001); 31B 110-114 (zaphod, ls 6002) and
+# 115-118 (marvin, ls 6003); the 26B relabels the 31B's hunger 1-3 food-in-view pairs (ls 6004); + big's dart shard.
+schema = "4"
+traces = ["out/cstates/lab-26b.jsonl", "out/cstates/kept-31b.jsonl", "out/cstates/relabel26b-31b-s[01]of2.jsonl",
+          "out/data/big-play/gen-*-ls3611-*-play0.6.jsonl"]
