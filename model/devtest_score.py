@@ -27,4 +27,7 @@ for ck in a.ckpt:
     d = Student(ck, device=a.device).dists(states)
     top = [max(p, key=p.get) for p, _ in d]
     scores = [sum(g == lab[s] for g, s in zip(top, states)) / len(states) for _, lab in T]
-    print(f"{ck}: " + "  ".join(f"{n} {sc:.1%}" for (n, _), sc in zip(T, scores)) + f"  | mean {sum(scores) / len(scores):.1%}")
+    both = [(g, s) for g, s in zip(top, states) if len({lab[s] for _, lab in T}) == 1]   # the teachers agree here
+    cons = sum(g == T[0][1][s] for g, s in both) / max(len(both), 1)
+    print(f"{ck}: " + "  ".join(f"{n} {sc:.1%}" for (n, _), sc in zip(T, scores)) + f"  | mean {sum(scores) / len(scores):.1%}"
+          f"  | where the teachers agree ({len(both)}): {cons:.1%}")

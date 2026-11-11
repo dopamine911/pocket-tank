@@ -88,3 +88,4 @@ sha256 = "f16bd193045bebdcd29110e07ed2b7c35877a8331b698aaecdb66cfadab1f589"   # 
 schema = "4"
 traces = ["out/cstates/lab-26b.jsonl", "out/cstates/kept-31b.jsonl", "out/cstates/relabel26b-31b-s[01]of2.jsonl",
           "out/data/big-play/gen-*-ls3611-*-play0.6.jsonl"]
+sha256 = "3e9cdd50491265b9349a10ab6487bcec530d9897f9c4c8f4b32de81bb2b1374d"   # 30,025 pairs, 2026-11-10 21:27
