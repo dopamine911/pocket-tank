@@ -39,6 +39,9 @@ def main():
     ap.add_argument("--teacher", action="store_true", help="also query Ollama and score agreement")
     ap.add_argument("--host", default="http://192.168.0.139:11434")
     ap.add_argument("--model", default="gemma4:26b")
+    ap.add_argument("--api", choices=("ollama", "openai"), default="ollama",
+                    help="the teacher's API: ollama (default) or an OpenAI-compatible server (key: $TEACHER_API_KEY)")
+    ap.add_argument("--label-seed", type=int, default=None, help="seed every teacher answer (gen_traces.label_seed)")
     ap.add_argument("--run-bin", default=os.path.join(HERE, "runw"))
     ap.add_argument("--model-bin", default=os.path.join(HERE, "out", "model.bin"))
     ap.add_argument("--tok-bin", default=os.path.join(HERE, "out", "tokenizer.bin"))
@@ -68,7 +71,11 @@ def main():
             valid += 1
         line = f"[{i+1:3d}] {s_goal:28s}"
         if args.teacher:
-            t_goal = gt.ask_ollama(args.host, args.model, state, 30) or "<teacher failed>"
+            if args.api == "ollama" and args.label_seed is None:
+                t_goal = gt.ask_ollama(args.host, args.model, state, 30) or "<teacher failed>"
+            else:
+                seed = None if args.label_seed is None else gt.label_seed(args.label_seed, i, state)
+                t_goal = gt.ask_teacher(args.api, args.host, args.model, state, 60, seed=seed) or "<teacher failed>"
             hit = s_goal.split()[0] == t_goal.split()[0]
             agree += hit
             line += f" teacher: {t_goal:28s} {'MATCH' if hit else 'diff'}"

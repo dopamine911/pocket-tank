@@ -1,0 +1,94 @@
+== 800 real states ==
+goal-token mass (sanity, should be ~1): mean 0.999 min 0.956
+top-1 prob: mean 0.82; >0.9: 50%; <0.6: 17%
+'torn' (top-2 margin <0.2): 11%
+entropy mean 0.46 nats (max 2.08)
+teacher label == greedy: 73%; teacher label in top-2: 93%
+P(sample != greedy) at T=1: 18%
+
+== starving (hunger 9, food near 12, no shadow): P(seek_food) across identities ==
+  min P(seek_food) over 18 identities: 0.99
+  adult/5/5: seek_f=1.00 follow=0.00 explor=0.00 dart_p=0.00  H=0.01
+  timid stressed fry: seek_f=1.00 follow=0.00 explor=0.00 rest=0.00  H=0.02
+    T=0.5: P(not seek_food)=0.00
+    T=0.8: P(not seek_food)=0.00
+    T=1.0: P(not seek_food)=0.00
+
+== content fish (hunger 2, energy 7, stress 0, curiosity 7, nothing urgent) ==
+  adult bold5 social5: visit_=0.74 inspec=0.14 explor=0.09 dart_p=0.01  H=0.81
+  -- bold sweep 0..9 (TV distance from previous step; smooth = drift is continuous) --
+    bold 0: visit_=0.40 inspec=0.38 explor=0.19 rest=0.02
+    bold 1: inspec=0.40 visit_=0.38 explor=0.17 rest=0.03   dTV=0.04
+    bold 2: visit_=0.47 inspec=0.35 explor=0.15 rest=0.02   dTV=0.09
+    bold 3: visit_=0.52 inspec=0.32 explor=0.14 rest=0.01   dTV=0.05
+    bold 4: visit_=0.62 inspec=0.24 explor=0.12 rest=0.01   dTV=0.10
+    bold 5: visit_=0.74 inspec=0.14 explor=0.09 dart_p=0.01   dTV=0.13
+    bold 6: visit_=0.75 inspec=0.14 explor=0.10 dart_p=0.01   dTV=0.01
+    bold 7: visit_=0.79 inspec=0.10 explor=0.09 dart_p=0.02   dTV=0.05
+    bold 8: visit_=0.77 explor=0.09 inspec=0.09 dart_p=0.04   dTV=0.03
+    bold 9: visit_=0.71 explor=0.12 dart_p=0.08 inspec=0.07   dTV=0.07
+  -- social sweep --
+    social 0: visit_=0.64 inspec=0.21 explor=0.13 dart_p=0.01
+    social 3: visit_=0.81 inspec=0.10 explor=0.08 dart_p=0.01
+    social 6: visit_=0.71 inspec=0.16 explor=0.10 follow=0.01
+    social 9: follow=0.68 visit_=0.23 explor=0.05 inspec=0.03
+  -- stage sweep --
+    fry  : visit_=0.80 explor=0.10 follow=0.05 inspec=0.02  H=0.75
+    juv  : visit_=0.78 explor=0.12 inspec=0.06 dart_p=0.03  H=0.78
+    adult: visit_=0.74 inspec=0.14 explor=0.09 dart_p=0.01  H=0.81
+    elder: visit_=0.80 explor=0.11 inspec=0.08 rest=0.01  H=0.70
+
+== boredom (v4): content fish at the bubbles, bored 0..9 -> P(bubbles again) / P(explore) ==
+    bored 0: P(bubbles)=0.59 P(explore)=0.22  visit_=0.59 explor=0.22 inspec=0.15 rest=0.02
+    bored 1: P(bubbles)=0.51 P(explore)=0.29  visit_=0.51 explor=0.29 inspec=0.17 rest=0.02
+    bored 2: P(bubbles)=0.55 P(explore)=0.20  visit_=0.55 inspec=0.21 explor=0.20 rest=0.02
+    bored 3: P(bubbles)=0.48 P(explore)=0.26  visit_=0.48 explor=0.26 inspec=0.22 rest=0.02
+    bored 4: P(bubbles)=0.40 P(explore)=0.30  visit_=0.40 explor=0.30 inspec=0.27 rest=0.02
+    bored 5: P(bubbles)=0.11 P(explore)=0.77  explor=0.77 inspec=0.11 visit_=0.11 rest=0.01
+    bored 6: P(bubbles)=0.05 P(explore)=0.90  explor=0.90 visit_=0.05 inspec=0.05 rest=0.00
+    bored 7: P(bubbles)=0.01 P(explore)=0.98  explor=0.98 inspec=0.01 visit_=0.01 rest=0.00
+    bored 8: P(bubbles)=0.00 P(explore)=0.99  explor=0.99 inspec=0.00 visit_=0.00 rest=0.00
+    bored 9: P(bubbles)=0.00 P(explore)=1.00  explor=1.00 inspec=0.00 rest=0.00 visit_=0.00
+  social 8 fish following a friend, bored 0 / 5 / 9:
+    bored 0: P(follow)=0.68 P(explore)=0.04  follow=0.68 visit_=0.25 explor=0.04 inspec=0.01
+    bored 5: P(follow)=0.35 P(explore)=0.44  explor=0.44 follow=0.35 visit_=0.16 inspec=0.03
+    bored 9: P(follow)=0.01 P(explore)=0.98  explor=0.98 follow=0.01 inspec=0.00 visit_=0.00
+  night, elder, bored 9, last rest (boredom must not wake the tank):
+    rest=1.00 explor=0.00 visit_=0.00 seek_f=0.00
+  starving, bored 9 (boredom never outranks hunger):
+    P(seek_food)=0.96  seek_f=0.96 explor=0.04 follow=0.00 rest=0.00
+  P(flee_shadow) anywhere above (should be ~0): the goal token is in the vocab, never a label
+
+== (shadow probes skipped: no shadow in v4) ==
+
+== night, content ==
+  juv: rest=0.99 visit_=0.01 follow=0.00 explor=0.00
+  elder: rest=1.00 visit_=0.00 follow=0.00 explor=0.00
+
+== OOD check: 'friend none' (17/28312 in training) vs friend present ==
+  friend bolt mid 3: visit_=0.74 inspec=0.14 explor=0.09 dart_p=0.01  H=0.81 goalmass=0.997
+  starving, friend bolt mid 3: seek_f=1.00 follow=0.00 explor=0.00 dart_p=0.00 goalmass=0.994
+  friend none      : visit_=0.71 inspec=0.14 explor=0.11 rest=0.03  H=0.89 goalmass=0.991
+  starving, friend none      : seek_f=1.00 rest=0.00 explor=0.00 dart_p=0.00 goalmass=0.986
+
+hunger mid-range (5,6,7) with food near -> P(seek_food):
+  hunger 4: P(seek)=0.65 seek_f=0.65 follow=0.31 explor=0.02 inspec=0.01
+  hunger 5: P(seek)=0.80 seek_f=0.80 follow=0.19 visit_=0.01 explor=0.01
+  hunger 6: P(seek)=0.88 seek_f=0.88 follow=0.10 visit_=0.01 explor=0.00
+  hunger 7: P(seek)=0.98 seek_f=0.98 follow=0.01 explor=0.00 visit_=0.00
+  hunger 8: P(seek)=1.00 seek_f=1.00 follow=0.00 explor=0.00 dart_p=0.00
+
+name swap (names carry no signal?) content state:
+  mira: visit_=0.74 inspec=0.14 explor=0.09 dart_p=0.01
+  bolt: visit_=0.74 inspec=0.14 explor=0.09 dart_p=0.01
+  kelp: visit_=0.74 inspec=0.14 explor=0.09 dart_p=0.01
+  nori: visit_=0.74 inspec=0.14 explor=0.09 dart_p=0.01
+
+== personality over 6 content states: mean P(follow) social 0 vs 9; mean P(dart) bold 0 vs 9; mean TV(social0,social9), TV(bold0,bold9) ==
+  {'hunger': 2, 'energy': 7, 'stress': 0, 'curiosity': 7}                social0->9: visit_=0.64 inspec=0.21 explor=0.13 dart | follow=0.68 visit_=0.23 explor=0.05 insp
+  {'hunger': 3, 'energy': 9, 'stress': 1, 'curiosity': 3}                social0->9: visit_=0.64 explor=0.22 rest=0.07 inspec | follow=0.76 visit_=0.13 explor=0.05 rest
+  {'hunger': 1, 'energy': 8, 'stress': 0, 'curiosity': 5, 'friend': 'bol social0->9: visit_=0.61 explor=0.23 inspec=0.09 rest | follow=0.76 visit_=0.17 explor=0.04 insp
+  {'hunger': 2, 'energy': 6, 'stress': 2, 'curiosity': 8, 'zone': 5, 're social0->9: inspec=0.95 explor=0.05 visit_=0.00 rest | follow=0.45 inspec=0.36 explor=0.09 visi
+  {'hunger': 4, 'energy': 9, 'stress': 0, 'curiosity': 6, 'last': 'dart_ social0->9: explor=0.63 visit_=0.19 inspec=0.17 seek | follow=0.49 visit_=0.34 explor=0.15 insp
+  {'hunger': 0, 'energy': 9, 'stress': 0, 'curiosity': 9, 'zone': 1, 're social0->9: inspec=0.88 explor=0.10 visit_=0.01 dart | inspec=0.73 follow=0.16 explor=0.09 rest
+  MEAN: P(follow) social0 0.00 -> social9 0.55;  P(dart) bold0 0.00 -> bold9 0.15;  TV social 0.60, TV bold 0.32

@@ -4094,7 +4094,7 @@ static int selftest_llm(int minutes) {
         printf("FAIL: model.bin/tokenizer.bin not found under ../model/out/\n");
         return 1;
     }
-    tank_init(&tank, 4321);
+    tank_init(&tank, getenv("POCKET_SIM_SEED") ? (uint32_t)atol(getenv("POCKET_SIM_SEED")) : 4321);   /* (seed: issue #1 state dumps) */
     tank_new_population(&tank);
     while (tank.n_fish < 4) tank_add_fish(&tank, 0, 1);   /* the 4-fish tank the soak numbers refer to */
     for (int i = 2; i < 4; i++) tank.fish[i].stage = STAGE_ADULT;
@@ -4109,7 +4109,10 @@ static int selftest_llm(int minutes) {
     advisor_llm_debug(&tank, 1);
     int changes = 0, torn = 0;
     int ticks = minutes > 0 ? minutes * 3600 : 3600;
-    int delay = minutes > 0 ? 16 : 2;             /* 16ms = real-time 60fps */
+    int lights_off_at = getenv("POCKET_SIM_LIGHTS_OFF_AT") ? atoi(getenv("POCKET_SIM_LIGHTS_OFF_AT")) * 60 : 0;   /* seconds -> ticks */
+    int feed_every = getenv("POCKET_SIM_FEED_EVERY") ? atoi(getenv("POCKET_SIM_FEED_EVERY")) * 60 : 0;   /* seconds -> ticks (issue #1 feeding patterns) */
+    if (getenv("POCKET_SIM_SEED")) srand((unsigned)atol(getenv("POCKET_SIM_SEED")));
+    int delay = minutes > 0 && !getenv("POCKET_SIM_FAST") ? 16 : 2;   /* 16ms = real-time 60fps (POCKET_SIM_FAST: long runs at the 2 ms pace) */
     goal_id_t last[N_FISH_MAX];
     for (int i = 0; i < tank.n_fish; i++) last[i] = tank.fish[i].goal.id;
     /* census (2026-09-01, Strato: "all four fish overlapping at the bubble
@@ -4121,6 +4124,12 @@ static int selftest_llm(int minutes) {
     uint8_t zmask[N_FISH_MAX] = {0}; long zones_sum = 0, zone_windows = 0;
     float streak[N_FISH_MAX] = {0}, longest_streak = 0; double bored_sum = 0;
     for (int i = 0; i < ticks; i++) {
+        if (lights_off_at > 0 && i == lights_off_at) tank_toggle_light(&tank);   /* POCKET_SIM_LIGHTS_OFF_AT: the keeper turns the light off */
+        if (feed_every > 0 && i > 0 && i % feed_every == 0) {   /* POCKET_SIM_FEED_EVERY: a keeper's surface tap (3 pellets) */
+            float y = tank_glass_top(TANK_W / 2.0f) + 10.0f;
+            float x0 = tank_glass_x0(y) + 30.0f, x1 = tank_glass_x1(y) - 30.0f;
+            tank_feed(&tank, x0 + (x1 - x0) * (float)rand() / (float)RAND_MAX, 3);
+        }
         tank_tick(&tank, 1.0f / 60.0f, advisor_llm);
         progression_tick(&tank, 1.0f / 60.0f);
         SDL_Delay(delay);

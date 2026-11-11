@@ -1,0 +1,37 @@
+advisor: schema v4, sampled decoding
+tank 00000000: 4 fish
+  pip   (model token mira) fry bold 0.81 social 0.32 trust 5.0
+        id 437cb2b5, parents 00000000 00000000
+        CLASSIC / CLASSIC / BARS, body 4 markings 0; carries CLASSIC / SAIL / EYE BAND, body 1 markings 3
+  bolt  (model token bolt) fry bold 0.30 social 0.78 trust 5.0
+        id b4bc348a, parents 00000000 00000000
+        CLASSIC / CLASSIC / BARS, body 1 markings 7; carries SLENDER / CLASSIC / MASK, body 7 markings 4
+  mira  (model token kelp) adult bold 0.61 social 0.64 trust 4.0
+        id 7e5dbff0, parents 437cb2b5 b4bc348a
+        SLENDER / CLASSIC / BARS, body 1 markings 4; carries CLASSIC / CLASSIC / BARS, body 4 markings 0
+  nori  (model token nori) adult bold 0.47 social 0.49 trust 4.0
+        id 0dd4bdb8, parents 437cb2b5 b4bc348a
+        CLASSIC / CLASSIC / BARS, body 1 markings 7; carries CLASSIC / SAIL / BARS, body 4 markings 0
+warm-up (pages in the mmap'd weights):
+  state: zone 5 hunger 4 energy 7 stress 1 curiosity 6 bold 7 social 3 stage fry trust 5 bored 0 food far 1 friend near 5 bubble mid 3 reef mid 8 wall mid 6 last explore time day
+  decision: follow_friend urgency 3  (p=0.71, runner-up seek_food)
+  dist: seek_food=0.27 flee_shadow=0.00 visit_bubbles=0.01 follow_friend=0.71 explore=0.00 rest=0.00 dart_play=0.00 inspect_reef=0.01
+  state: zone 5 hunger 4 energy 6 stress 0 curiosity 6 bold 3 social 7 stage fry trust 5 bored 0 food far 5 friend near 3 bubble mid 6 reef mid 1 wall mid 10 last explore time day
+  decision: follow_friend urgency 3  (p=0.77, runner-up seek_food)
+  dist: seek_food=0.22 flee_shadow=0.00 visit_bubbles=0.00 follow_friend=0.77 explore=0.00 rest=0.00 dart_play=0.00 inspect_reef=0.00
+  tick     0 goals: explore explore explore explore | asks 3 overrides 0
+  t=0.1s pip   -> dart_play (urgency 4, p=0.00, hesitating)
+  t=0.1s bolt  -> follow_friend (urgency 3, p=0.77)
+  t=0.1s mira  -> inspect_reef (urgency 3, p=0.91)
+  t=0.2s nori  -> follow_friend (urgency 3, p=0.35, hesitating)
+  t=2.2s mira  -> follow_friend (urgency 3, p=0.55, hesitating)
+  t=6.5s pip   -> visit_bubbles (urgency 3, p=0.33, hesitating)
+  t=11.5s mira  -> explore (urgency 4, p=0.26, hesitating)
+  t=11.5s nori  -> inspect_reef (urgency 3, p=0.91)
+  tick  9000 goals: explore explore explore explore | asks 59 overrides 0
+  tick 18000 goals: explore follow_friend visit_bubbles visit_bubbles | asks 134 overrides 0
+  tick 27000 goals: visit_bubbles follow_friend inspect_reef visit_bubbles | asks 186 overrides 0
+selftest-llm: 169 goal changes (84 torn), 240 asks, 0 survival overrides in 600 sim-seconds
+census: goal share seek_food 3% flee_shadow 0% visit_bubbles 19% follow_friend 24% explore 31% rest 4% dart_play 0% inspect_reef 20%
+census: fish-time at a landmark (bubbles/reef, 55 px) 54% | 3+ fish crowding one 14% of the time | a 3-fish cluster anywhere 12% | mean curiosity 1.8 hunger 4.1 energy 5.5
+census: explore - 3.4 distinct zones per fish-minute | longest one-goal stretch 82 s | mean bored 4.2

@@ -1,0 +1,49 @@
+{
+ "stages": [
+  {
+   "stage": "train",
+   "exit": 0,
+   "wall_s": 208.5
+  },
+  {
+   "stage": "probe_p11_n400",
+   "exit": 0,
+   "wall_s": 2.2
+  },
+  {
+   "stage": "probe_p23_n400",
+   "exit": 0,
+   "wall_s": 2.2
+  },
+  {
+   "stage": "export_q4",
+   "exit": 0,
+   "wall_s": 1.2
+  },
+  {
+   "stage": "export_fp32",
+   "exit": 0,
+   "wall_s": 1.3
+  }
+ ],
+ "train": {
+  "docs": 28948,
+  "iters_done": 5000,
+  "loss": 0.5398,
+  "s_per_iter": 0.04,
+  "kept_iter": 4000,
+  "best_val": 8.0092,
+  "goal_nll": 0.5767,
+  "goal_acc": 0.7761,
+  "decision_loss": 0.6073,
+  "params_m": 4.83,
+  "peak_gpu_mib": 631
+ },
+ "versions": {
+  "torch": "2.10.0+rocm7.13.0a20260513",
+  "hip": "7.13.26183",
+  "cuda_available": true,
+  "device_name": "Radeon 8060S Graphics",
+  "device_count": 1
+ }
+}

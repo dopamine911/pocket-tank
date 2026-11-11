@@ -7,6 +7,7 @@ _ap = argparse.ArgumentParser()
 _ap.add_argument("--schema", type=int, choices=(2, 3, 4), default=2)
 _ap.add_argument("--ckpt", default=None, help="checkpoint (default: ckpt_v2w.pt / ckpt_v3.pt)")
 _ap.add_argument("--data", default=None, help="clean jsonl to sample real states from")
+_ap.add_argument("--device", default="cpu", help="cpu (default) or cuda (a ROCm/CUDA GPU)")
 _args = _ap.parse_args()
 os.environ["POCKET_SCHEMA"] = str(_args.schema)
 sys.path.insert(0, MODEL_DIR); sys.path.insert(0, os.path.join(MODEL_DIR, "llama2.c"))
@@ -15,15 +16,15 @@ from export import load_checkpoint
 import train_tokenizer as tok
 
 torch.manual_seed(0); random.seed(0)
-model = load_checkpoint(_args.ckpt or os.path.join(MODEL_DIR, "out", {2: "ckpt_v2w.pt", 3: "ckpt_v3m.pt", 4: "ckpt_v4m.pt"}[_args.schema]))
+model = load_checkpoint(_args.ckpt or os.path.join(MODEL_DIR, "out", {2: "ckpt_v2w.pt", 3: "ckpt_v3m.pt", 4: "ckpt_v4m.pt"}[_args.schema])).to(_args.device)
 GOALS = ["seek_food","flee_shadow","visit_bubbles","follow_friend","explore","rest","dart_play","inspect_reef"]
 GID = [tok.encode(g)[0] for g in GOALS]
 
 @torch.no_grad()
 def goal_probs(state, T=1.0):
     ids = tok.encode(state + " ->", bos=True)
-    x = torch.tensor([ids], dtype=torch.long)
-    logits = model(x)[0, -1, :]            # next-token logits
+    x = torch.tensor([ids], dtype=torch.long, device=_args.device)
+    logits = model(x)[0, -1, :].float().cpu()            # next-token logits
     g = logits[GID] / T
     p = torch.softmax(g, dim=0)
     mass = torch.softmax(logits, dim=0)[GID].sum().item()   # how much prob sits on goal tokens at all

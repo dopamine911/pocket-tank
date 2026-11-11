@@ -1,0 +1,100 @@
+{
+ "run": {
+  "model": "fish-d256-n6",
+  "dataset": "fish-v4-mix-cov",
+  "iters": 5000,
+  "batch": 64,
+  "lr": 0.0006,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "loss": "decision",
+  "mode": "training",
+  "cpu": false,
+  "export": true,
+  "probes": [
+   {
+    "n": 400,
+    "seed": 11
+   },
+   {
+    "n": 400,
+    "seed": 23
+   }
+  ],
+  "name": "fish-d256-n6-decision-mixcov"
+ },
+ "model": {
+  "schema": "4",
+  "dim": 256,
+  "n_layers": 6,
+  "n_heads": 8,
+  "max_seq_len": 64,
+  "mem_mib": 2560
+ },
+ "dataset": "fish-v4-mix-cov",
+ "dataset_sha256": "d76fd64adfbae2bb15420023f19f20902bfe24000de3f337780e7fbdb3bce402",
+ "seed": 2,
+ "host": "zaphod",
+ "card": "zaphod-card2",
+ "arch": "gfx120X",
+ "image": "sha256:d256912f3686a4e5cc78d08319f2bb41ad126dc96190d1b669654d31fc1f1a97",
+ "image_tag": "pt-train-rocm:gfx120X",
+ "git": {
+  "sha": "dd01e751ee38f9cc55f4c7a7b6ce864c06a76849",
+  "dirty": false
+ },
+ "attempts": 1,
+ "wall_s": 132.1,
+ "card_mem_used_before_mib": 3824,
+ "card_mem_used_peak_mib": 5192,
+ "stages": [
+  {
+   "stage": "train",
+   "exit": 0,
+   "wall_s": 119.8
+  },
+  {
+   "stage": "probe_p11_n400",
+   "exit": 0,
+   "wall_s": 4.2
+  },
+  {
+   "stage": "probe_p23_n400",
+   "exit": 0,
+   "wall_s": 4.3
+  },
+  {
+   "stage": "export_q4",
+   "exit": 0,
+   "wall_s": 1.7
+  },
+  {
+   "stage": "export_fp32",
+   "exit": 0,
+   "wall_s": 2.1
+  }
+ ],
+ "train": {
+  "docs": 26698,
+  "iters_done": 5000,
+  "loss": 0.4914,
+  "s_per_iter": 0.02,
+  "kept_iter": 3200,
+  "best_val": 8.8816,
+  "goal_nll": 0.5513,
+  "goal_acc": 0.7789,
+  "decision_loss": 0.5927,
+  "params_m": 4.83,
+  "peak_gpu_mib": 584
+ },
+ "versions": {
+  "torch": "2.10.0+rocm7.13.0a20260513",
+  "hip": "7.13.26183",
+  "cuda_available": true,
+  "device_name": "AMD Radeon AI PRO R9700",
+  "device_count": 1
+ }
+}

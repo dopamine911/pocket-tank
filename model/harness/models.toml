@@ -1,0 +1,62 @@
+# Named architectures for harness.py (docs/pipeline.md, "Training harness"). The vocabulary is not
+# entered here: train.py takes it from the schema's tokenizer (train_tokenizer.py, POCKET_SCHEMA).
+# mem_mib is what one training job takes on a card; the memory guard adds the card's reserve_mib.
+# fish-14m is the shipped model's shape (dim 384, 8 layers, 8 heads, seq 64: docs/stats.md); the others
+# are the sizes of dopamine911/pocket-terrarium's lizard sweep (PR #9). Measured there (L1 14M, batch 64):
+# torch peak 1432 MiB on an R9700, 1577 on the 8060S.
+
+["fish-14m"]
+schema = "4"
+dim = 384
+n_layers = 8
+n_heads = 8
+max_seq_len = 64
+mem_mib = 2560
+
+["fish-d384-n4"]
+schema = "4"
+dim = 384
+n_layers = 4
+n_heads = 8
+max_seq_len = 64
+mem_mib = 2560
+
+["fish-d256-n8"]
+schema = "4"
+dim = 256
+n_layers = 8
+n_heads = 8
+max_seq_len = 64
+mem_mib = 2560
+
+["fish-d256-n6"]
+schema = "4"
+dim = 256
+n_layers = 6
+n_heads = 8
+max_seq_len = 64
+mem_mib = 2560
+
+["fish-d256-n4"]
+schema = "4"
+dim = 256
+n_layers = 4
+n_heads = 8
+max_seq_len = 64
+mem_mib = 2560
+
+["fish-d192-n6"]
+schema = "4"
+dim = 192
+n_layers = 6
+n_heads = 6
+max_seq_len = 64
+mem_mib = 2560
+
+["fish-d192-n4"]
+schema = "4"
+dim = 192
+n_layers = 4
+n_heads = 6
+max_seq_len = 64
+mem_mib = 2560

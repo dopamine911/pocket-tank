@@ -1,0 +1,16 @@
+# The smoke run with the loss on the decision tokens only (train.py --loss decision).
+# exports. Proves the plumbing, not a model: rows may FAIL.
+model = "fish-d192-n4"
+dataset = "fish-smoke"
+iters = 300
+batch = 64
+lr = 6e-4
+seeds = [1, 2, 3]
+mode = "training"
+cpu = false
+export = true
+loss = "decision"
+
+[[probes]]
+n = 40
+seed = 11
