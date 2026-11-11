@@ -4094,7 +4094,7 @@ static int selftest_llm(int minutes) {
         printf("FAIL: model.bin/tokenizer.bin not found under ../model/out/\n");
         return 1;
     }
-    tank_init(&tank, 4321);
+    tank_init(&tank, getenv("POCKET_SIM_SEED") ? (uint32_t)atol(getenv("POCKET_SIM_SEED")) : 4321);   /* (seed: issue #1 state dumps) */
     tank_new_population(&tank);
     while (tank.n_fish < 4) tank_add_fish(&tank, 0, 1);   /* the 4-fish tank the soak numbers refer to */
     for (int i = 2; i < 4; i++) tank.fish[i].stage = STAGE_ADULT;
@@ -4109,7 +4109,7 @@ static int selftest_llm(int minutes) {
     advisor_llm_debug(&tank, 1);
     int changes = 0, torn = 0;
     int ticks = minutes > 0 ? minutes * 3600 : 3600;
-    int delay = minutes > 0 ? 16 : 2;             /* 16ms = real-time 60fps */
+    int delay = minutes > 0 && !getenv("POCKET_SIM_FAST") ? 16 : 2;   /* 16ms = real-time 60fps (POCKET_SIM_FAST: long runs at the 2 ms pace) */
     goal_id_t last[N_FISH_MAX];
     for (int i = 0; i < tank.n_fish; i++) last[i] = tank.fish[i].goal.id;
     /* census (2026-09-01, Strato: "all four fish overlapping at the bubble

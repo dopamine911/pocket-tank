@@ -145,6 +145,11 @@ goal_t advisor_llm(const tank_t *t, int fish_idx, bool request) {
         g_pending[fish_idx] = false;
         g_next = (fish_idx + 1) % N_FISH_SLOTS;
         advisor_core_encode(t, fish_idx, g_req_state, sizeof g_req_state);   /* fresh state */
+        {   /* POCKET_DUMP_STATES=file: append every state the model is asked about (issue #1: training states from the C tank) */
+            static FILE *dump; static bool tried;
+            if (!tried) { const char *p = getenv("POCKET_DUMP_STATES"); tried = true; if (p) dump = fopen(p, "a"); }
+            if (dump) { fprintf(dump, "%s\n", g_req_state); fflush(dump); }
+        }
         if (advisor_llm_narrate)
             printf("\033[0;36m%s sees:\033[0m %s\n", t->fish[fish_idx].name, g_req_state);
         g_req_fish = fish_idx; g_req_gen = g_gen;
