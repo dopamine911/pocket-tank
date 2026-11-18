@@ -1,0 +1,8 @@
+# the CYD build (Freenove ESP32-S3 Display 2.8, FNK0104B; 320 x 240 landscape): on top of sdkconfig.defaults
+#   idf.py -B <dir> -DSDKCONFIG=<dir>/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.cyd" build
+# the ILI9341 panel (display_port_ili9341.c), the FT6336G touch and the ES8311 codec are on; the AMOLED's SH8601 is not built
+CONFIG_POCKET_TANK_CYD=y
+CONFIG_POCKET_TANK_DISPLAY_ILI9341=y
+# CONFIG_POCKET_TANK_DISPLAY_SH8601 is not set
+CONFIG_POCKET_TANK_TOUCH_FT3168=y
+CONFIG_POCKET_TANK_AUDIO_ES8311=y

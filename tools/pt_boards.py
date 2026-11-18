@@ -15,6 +15,7 @@ BOARDS = [
     ("round175c", "Waveshare ESP32-S3-Touch-AMOLED-1.75C", "sdkconfig.round"),
     ("watch206",  "Waveshare ESP32-S3-Touch-AMOLED-2.06",  "sdkconfig.watch"),
     ("square216", "Waveshare ESP32-S3-Touch-AMOLED-2.16",  "sdkconfig.square"),
+    ("cyd28",     "Freenove ESP32-S3 Display 2.8 (FNK0104B)", "sdkconfig.cyd"),
 ]
 IDS = [b[0] for b in BOARDS]
 MAGIC = b"PTBOARD\0"

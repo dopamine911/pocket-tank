@@ -26,10 +26,10 @@
  * number in that merge. At the 0.4.0 release the stage goes back to "alpha". */
 #define PT_RELEASE_MAJOR 0
 #define PT_RELEASE_MINOR 4
-#define PT_RELEASE_PATCH 1
+#define PT_RELEASE_PATCH 2
 #define PT_RELEASE_HOTFIX 0                    /* a fourth part (2026-10-21): a fix between patches - 0.3.8.1 - that
                                                   must not burn the next number. 0 = none, and the string has three parts */
-#define PT_RELEASE       "0.4.1"
+#define PT_RELEASE       "0.4.2"
 #define PT_RELEASE_STAGE "alpha"               /* pre-1.0: shown beside the number ("alpha" in a release; "dev" on main between them) */
 /* the packed number the tank compares (update.c newer(), the save's stamp):
  * a byte each, major.minor.patch.hotfix. Until 0.3.8 it was three bytes
@@ -67,6 +67,9 @@
 #elif defined(TANK_SQUARE)
 #define PT_BOARD         "square216"
 #define PT_BOARD_NAME    "ESP32-S3-Touch-AMOLED-2.16"
+#elif defined(TANK_CYD)
+#define PT_BOARD         "cyd28"
+#define PT_BOARD_NAME    "Freenove ESP32-S3 Display 2.8 (FNK0104B)"
 #else
 #define PT_BOARD         "amoled18"
 #define PT_BOARD_NAME    "ESP32-S3-Touch-AMOLED-1.8"
@@ -76,7 +79,7 @@
 static inline const char *pt_board_words(const char *id) {
     if (!id) return NULL;
     return !strcmp(id, "amoled18") ? "1.8 INCH" : !strcmp(id, "round175c") ? "1.75 ROUND" :
-           !strcmp(id, "watch206") ? "2.06 WATCH" : !strcmp(id, "square216") ? "2.16 SQUARE" : NULL;
+           !strcmp(id, "watch206") ? "2.06 WATCH" : !strcmp(id, "square216") ? "2.16 SQUARE" : !strcmp(id, "cyd28") ? "2.8 CYD" : NULL;
 }
 #define PT_BOARD_MAGIC   "PTBOARD"             /* the image's board marker begins with these 8 bytes (with the NUL) */
 #define PT_BOARD_MARKER_OFFSET 0x120           /* ... at this offset in the app image: the image header (24) + the

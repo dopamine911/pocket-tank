@@ -38,4 +38,7 @@ sim/sheets/
 tools/boards.local.sh
 sim/build-square/
 sim/fishsim-square
+sim/build-cyd/
+sim/fishsim-cyd
+firmware/build-*/
 sim/build-arm*/

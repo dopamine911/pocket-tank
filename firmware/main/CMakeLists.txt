@@ -1,11 +1,19 @@
-set(SRCS main.c director.c brightness.c batlog.c codec_port.c advisor_llm_esp.c battery_port_axp2101.c imu_port_qmi8658.c
+set(SRCS main.c director.c brightness.c batlog.c codec_port.c advisor_llm_esp.c imu_port_qmi8658.c
          update_mode.c net_port_esp.c model_trailer.c link_spike.c link_port_espnow.c link_dev.c)
 # sd_spike.c (the tank switcher's step 2 test, `sd test`) is left out of 0.3.9.3 (docs/release-0.3.9.3.md D2): it comes
 # back with the packages (step 4) - list it here and restore its three hooks in main.c / director.c
 if(CONFIG_POCKET_TANK_DISPLAY_SH8601)
     list(APPEND SRCS display_port_sh8601.c)
+elseif(CONFIG_POCKET_TANK_DISPLAY_ILI9341)   # the CYD's 2.8in ILI9341 (display_port_ili9341.c)
+    list(APPEND SRCS display_port_ili9341.c)
 else()
     list(APPEND SRCS display_port_stub.c)
+endif()
+# the battery: the AXP2101 fuel gauge on the Waveshare boards; the CYD has no PMIC, so its meter is GPIO9's divider read by the ADC
+if(CONFIG_POCKET_TANK_CYD)
+    list(APPEND SRCS battery_port_adc.c)
+else()
+    list(APPEND SRCS battery_port_axp2101.c)
 endif()
 if(CONFIG_POCKET_TANK_TOUCH_FT3168)
     list(APPEND SRCS touch_port_ft3168.c)
@@ -20,10 +28,13 @@ endif()
 idf_component_register(
     SRCS ${SRCS}
     INCLUDE_DIRS "."
-    REQUIRES tankcore llm esp_partition spi_flash esp_timer esp_driver_spi esp_driver_i2c esp_driver_i2s esp_driver_gpio esp_driver_usb_serial_jtag esp_lcd nvs_flash esp_app_format
+    REQUIRES tankcore llm esp_partition spi_flash esp_timer esp_driver_spi esp_driver_i2c esp_driver_i2s esp_driver_gpio esp_driver_usb_serial_jtag esp_lcd esp_adc nvs_flash esp_app_format
              esp_wifi esp_netif esp_event esp_http_client esp_https_ota app_update json mbedtls bootloader_support fatfs sdmmc esp_driver_sdspi
     EMBED_FILES "tokenizer.bin" "../../assets/sounds/sounds.bin"
 )
+# THE APP'S ROOM (0.4.2): the serial console, the battery log, the update page's mode, the Wi-Fi port and the tank
+# link's device side never draw a frame or run the model: compiled for size (tankcore's CMakeLists has the shared ones)
+set_source_files_properties(director.c batlog.c update_mode.c net_port_esp.c link_dev.c PROPERTIES COMPILE_OPTIONS "-Os")
 # the board marker (net_port_esp.c, version.h PT_BOARD_MARKER_OFFSET): nothing
 # references it - the download reads it back from flash - so it is kept by name
 # or --gc-sections drops it (ESP-IDF's "custom structure" recipe, app_image_format)
