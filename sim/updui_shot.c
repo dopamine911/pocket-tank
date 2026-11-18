@@ -17,8 +17,8 @@ void net_sim_see(const char *const *names, int n);
 void net_sim_cut_at(int k);
 void net_sim_cold(int n);
 
-#define PGX(x) (PAGE_X + (x))
-#define PGY(y) (PAGE_Y + (y))
+#define PGX(x) PAGE_FX(x)
+#define PGY(y) PAGE_FY(y)
 #define ADV(secs) do { net_sim_advance(secs); update_tick(secs); } while (0)
 #define TAP(X, Y) (update_touch(PGX(X), PGY(Y), true), update_touch(PGX(X), PGY(Y), false))
 #define KEY(cell) TAP(UPD_KB_X + ((cell) % UPD_KB_COLS) * UPD_KB_PX + UPD_KB_W / 2, UPD_KB_Y + ((cell) / UPD_KB_COLS) * UPD_KB_PY + UPD_KB_H / 2)

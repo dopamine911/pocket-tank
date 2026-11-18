@@ -455,7 +455,7 @@ int selftest_move(void) {
             if (card_tap(RENDER_GM_TAP_LETIN) != RENDER_GM_TAP_LETIN) MV_FAIL("H. LET IN on the card was not taken");
             if (here(PIP) != 1 || bowl(PIP) || render_give_modal_step(&T) != RENDER_GM_DONE) MV_FAIL("H. LET IN on the card: %d in the tank, bowl %d, card %d", here(PIP), bowl(PIP), render_give_modal_step(&T));
             /* its double tap: the card is gone, and the second tap reaches nothing under it (the keeper page's rows) */
-            { int fx = PAGE_X + 100, fy = PAGE_Y + MSP_ROW_Y0 + MSP_ROW_MID;   /* (the first fish's row: a tap there opens its card) */
+            { int fx = PAGE_FX(100), fy = PAGE_FY(MSP_ROW_Y0 + MSP_ROW_MID);   /* (the first fish's row: a tap there opens its card) */
               if (render_milestones_tap(&T, (float)fx, (float)fy) != MS_TAP_KEPT || render_milestones_card(&T, NULL, NULL, NULL, NULL)) MV_FAIL("J7. LET IN's double tap opened what was under the card");
               if (render_give_modal_tap(&T, (float)fx, (float)fy) != RENDER_GM_TAP_HELD) MV_FAIL("J7. a tap right after LET IN was not spent");
               live(TAP_W_S + 0.1f);
@@ -485,12 +485,14 @@ int selftest_move(void) {
         if (!render_milestones_card(&T, &fish, &rx, &sx, &by) || !render_milestones_give(&T, &gx, &gy) || !render_milestones_move(&T, &mx, &my) || !render_milestones_more(&T, &ox, &oy))
             MV_FAIL("I. the card does not show all five buttons");
         else {
-            const int X[5] = { rx, gx, mx, sx, ox };
-            const int cx0 = PAGE_X + MSP_MODAL_X, cx1 = cx0 + MSP_MODAL_W;
+            const int X[5] = { rx, gx, mx, sx, ox };                       /* (frame px: the getters'; the card's layout is in page px - FX_PAGE) */
+            int P[5]; for (int k = 0; k < 5; k++) P[k] = (int)lroundf(FX_PAGE((float)X[k]));
+            const int cx0 = MSP_MODAL_X, cx1 = cx0 + MSP_MODAL_W, hf = (int)(MSP_CARD_ICON / 2 * PAGE_K);   /* (an icon's half on the glass) */
+            const int sl = PAGE_SCALED ? 2 : 0;                            /* (a frame px read back as page px: up to 1 / PAGE_K of rounding; none at 1) */
             for (int k = 0; k < 5; k++) {
-                if (k && X[k] - X[k - 1] < MSP_CARD_ICON + 8) MV_FAIL("I. the card's buttons %d and %d are %d px apart", k - 1, k, X[k] - X[k - 1]);
-                if (X[k] - MSP_CARD_ICON / 2 < cx0 + 4 || X[k] + MSP_CARD_ICON / 2 > cx1 - 4) MV_FAIL("I. the card's button %d (x %d) is off the card (%d..%d)", k, X[k], cx0, cx1);
-                if (!on_glass(X[k] - MSP_CARD_ICON / 2, by + MSP_CARD_ICON / 2) || !on_glass(X[k] + MSP_CARD_ICON / 2, by + MSP_CARD_ICON / 2)) MV_FAIL("I. the card's button %d is off the glass", k);
+                if (k && P[k] - P[k - 1] < MSP_CARD_ICON + 8 - sl) MV_FAIL("I. the card's buttons %d and %d are %d page px apart", k - 1, k, P[k] - P[k - 1]);
+                if (P[k] - MSP_CARD_ICON / 2 < cx0 + 4 - sl || P[k] + MSP_CARD_ICON / 2 > cx1 - 4 + sl) MV_FAIL("I. the card's button %d (page x %d) is off the card (%d..%d)", k, P[k], cx0, cx1);
+                if (!on_glass(X[k] - hf, by + hf) || !on_glass(X[k] + hf, by + hf)) MV_FAIL("I. the card's button %d is off the glass", k);
             }
             /* a tap on MOVE: its card, and only its card - nothing moved by one tap */
             if (render_milestones_tap(&T, (float)mx, (float)my) != MS_TAP_KEPT || render_give_modal_step(&T) != RENDER_GM_MOVE || T.n_fish != 3 || progression_bowl_has()) MV_FAIL("I. a tap on MOVE: step %d, %d fish", render_give_modal_step(&T), T.n_fish);
@@ -510,7 +512,8 @@ int selftest_move(void) {
             int bx, bby, kx, ky;
             if (!render_give_modal_button(&T, RENDER_GM_TAP_MOVE, &bx, &bby) || !render_give_modal_button(&T, RENDER_GM_TAP_BACK, &kx, &ky)) MV_FAIL("I. the MOVE card has no MOVE / BACK");
             else {
-                if (!on_glass(bx - 70, bby + 17) || !on_glass(kx + 70, ky + 17) || kx - bx < 150) MV_FAIL("I. the MOVE card's buttons: MOVE at %d,%d BACK at %d,%d", bx, bby, kx, ky);
+                const int o = (int)(70 * PAGE_K), oy = (int)(17 * PAGE_K);      /* (the buttons' half and middle on the glass: page px drawn at PAGE_K) */
+                if (!on_glass(bx - o, bby + oy) || !on_glass(kx + o, ky + oy) || (kx - bx) / PAGE_K < 150) MV_FAIL("I. the MOVE card's buttons: MOVE at %d,%d BACK at %d,%d", bx, bby, kx, ky);
                 if (render_give_modal_tap(&T, (float)bx, (float)bby) != RENDER_GM_TAP_HELD) MV_FAIL("I. MOVE took the double of the tap that opened its card");
                 if (card_tap(RENDER_GM_TAP_BACK) != RENDER_GM_TAP_BACK || render_give_modal_step(&T) != RENDER_GM_OFF || T.n_fish != 3) MV_FAIL("I. BACK did not close the MOVE card");
                 render_milestones_tap(&T, (float)mx, (float)my);
@@ -518,7 +521,7 @@ int selftest_move(void) {
                 const uint32_t W7 = T.fish[2].uid;
                 if (card_tap(RENDER_GM_TAP_MOVE) != RENDER_GM_TAP_MOVE) MV_FAIL("I. MOVE on its card was not taken");
                 if (here(W7) || !bowl(W7) || render_give_modal_step(&T) != RENDER_GM_DONE) MV_FAIL("I. MOVE on its card: %d in the tank, bowl %d, card %d", here(W7), bowl(W7), render_give_modal_step(&T));
-                if (render_milestones_tap(&T, (float)(PAGE_X + 100), (float)(PAGE_Y + MSP_ROW_Y0 + MSP_ROW_MID)) != MS_TAP_KEPT || render_milestones_card(&T, NULL, NULL, NULL, NULL)) MV_FAIL("J7. MOVE's double tap reached the page under the card");
+                if (render_milestones_tap(&T, (float)PAGE_FX(100), (float)PAGE_FY(MSP_ROW_Y0 + MSP_ROW_MID)) != MS_TAP_KEPT || render_milestones_card(&T, NULL, NULL, NULL, NULL)) MV_FAIL("J7. MOVE's double tap reached the page under the card");
                 live(TAP_W_S + 0.1f);
                 if (render_give_modal_step(&T) != RENDER_GM_OFF) MV_FAIL("J7. after MOVE the card's spent moment never ends");
                 render_frame_begin(); render_milestones(&T, fa, TANK_W);

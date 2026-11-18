@@ -140,9 +140,12 @@ int selftest_home(void) {
             back += render_library_tap((float)x, (float)y, 2) == LIB_TAP_BACK;
             int r = render_shelf_tap((float)x, (float)y); if (r > 0 && r < SHELF_TAP_SLOT0) hit[r]++;
         }
-        if (back < (MSP_CLOSE_W + 8) * (MSP_CLOSE_H + 8)) HM_FAIL("G. THE LIBRARY's BACK answers on %d px (its button alone is %d)", back, MSP_CLOSE_W * MSP_CLOSE_H);
+        /* (the areas in PAGE px: the CYD draws the page at PAGE_K, so a frame px there covers 1 / PAGE_K^2 of them - and its
+           px are 2.25x the 1.8's, the button bigger under the finger, not smaller) */
+        const float a = 1.0f / (PAGE_K * PAGE_K);
+        if (back * a < (MSP_CLOSE_W + 8) * (MSP_CLOSE_H + 8)) HM_FAIL("G. THE LIBRARY's BACK answers on %d px (its button alone is %d)", back, MSP_CLOSE_W * MSP_CLOSE_H);
         static const int want[] = { SHELF_TAP_CLOSE, SHELF_TAP_LIBRARY, SHELF_TAP_PREV, SHELF_TAP_NEXT, SHELF_TAP_TOUCH_LOCK, SHELF_TAP_SETTINGS };
-        for (unsigned k = 0; k < sizeof want / sizeof want[0]; k++) if (hit[want[k]] < 44 * 30) HM_FAIL("G. MY TANKS's foot: tap %d answers on %d px (a button is %d)", want[k], hit[want[k]], 44 * 30);
+        for (unsigned k = 0; k < sizeof want / sizeof want[0]; k++) if (hit[want[k]] * a < 44 * 30) HM_FAIL("G. MY TANKS's foot: tap %d answers on %d px (a button is %d)", want[k], hit[want[k]], 44 * 30);
     }
     /* H */
     board_new(); boot();

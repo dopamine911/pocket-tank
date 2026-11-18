@@ -12,9 +12,10 @@ read before a flash.
 | Waveshare 1.75C (the bowl) | 466 circle | `TANK_ROUND` | `make ROUND=1` -> `fishsim-round` | `tools/flash_round.sh` (`fw-build-175c`) | its USB serial (`ROUND_SERIAL`, tools/boards.local.sh) |
 | Waveshare 2.06 (the watch) | 410 x 502 portrait, 100 px corners | `TANK_WATCH` | `make WATCH=1` -> `fishsim-watch` | `tools/flash_watch.sh` (`fw-build-206`) | its USB serial (`WATCH_SERIAL`, tools/boards.local.sh) |
 | Waveshare 2.16 (the square, 2026-10-12) | 480 x 480, ~40 px corners | `TANK_SQUARE` | `make SQUARE=1` -> `fishsim-square` | `tools/flash_square.sh` (`fw-build-216`) | its USB serial (`SQUARE_SERIAL`, tools/boards.local.sh) |
+| Freenove FNK0104B 2.8 (the CYD, 2026-11-18) | 320 x 240 LCD, square corners; the pages drawn at 0.65 (`PAGE_SCALED`) | `TANK_CYD` | `make CYD=1` -> `fishsim-cyd` | `tools/flash_cyd.sh` (`fw-build-cyd`) | its USB serial (`CYD_SERIAL`, tools/boards.local.sh) |
 
 Each board's own traps are in its doc (board-amoled-1.75c.md,
-board-amoled-2.06-watch.md, board-amoled-2.16.md).
+board-amoled-2.06-watch.md, board-amoled-2.16.md, board-cyd-2.8.md).
 
 ## What is shared, and where a board may differ
 

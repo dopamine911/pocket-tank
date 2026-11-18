@@ -21,7 +21,9 @@
  * reset on a GPIO. Its own build is a portrait tank: panel px = tank px.
  * The SQUARE (2.16, 2026-10-12) has a CST9220 - the round board's CST9217
  * family, read the same way, on its own reset pin and a 480 px panel; its own
- * build is the panel too. Which way its report runs is `touch mirror`. */
+ * build is the panel too. Which way its report runs is `touch mirror`.
+ * The CYD (the 2.8, 2026-11-18) has an FT6336G (the FT5x06 family) read through esp_lcd, its reset on GPIO18: the driver
+ * turns its report to landscape, and map_touch turns it the rest of the way with the picture (cyd_touch_init). */
 #include "touch_port.h"
 #include "link_dev.h"
 #include "display_port.h"
@@ -96,7 +98,11 @@ static int  s_q;                                  /* the picture's quarter turns
  * same reason; Strato saw it on the swatch rows, 2026-09-13). Reported
  * points move UP by this many px in displayed space; director `touch bias
  * <px>` tunes it live. */
+#ifdef TANK_CYD                                         /* the CYD's finger lands on the glass: no 10 px low landing (the community port's bench) */
+static int s_bias_y = 0;
+#else
 static int s_bias_y = 10;
+#endif
 void touch_port_set_bias(int px) { s_bias_y = px; }
 int  touch_port_bias(void) { return s_bias_y; }
 
@@ -279,7 +285,35 @@ static bool panel_read(uint16_t *x, uint16_t *y) {
     return true;
 }
 
+#ifdef TANK_CYD
+/* the CYD's FT6336G (2026-11-18): the FT5x06 family at 0x38 on the shared bus, its reset on GPIO18 (board_pins.h), read through
+ * esp_lcd like the 1.8's. The driver's swap_xy turns its report to landscape (320 x 240); mirror_y makes it the vendor's way
+ * (both as the community port found them on the bench). map_touch turns it the rest of the way with the picture. */
+#define CYD_TOUCH_SWAP_XY  1
+#define CYD_TOUCH_MIRROR_X 0
+#define CYD_TOUCH_MIRROR_Y 1
+static bool cyd_touch_init(void) {
+    gpio_config_t rst = { .pin_bit_mask = 1ULL << PIN_TP_RST, .mode = GPIO_MODE_OUTPUT };
+    gpio_config(&rst); gpio_sleep_sel_dis(PIN_TP_RST);
+    gpio_set_level(PIN_TP_RST, 0); vTaskDelay(pdMS_TO_TICKS(10));
+    gpio_set_level(PIN_TP_RST, 1); vTaskDelay(pdMS_TO_TICKS(100));   /* its boot: it answers nothing sooner */
+    esp_lcd_panel_io_handle_t io;
+    esp_lcd_panel_io_i2c_config_t io_cfg = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
+    io_cfg.dev_addr = I2C_ADDR_FT6336; io_cfg.scl_speed_hz = 400000;
+    if (esp_lcd_new_panel_io_i2c(board_i2c_bus(), &io_cfg, &io) != ESP_OK) { ESP_LOGW(TAG, "no touch io"); return false; }
+    esp_lcd_touch_config_t tp_cfg = { .x_max = PANEL_W, .y_max = PANEL_H, .rst_gpio_num = -1, .int_gpio_num = -1,
+        .levels = { .reset = 0, .interrupt = 0 },
+        .flags = { .swap_xy = CYD_TOUCH_SWAP_XY, .mirror_x = CYD_TOUCH_MIRROR_X, .mirror_y = CYD_TOUCH_MIRROR_Y } };
+    if (esp_lcd_touch_new_i2c_ft5x06(io, &tp_cfg, &s_tp) != ESP_OK) { ESP_LOGW(TAG, "no FT6336"); return false; }
+    ESP_LOGI(TAG, "FT6336 ready (the CYD: read through the driver, turned with the picture)");
+    return true;
+}
+#endif
+
 bool touch_port_init(void) {
+#ifdef TANK_CYD
+    return cyd_touch_init();
+#endif
     if (board_is_round() || board_is_square()) return cst9217_init();
     if (board_is_watch()) return ft3168_init();
     esp_lcd_panel_io_handle_t io;
@@ -451,6 +485,9 @@ static void map_touch(uint16_t px, uint16_t py, float *tx, float *ty) {
      * on the watch, ~20 at the top of the bowl, ~2 on the 1.8. */
 #if defined(TANK_WATCH) || defined(TANK_SQUARE)       /* the watch's portrait tank, the square's: the panel's px are the tank's */
     int rx = fx, ry = fy;
+#elif defined(TANK_CYD)                               /* the CYD's landscape panel: the driver reports the frame; upright it reads 180 degrees
+                                                         from the picture, so it is turned here (view_point turns it back when flipped) */
+    int rx = TANK_W - 1 - fx, ry = TANK_H - 1 - fy;
 #else
     int rx = TANK_W - 1 - fy, ry = fx;
 #endif

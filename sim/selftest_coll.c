@@ -220,7 +220,7 @@ int selftest_coll_pages(void) {
     render_collection_leave();
     int ax, ay, bx2, by2;
     if (!render_collection_arrow(false, &ax, &ay) || !render_collection_arrow(true, &bx2, &by2)) CFAIL("no arrows on 10 pages");
-    const int h = RENDER_CRIT_NAV_W / 2;
+    const int h = (int)(RENDER_CRIT_NAV_W / 2 * PAGE_K);   /* (its half in frame px: the getter's centre is the frame's; drawn scaled on the CYD) */
     int cs[4][2] = { { ax - h, ay - h }, { ax + h, ay - h }, { bx2 - h, by2 - h }, { bx2 + h, by2 - h } };
     for (int k = 0; k < 4; k++) if (!in_glass(cs[k][0], cs[k][1], 6)) CFAIL("an arrow's corner (%d,%d) is not 6 px inside the glass", cs[k][0], cs[k][1]);
     render_collection_tap(&s_tk, (float)ax, (float)ay);
@@ -230,7 +230,7 @@ int selftest_coll_pages(void) {
     render_collection(&s_tk, fb, TANK_W);
     t0 = clock(); for (int k = 0; k < 50; k++) render_collection(&s_tk, fb, TANK_W);
     double draw_ms = ms_since(t0) / 50;
-    if (render_collection_tap(&s_tk, PAGE_X + 40 + 46, PAGE_Y + 60 + 40) != COLL_TAP_KEPT) CFAIL("a tap on page 2's first place");
+    if (render_collection_tap(&s_tk, PAGE_FX(40 + 46), PAGE_FY(60 + 40)) != COLL_TAP_KEPT) CFAIL("a tap on page 2's first place");
     render_collection_tap(&s_tk, 0, 0);
     render_collection_leave();
     if (render_collection_page() != 0) CFAIL("the page did not open on page 1 again");

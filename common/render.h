@@ -18,8 +18,44 @@
  * rectangle the two are the same thing. */
 #define PAGE_W 448
 #define PAGE_H 368
+/* THE SCALED PAGE (the CYD, 2026-11-18): a glass smaller than the page in both ways. The page keeps its 448 x 368
+ * layout and is DRAWN smaller: PAGE_K frame px for each page px (240 / 368), centred - page (0,0) is frame (PAGE_X,
+ * PAGE_Y), and page x is frame x PAGE_X + x * PAGE_K. The drawing helpers map every shape (render.c ctx_page): a rect's
+ * edges, a span, a pixel; the pixel font is drawn at a whole scale near scale * PAGE_K (PAGE_TEXT) from the mapped
+ * corner, and text_w answers in page px, so a layout that centres or right-aligns a label by its width still does.
+ * Everything that crosses between the frame and the page goes through PAGE_FX / PAGE_FY (page -> frame) and
+ * FX_PAGE / FY_PAGE (frame -> page): a tap coming in, a ring round a fish going out. PAGE_FW / PAGE_FH are the
+ * frame's width and height in page px (a band across the whole glass). Everywhere else PAGE_K is 1 and these are
+ * the sums they always were. */
+#ifdef TANK_CYD
+#define PAGE_SCALED 1
+#define PAGE_K  (240.0f / 368.0f)
+#define PAGE_X  14              /* (320 - 448 * PAGE_K) / 2 */
+#define PAGE_Y  0
+#define PAGE_TEXT(s) ((s) <= 2 ? 1 : (int)((s) * PAGE_K + 0.5f))   /* 1, 2 -> 1; 3 -> 2; 4 -> 3; 6 -> 4 */
+#define PAGE_FX(x) ((int)floorf(PAGE_X + (x) * PAGE_K))
+#define PAGE_FY(y) ((int)floorf(PAGE_Y + (y) * PAGE_K))
+#define FX_PAGE(x) (((x) - PAGE_X) / PAGE_K)
+#define FY_PAGE(y) (((y) - PAGE_Y) / PAGE_K)
+#define PAGE_FX0 ((int)floorf(FX_PAGE(0)))   /* the frame's corner in page px: a fill over the whole glass is (PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH) */
+#define PAGE_FY0 ((int)floorf(FY_PAGE(0)))
+#define PAGE_FW ((int)(TANK_W / PAGE_K + 2))
+#define PAGE_FH ((int)(TANK_H / PAGE_K + 2))
+#else
+#define PAGE_SCALED 0
+#define PAGE_K  1
 #define PAGE_X ((TANK_W - PAGE_W) / 2)
 #define PAGE_Y ((TANK_H - PAGE_H) / 2)
+#define PAGE_TEXT(s) (s)
+#define PAGE_FX(x) ((x) + PAGE_X)
+#define PAGE_FY(y) ((y) + PAGE_Y)
+#define FX_PAGE(x) ((x) - PAGE_X)
+#define FY_PAGE(y) ((y) - PAGE_Y)
+#define PAGE_FX0 (-PAGE_X)
+#define PAGE_FY0 (-PAGE_Y)
+#define PAGE_FW TANK_W
+#define PAGE_FH TANK_H
+#endif
 #ifdef TANK_ROUND               /* the bowl's circle cuts the page's corners: a few buttons are drawn in from the glass */
 #define PAGE_BOWL 1
 #else
@@ -31,7 +67,7 @@
  * corners no longer reach it). The layouts keep their margins of 24..32 px,
  * so most of every page is inside that window as it stands; PAGE_NARROW
  * marks the few columns that had to come in. */
-#define PAGE_NARROW (TANK_W < PAGE_W)
+#define PAGE_NARROW (PAGE_FW < PAGE_W)
 void render_tank(const tank_t *t, uint16_t *fb, int stride);
 
 /* Optional frame profiling: set a microsecond clock and render_tank fills
@@ -174,12 +210,30 @@ void render_stats_card(const tank_t *t, int fish_idx, uint16_t *fb, int stride);
 #elif defined(TANK_SQUARE)      /* the square: its bezel's corner clipped the card at the 1.8's 14 / 8 (Strato, 2026-10-12) */
 #define RENDER_CARD_X 26
 #define RENDER_CARD_Y 22
+#elif defined(TANK_CYD)         /* the 320 x 240 glass: the card a little higher, the toolbox beside it (tools_layout) */
+#define RENDER_CARD_X 14
+#define RENDER_CARD_Y 6
 #else
 #define RENDER_CARD_X 14
 #define RENDER_CARD_Y 8
 #endif
 #define RENDER_CARD_W 124
+#ifdef TANK_CYD                 /* 226 px with the MORE strip: the rows of the card squeezed to fit (the offsets below) */
+#define RENDER_CARD_H 226
+#define CARD_NEED_Y 26          /* the first NEEDS row, and the pitch of the four */
+#define CARD_NEED_DY 24
+#define CARD_DIV_Y 118          /* the divider between NEEDS and WHO THEY ARE */
+#define CARD_SLIDER_Y 126       /* the first spectrum slider, and the pitch of the three */
+#define CARD_SLIDER_DY 22
+#else
 #define RENDER_CARD_H 258       /* 228 + the MORE button strip (2026-09-16) */
+#define CARD_NEED_Y 30
+#define CARD_NEED_DY 27
+#define CARD_DIV_Y 142
+#define CARD_SLIDER_Y 152
+#define CARD_SLIDER_DY 26
+#endif
+_Static_assert(RENDER_CARD_Y + RENDER_CARD_H <= TANK_H, "the stats card must fit the glass (a 240 px glass: 6 + 226)");
 /* the card's tap hit box (touch ports): the card itself plus slop, most of
  * it BELOW the MORE button - fingers aiming at a button by the foot land
  * low and wide (Strato, 2026-09-16: "I'm not tapping it reliably"). Since
@@ -187,6 +241,10 @@ void render_stats_card(const tank_t *t, int fish_idx, uint16_t *fb, int stride);
  * it was for the panel's stretched report, which the calibration (09-30)
  * took out. RENDER_CARD_HIT(x, y) is the test. */
 #define RENDER_TOOLS_GAP 14
+#ifdef TANK_CYD                 /* the 240 px glass: the toolbox beside the card (the NEXT arrow's column, 8 px off it), not under it */
+#define RENDER_TOOLS_X (RENDER_CARD_X + RENDER_CARD_W + RENDER_SIDE_GAP + RENDER_NEXT_W + 8)
+#define RENDER_TOOLS_Y 46
+#endif
 #define RENDER_CARD_HIT_BELOW RENDER_TOOLS_GAP
 #define RENDER_CARD_HIT_SIDE  12
 #define RENDER_CARD_HIT(x, y) ((x) >= RENDER_CARD_X - RENDER_CARD_HIT_SIDE && (x) < RENDER_CARD_X + RENDER_CARD_W + RENDER_CARD_HIT_SIDE && \
@@ -889,7 +947,7 @@ bool render_crab_collect_hit(const tank_t *t, float x, float y);   /* the crab c
 #define MSP_CLOSE_X   242               /* UPGRADES 114..230 and CLOSE 242..334: the pair centred */
 #define MSP_CLOSE_Y   318
 #define MSP_SET_X     ((PAGE_W - MSP_SET_W) / 2)
-#define MSP_SET_Y     (-PAGE_Y + 18)    /* SETTINGS: top dead centre */
+#define MSP_SET_Y     (PAGE_FY0 + 18)    /* SETTINGS: top dead centre */
 #define SHP_CLOSE_X   259               /* the shop: HOW TO EARN 97..247 beside CLOSE */
 #define SET_CLOSE_X   296               /* settings: UPDATES and CLOSE drawn in from the glass */
 #else

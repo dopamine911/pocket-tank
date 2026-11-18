@@ -241,10 +241,12 @@ static int pages_drawn(void) {
             }
             if (x1 < 0) FR_FAIL("%s drew nothing", PG_NAME[pg]);
             if (off) FR_FAIL("%s: %d pixels drawn off the glass", PG_NAME[pg], off);
-            const int px = PAGE_X + (pg == RESET_PG_TANK ? RENDER_CONFIRM_X : RESET_PANEL_X), py = PAGE_Y + (pg == RESET_PG_TANK ? RENDER_CONFIRM_Y : RESET_PANEL_Y);
-            const int pw = pg == RESET_PG_TANK ? RENDER_CONFIRM_W : RESET_PANEL_W, ph = pg == RESET_PG_TANK ? RENDER_CONFIRM_H : RESET_PANEL_H;
-            if (x0 != px || y0 != py || x1 != px + pw - 1 || y1 != py + ph - 1)
-                FR_FAIL("%s drew %d,%d..%d,%d, not its panel %d,%d..%d,%d", PG_NAME[pg], x0, y0, x1, y1, px, py, px + pw - 1, py + ph - 1);
+            /* the panel in frame px: its page rect's two ends mapped (PAGE_FX / PAGE_FY; the far end is the last px before the next) */
+            const int X = pg == RESET_PG_TANK ? RENDER_CONFIRM_X : RESET_PANEL_X, Y = pg == RESET_PG_TANK ? RENDER_CONFIRM_Y : RESET_PANEL_Y;
+            const int W = pg == RESET_PG_TANK ? RENDER_CONFIRM_W : RESET_PANEL_W, H = pg == RESET_PG_TANK ? RENDER_CONFIRM_H : RESET_PANEL_H;
+            const int px = PAGE_FX(X), py = PAGE_FY(Y), px1 = PAGE_FX(X + W) - 1, py1 = PAGE_FY(Y + H) - 1;
+            if (x0 != px || y0 != py || x1 != px1 || y1 != py1)
+                FR_FAIL("%s drew %d,%d..%d,%d, not its panel %d,%d..%d,%d", PG_NAME[pg], x0, y0, x1, y1, px, py, px1, py1);
             unsigned seen = 0;
             for (int y = 0; y < TANK_H; y++) for (int x = 0; x < TANK_W; x++) {
                 int b = render_reset_hit((float)x, (float)y);
@@ -255,7 +257,7 @@ static int pages_drawn(void) {
                 float x, y;
                 if (!btn_at(b, &x, &y)) { FR_FAIL("%s: %s has no place", PG_NAME[pg], BTN_NAME[b]); continue; }
                 if (fa[(int)y * TANK_W + (int)x] == SENT) FR_FAIL("%s: %s answers at %.0f,%.0f where nothing is drawn", PG_NAME[pg], BTN_NAME[b], x, y);
-                if (x < px || x >= px + pw || y < py || y >= py + ph) FR_FAIL("%s: %s's middle %.0f,%.0f is outside the panel", PG_NAME[pg], BTN_NAME[b], x, y);
+                if (x < px || x > px1 || y < py || y > py1) FR_FAIL("%s: %s's middle %.0f,%.0f is outside the panel", PG_NAME[pg], BTN_NAME[b], x, y);
             }
             /* the box and the hold's bar change the picture: a ticked box, a hold under way, are SEEN */
             if (pg == RESET_PG_ERASE || pg == RESET_PG_HOLD) {
@@ -296,7 +298,7 @@ static int pages_baked(void) {
                         if (pg != RESET_PG_ERASING && !render_reset_bake_held()) FR_FAIL("%s: no picture was kept of it (the bake is not in use)", PG_NAME[pg]);
                         int diff = 0, dx0 = TANK_W, dy0 = TANK_H, dx1 = -1, dy1 = -1;
                         for (int i = 0; i < TANK_W * TANK_H; i++) if (fo[i] != fa[i]) { diff++; int x = i % TANK_W, y = i / TANK_W; if (x < dx0) dx0 = x; if (x > dx1) dx1 = x; if (y < dy0) dy0 = y; if (y > dy1) dy1 = y; }
-                        if (diff) printf("full-reset: (the difference: %d,%d..%d,%d, page coordinates %d,%d)\n", dx0, dy0, dx1, dy1, dx0 - PAGE_X, dy0 - PAGE_Y);
+                        if (diff) printf("full-reset: (the difference: %d,%d..%d,%d, page coordinates %d,%d)\n", dx0, dy0, dx1, dy1, (int)FX_PAGE(dx0), (int)FY_PAGE(dy0));
                         if (diff) FR_FAIL("%s (box %d, hold %.2f, timeout %.2f): from its picture it differs from drawn whole in %d pixels", PG_NAME[pg], wifi, HOLD[h], FRAC[f], diff);
                         n++;
                     }
@@ -352,7 +354,8 @@ static int page_erasing(void) {
         }
         page_frame(fa, 0);
         int px = 0; for (int i = 0; i < TANK_W * TANK_H; i++) px += fa[i] != SENT;
-        if (px < 50000) FR_FAIL("ERASING's frame before the erase holds %d drawn pixels - the page is not on it", px);
+        const int need = (int)(50000.0f * TANK_W * TANK_H / (448 * 368));   /* 50000 on the 1.8's frame: the same share of a smaller one (the CYD's) */
+        if (px < need) FR_FAIL("ERASING's frame before the erase holds %d drawn pixels (want %d) - the page is not on it", px, need);
         if ((r = render_reset_erase_ready()) != want) FR_FAIL("ERASING drawn %d times: the erase handed over is %d (want %d)", RESET_ERASING_FRAMES, r, want);
         if (render_reset_erase_ready() || render_reset_erase_armed()) FR_FAIL("the erase was handed over twice");
         if (render_reset_page() != RESET_PG_ERASING) FR_FAIL("ERASING left the glass before the erase (page %d): the board goes quiet under it", render_reset_page());
@@ -725,7 +728,9 @@ static int erase_refusals(void) {
 
 int selftest_full_reset(void) {
     board_env();
-    if (pages_drawn() || pages_baked() || page_erasing() || pages_work()) return 1;
+    /* the prompt's picture (its bake) is off on a SCALED page (render.c g_bake_off / g_bake_rp): the prompt is drawn whole each frame
+       there, so pages_baked has no picture to test on PAGE_SCALED and is skipped with that reason */
+    if (pages_drawn() || (!PAGE_SCALED && pages_baked()) || page_erasing() || pages_work()) return 1;
     if (reset_this_tank() || erase_everything() || erase_blank() || erase_refused() || erase_refusals() || erase_cut()) return 1;
     { char cmd[900]; snprintf(cmd, sizeof cmd, "rm -rf '%s'", s_dir); (void)system(cmd); }
     if (touch_port_reset_prompt()) fails++;

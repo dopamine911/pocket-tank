@@ -37,3 +37,7 @@ endif()
 if(CONFIG_POCKET_TANK_SQUARE)  # the square's 480 x 480 tank
     target_compile_definitions(${COMPONENT_LIB} PUBLIC TANK_SQUARE)
 endif()
+# the CYD's 320 x 240 landscape tank (Freenove ESP32-S3 Display 2.8, FNK0104B), the same way as the boards above
+if(CONFIG_POCKET_TANK_CYD)
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC TANK_CYD)
+endif()

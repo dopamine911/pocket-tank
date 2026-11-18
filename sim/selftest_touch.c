@@ -87,6 +87,10 @@ bool esp_lcd_touch_get_coordinates(esp_lcd_touch_handle_t tp, uint16_t *x, uint1
 #define HB_WATCH 1
 #elif defined(TANK_SQUARE)
 #define HB_SQUARE 1
+#elif defined(TANK_CYD)
+#define HB_CYD 1                                            /* the CYD's FT6336G through esp_lcd: the driver turns it, so it reports the
+                                                               320 x 240 frame (touch_port_ft3168.c map_touch); no V2 calibration
+                                                               (display_port_ili9341.c board_is_v2 is false) */
 #else
 #define HB_V2 1                                             /* the 1.8 (V2: CST816), Strato's */
 #endif
@@ -98,6 +102,9 @@ bool esp_lcd_touch_get_coordinates(esp_lcd_touch_handle_t tp, uint16_t *x, uint1
 #endif
 #ifndef HB_SQUARE
 #define HB_SQUARE 0
+#endif
+#ifndef HB_CYD
+#define HB_CYD 0
 #endif
 #ifndef HB_V2
 #define HB_V2 0
@@ -130,8 +137,8 @@ bool link_dev_drift_hit(float x, float y) { (void)x; (void)y; return false; }
 static tank_t T;
 static int64_t g_shelf_press;                              /* touch_port_take_shelf_tap's press time (main.c's waits read it) */
 #define FRAME_MS 40
-static int panel_w(void) { return HB_ROUND ? R_PANEL : HB_SQUARE ? S_PANEL : HB_WATCH ? W_PANEL_W : PANEL_W; }
-static int panel_h(void) { return HB_ROUND ? R_PANEL : HB_SQUARE ? S_PANEL : HB_WATCH ? W_PANEL_H : PANEL_H; }
+static int panel_w(void) { return HB_ROUND ? R_PANEL : HB_SQUARE ? S_PANEL : HB_WATCH ? W_PANEL_W : HB_CYD ? TANK_W : PANEL_W; }
+static int panel_h(void) { return HB_ROUND ? R_PANEL : HB_SQUARE ? S_PANEL : HB_WATCH ? W_PANEL_H : HB_CYD ? TANK_H : PANEL_H; }
 static void chip_from_panel(int px, int py, int *rx, int *ry) {   /* the CST92xx's mirror bits undone (cst9217_read) */
     if (HB_ROUND || HB_SQUARE) {
         int m = s_cst_mirror, pn = cst_panel();
@@ -210,7 +217,7 @@ static int hit_next(float x, float y, int u) { (void)u; return render_next_hit(x
 static int hit_chip(float x, float y, int u) { (void)u; return render_tool_chip_hit(&T, x, y); }
 static void foot(int which, float *x, float *y) {
     int bx, by; render_ms_foot_box(which, &bx, &by);
-    *x = PAGE_X + bx + MSP_FOOT_SQ / 2.0f; *y = PAGE_Y + by + MSP_FOOT_SQ / 2.0f;
+    *x = PAGE_FX(bx + MSP_FOOT_SQ / 2.0f); *y = PAGE_FY(by + MSP_FOOT_SQ / 2.0f);
 }
 static void bare(void) {                                    /* the bare tank, the finger up, every page and card down */
     g_down = false; touch_port_dismiss(); g_link_page = false; touch_port_set_pill(false); tank_set_tool(&T, TOOL_HAND);
@@ -249,7 +256,7 @@ static void settings_nav(void) {
             bare(); touch_port_set_jelly(jelly ? jelly_cb : NULL); render_set_gfx_level(RENDER_GFX_HIGH);
             touch_port_show_settings(true); hold_for(800);
             int bx, by, bw, bh; render_settings_box(b, &bx, &by, &bw, &bh);
-            const float x = PAGE_X + bx + bw / 2.0f, y = PAGE_Y + by + bh / 2.0f;
+            const float x = PAGE_FX(bx + bw / 2.0f), y = PAGE_FY(by + bh / 2.0f);
             pagestate_t s0 = pagestate();
             if (!tap(x, y, 90, FRAME_MS)) { TFAIL("settings' %s at %.0f,%.0f is past the panel's reach", NAME[b], x, y); continue; }
             int v = 0, w = touch_port_take_setting(&v);
@@ -268,7 +275,7 @@ static void settings_nav(void) {
                 for (int k = 0; k < 4; k++) {
                     int gx, gy, gw, gh; render_gfx_page_box(GP[k].box, &gx, &gy, &gw, &gh);
                     hold_for(800);
-                    if (!tap(PAGE_X + gx + gw / 2.0f, PAGE_Y + gy + gh / 2.0f, 90, FRAME_MS)) { TFAIL("the GRAPHICS page's %s is past the panel's reach", GP[k].n); continue; }
+                    if (!tap(PAGE_FX(gx + gw / 2.0f), PAGE_FY(gy + gh / 2.0f), 90, FRAME_MS)) { TFAIL("the GRAPHICS page's %s is past the panel's reach", GP[k].n); continue; }
                     w = touch_port_take_setting(&v);
                     if (!touch_port_settings() || !render_gfx_page() || w != GP[k].what || v != GP[k].val
                         || (GP[k].what == SET_TAP_GFX ? render_gfx_level() != GP[k].val : render_vignette() != (GP[k].val != 0)))
@@ -276,13 +283,13 @@ static void settings_nav(void) {
                 }
                 {   int gx, gy, gw, gh; render_gfx_page_box(GFXP_BOX_BACK, &gx, &gy, &gw, &gh);
                     hold_for(800);
-                    const bool hit = tap(PAGE_X + gx + gw / 2.0f, PAGE_Y + gy + gh / 2.0f, 90, FRAME_MS);
+                    const bool hit = tap(PAGE_FX(gx + gw / 2.0f), PAGE_FY(gy + gh / 2.0f), 90, FRAME_MS);
                     w = touch_port_take_setting(&v);
                     if (!hit || !touch_port_settings() || render_gfx_page() || touch_port_milestones() || touch_port_updates() || g_link_page || w)
                         TFAIL("the GRAPHICS page's BACK%s: hit %d, settings %d, its page still up %d, keeper page %d, link %d, setting %d (want the settings page)", jt, hit,
                               touch_port_settings(), render_gfx_page(), touch_port_milestones(), g_link_page, w);
                     /* ... and BACK's double (0.15 s on: LINK stands under it on the settings page) answers nothing */
-                    hold_for(60); tap(PAGE_X + gx + gw / 2.0f, PAGE_Y + gy + gh / 2.0f, 60, FRAME_MS); w = touch_port_take_setting(&v);
+                    hold_for(60); tap(PAGE_FX(gx + gw / 2.0f), PAGE_FY(gy + gh / 2.0f), 60, FRAME_MS); w = touch_port_take_setting(&v);
                     if (!touch_port_settings() || render_gfx_page() || g_link_page || touch_port_updates() || w) TFAIL("the GRAPHICS page's BACK%s: its double answered on the settings page (link %d, setting %d)", jt, g_link_page, w);
                 }
                 /* left up and the settings page opened again: the settings page itself */
@@ -363,7 +370,7 @@ static void settings_nav(void) {
        page - acts on nothing; after a pause the same tap is the page's */
     {   int bx, by, bw, bh, pts = 0, ok = 0, later = 0; render_settings_box(SET_BOX_TILE, &bx, &by, &bw, &bh);
         for (int py = by + 6; py < by + bh - 4; py += 14) for (int px = bx + 8; px < bx + bw - 4; px += 30) {
-            const float x = PAGE_X + px, y = PAGE_Y + py, mx = TANK_W - 1 - x, my = TANK_H - 1 - y;
+            const float x = PAGE_FX(px), y = PAGE_FY(py), mx = TANK_W - 1 - x, my = TANK_H - 1 - y;
             int u; if (render_settings_tap(mx, my, &u) == SET_TAP_NONE) continue;
             bare(); T.screen_turned = false; touch_port_set_quarter(0); tank_light_choice_set(&T, 3); touch_port_show_settings(true); hold_for(800);   /* (LIGHTS OUT mid-list) */
             if (!tap(x, y, 90, 1)) continue;
@@ -406,7 +413,7 @@ static void firm_press(void) {
         }
     for (int h = 0; h < 3; h++) {                            /* the collection's CLOSE */
         bare(); touch_port_show_collection(true); hold_for(800);
-        float x = PAGE_X + MSP_CLOSE_X + MSP_CLOSE_W / 2.0f, y = PAGE_Y + MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f;
+        float x = PAGE_FX(MSP_CLOSE_X + MSP_CLOSE_W / 2.0f), y = PAGE_FY(MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f);
         if (!press(x, y, HOLDS[h])) { TFAIL("the collection's CLOSE is past the panel's reach"); continue; }
         lift(FRAME_MS);
         if (touch_port_collection() || !touch_port_milestones()) TFAIL("the collection's CLOSE pressed %d ms did nothing", HOLDS[h]);
@@ -464,7 +471,15 @@ static void firm_press(void) {
         }
     }
     /* the water keeps the quick rule: a quick tap is a tap; a slow press is the hold - no tap at its lift (a card stays) */
-    const float wx = TANK_W * 0.55f, wy = TANK_H * 0.45f;
+    float wx = TANK_W * 0.55f, wy = TANK_H * 0.45f;
+    /* not open water with a card up (the CYD's toolbox sits beside the card here): the open point nearest the spot */
+    if (render_tools_hit(&T, 1, wx, wy) >= 0 || render_next_hit(wx, wy) || RENDER_CARD_HIT(wx, wy)) {
+        float bd = 1e9f, cx0 = wx, cy0 = wy;
+        for (int y = 20; y < TANK_H - 20; y += 2) for (int x = 20; x < TANK_W - 20; x += 2) {
+            if (render_tools_hit(&T, 1, x, y) >= 0 || render_next_hit(x, y) || RENDER_CARD_HIT(x, y)) continue;
+            float d = (x - cx0) * (x - cx0) + (y - cy0) * (y - cy0); if (d < bd) { bd = d; wx = x; wy = y; }
+        }
+    }
     bare(); T.tap_count = 0;
     if (!tap(wx, wy, 120, FRAME_MS)) TFAIL("the water at %.0f,%.0f is past the panel's reach", wx, wy);
     else if (T.tap_count != 1) TFAIL("a quick tap on the water was no tap (%d) - the test's spot is not open water", T.tap_count);
@@ -682,14 +697,14 @@ static const int FIRM_HOLDS[5] = { 100, 300, 500, 700, 900 };
 static void firm_tap_then_press(float x, float y, int hold) { tap(x, y, 90, FIRM_GAP); press(x, y, hold); lift(FRAME_MS); }
 static int shop_row_under_button(float *ox, float *oy) {     /* a shop row whose band stands under the one-button modal's UNLOCK */
     const int bx = SHP_MODAL_X + (SHP_MODAL_W - MSP_HOW_W) / 2, by = SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H;
-    const float x = PAGE_X + bx + MSP_HOW_W / 2.0f;
+    const float x = PAGE_FX(bx + MSP_HOW_W / 2.0f);
     for (int j = SHP_PER_PAGE - 1; j >= 0; j--) { const int top = SHP_ROW_Y0 + j * SHP_ROW_DY;
         for (int yy = top - 8; yy < top + SHP_ROW_DY - 8; yy++) {
             if (!(yy >= by - MSP_HOW_SLOP_UP && yy < by + MSP_HOW_H + MSP_HOW_SLOP_DN)) continue;
             bool on_foot = false;
             for (int b = 0; b < SHF_N && !on_foot; b++) { int fx, fy; render_shop_foot_box(b, &fx, &fy);
-                on_foot = !(x - PAGE_X < fx - 6 || x - PAGE_X >= fx + MSP_FOOT_SQ + 6 || yy < fy - 8 || yy >= fy + MSP_FOOT_SQ + 12); }
-            if (!on_foot && aim(x, (float)(PAGE_Y + yy + 4))) { *ox = x; *oy = (float)(PAGE_Y + yy + 4); return j; }
+                on_foot = !(FX_PAGE(x) < fx - 6 || FX_PAGE(x) >= fx + MSP_FOOT_SQ + 6 || yy < fy - 8 || yy >= fy + MSP_FOOT_SQ + 12); }
+            if (!on_foot && aim(x, (float)PAGE_FY(yy + 4))) { *ox = x; *oy = (float)PAGE_FY(yy + 4); return j; }
         } }
     return -1;
 }
@@ -732,10 +747,10 @@ static void firm_seconds(void) {
         bare(); T.sd_unlocks = SD_ITEMS[pi].bit; T.sd_shelved = SD_ITEMS[pi].bit; touch_port_show_shop(true); hold_for(200);
         int a, pg, r0; render_shop_leave();
         if (!render_shop_find(&T, pi, &a, &pg, &r0)) { TFAIL("firm second press: the shelved %s is not in the shop", SD_ITEMS[pi].name); break; }
-        { int fx, fy; render_shop_foot_box(SHF_DECOR + a, &fx, &fy); render_shop_tap(&T, PAGE_X + fx + MSP_FOOT_SQ / 2.0f, PAGE_Y + fy + MSP_FOOT_SQ / 2.0f); }
-        for (int k = 0; k < pg; k++) render_shop_tap(&T, PAGE_X + SHP_ARROW_X1 + SHP_ARROW_W / 2.0f, PAGE_Y + SHP_ROW_Y0 - 20.0f);
-        const float x0 = PAGE_X + 100.0f, y0 = PAGE_Y + SHP_ROW_Y0 + r0 * SHP_ROW_DY + 20.0f;   /* the row's name: its modal */
-        const float sx = PAGE_X + SHP_TWO_X1 + MSP_HOW_W / 2.0f, sy = PAGE_Y + SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H / 2.0f;
+        { int fx, fy; render_shop_foot_box(SHF_DECOR + a, &fx, &fy); render_shop_tap(&T, PAGE_FX(fx + MSP_FOOT_SQ / 2.0f), PAGE_FY(fy + MSP_FOOT_SQ / 2.0f)); }
+        for (int k = 0; k < pg; k++) render_shop_tap(&T, PAGE_FX(SHP_ARROW_X1 + SHP_ARROW_W / 2.0f), PAGE_FY(SHP_ROW_Y0 - 20.0f));
+        const float x0 = PAGE_FX(100.0f), y0 = PAGE_FY(SHP_ROW_Y0 + r0 * SHP_ROW_DY + 20.0f);   /* the row's name: its modal */
+        const float sx = PAGE_FX(SHP_TWO_X1 + MSP_HOW_W / 2.0f), sy = PAGE_FY(SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H / 2.0f);
         tap(x0, y0, 90, 700);
         firm_tap_then_press(sx, sy, FIRM_HOLDS[h]);
         int r = touch_port_take_shop();
@@ -854,7 +869,7 @@ static void page_doubles(void) {
     for (int mashed = 0; mashed < 1; mashed++) {   /* (doubles only since THE TOUCH RULE) */
         const char *how = mashed ? "mashed (4 taps)" : "double tapped";
         /* the shop's X -> the keeper page */
-        render_shop_foot_box(SHF_CLOSE, &bx, &by); x = PAGE_X + bx + MSP_FOOT_SQ / 2.0f; y = PAGE_Y + by + MSP_FOOT_SQ / 2.0f;
+        render_shop_foot_box(SHF_CLOSE, &bx, &by); x = PAGE_FX(bx + MSP_FOOT_SQ / 2.0f); y = PAGE_FY(by + MSP_FOOT_SQ / 2.0f);
         bare(); touch_port_show_shop(true); hold_for(800);
         if (mashed) mash(x, y, 4); else dbl(x, y);
         if (touch_port_shop() || !touch_port_milestones()) TFAIL("a page doubled: the shop's X %s - shop %d, keeper page %d (the keeper page shut too)", how, touch_port_shop(), touch_port_milestones());
@@ -862,14 +877,14 @@ static void page_doubles(void) {
         if (touch_port_milestones()) TFAIL("a page doubled: the keeper page's CLOSE 0.7 s after the shop's X %s did not close it", how);
         n++;
         /* the collection's CLOSE -> the keeper page */
-        x = PAGE_X + MSP_CLOSE_X + MSP_CLOSE_W / 2.0f; y = PAGE_Y + MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f;
+        x = PAGE_FX(MSP_CLOSE_X + MSP_CLOSE_W / 2.0f); y = PAGE_FY(MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f);
         bare(); touch_port_show_collection(true); hold_for(800);
         if (mashed) mash(x, y, 4); else dbl(x, y);
         if (touch_port_collection() || !touch_port_milestones()) TFAIL("a page doubled: the collection's CLOSE %s - collection %d, keeper page %d", how, touch_port_collection(), touch_port_milestones());
         n++;
         /* VISITORS -> the collection (its middle, its right side) */
         for (int part = 0; part < 2; part++) {
-            render_ms_foot_box(MSF_VIS, &bx, &by); x = PAGE_X + bx + (part ? MSP_FOOT_SQ - 6 : MSP_FOOT_SQ / 2.0f); y = PAGE_Y + by + MSP_FOOT_SQ / 2.0f;
+            render_ms_foot_box(MSF_VIS, &bx, &by); x = PAGE_FX(bx + (part ? MSP_FOOT_SQ - 6 : MSP_FOOT_SQ / 2.0f)); y = PAGE_FY(by + MSP_FOOT_SQ / 2.0f);
             bare(); touch_port_show_milestones(true); hold_for(800);
             if (mashed) mash(x, y, 4); else dbl(x, y);
             if (!touch_port_collection()) TFAIL("a page doubled: VISITORS (%s) %s - the collection opened and shut again (keeper page %d)", part ? "right side" : "middle", how, touch_port_milestones());
@@ -1068,7 +1083,7 @@ static void reach_check(const char *name, hit_fn f, int arg) {
 static int hp_ms(float x, float y, int want) { int r = render_milestones_tap(&T, x, y); render_milestones_leave(); return r == want; }
 static int g_tcol;
 static int hp_trow(float x, float y, int col) {     /* the TANK row: the modal a tap opens names badge k? compare via ms state is private: use the column math */
-    (void)col; float px = x - PAGE_X, py = y - PAGE_Y;
+    (void)col; float px = FX_PAGE(x), py = FY_PAGE(y);
     if (!(py >= MSP_TANK_Y - 6 && py < MSP_FOOT_HIT_Y)) return 0;
     if (px >= MSP_TPG_HIT_X) return g_tcol == 7;
     const int bx0 = MSP_TBADGE_X0;
@@ -1093,14 +1108,14 @@ static int hp_lib(float x, float y, int want) { return render_library_tap(x, y, 
 static int hp_rm(float x, float y, int want) { return render_shelf_remove_hit(x, y) == want; }
 static int hp_key(float x, float y, int want) { return render_shelf_rename_hit(x, y) == want; }
 static int hp_sfoot(float x, float y, int b) {
-    int bx, by; render_shop_foot_box(b, &bx, &by); x -= PAGE_X; y -= PAGE_Y;
+    int bx, by; render_shop_foot_box(b, &bx, &by); x = FX_PAGE(x); y = FY_PAGE(y);
     return !(x < bx - 6 || x >= bx + MSP_FOOT_SQ + 6 || y < by - 8 || y >= by + MSP_FOOT_SQ + 12);
 }
-static int hp_srow(float x, float y, int j) { x -= PAGE_X; y -= PAGE_Y; int top = SHP_ROW_Y0 + j * SHP_ROW_DY;
-    for (int b = 0; b < SHF_N; b++) if (hp_sfoot(x + PAGE_X, y + PAGE_Y, b)) return 0;
+static int hp_srow(float x, float y, int j) { const float fx = x, fy = y; x = FX_PAGE(x); y = FY_PAGE(y); int top = SHP_ROW_Y0 + j * SHP_ROW_DY;
+    for (int b = 0; b < SHF_N; b++) if (hp_sfoot(fx, fy, b)) return 0;
     return x >= 20 && y >= top - 8 && y < top + SHP_ROW_DY - 8; }
 static int hp_smod(float x, float y, int which) {   /* 0 = the one button, 1 = left of two, 2 = right of two, 3..5 = a fry box */
-    x -= PAGE_X; y -= PAGE_Y;
+    x = FX_PAGE(x); y = FY_PAGE(y);
     const int bx = SHP_MODAL_X + (SHP_MODAL_W - MSP_HOW_W) / 2, by = SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H;
     bool row = y >= by - MSP_HOW_SLOP_UP && y < by + MSP_HOW_H + MSP_HOW_SLOP_DN;
     if (which == 0) return row && x >= bx - MSP_HOW_SLOP_X && x < bx + MSP_HOW_W + MSP_HOW_SLOP_X;
@@ -1152,7 +1167,7 @@ static void doubles_map(void) {
     int n = 0, hit[16] = { 0 };
     int bx, by; render_ms_foot_box(MSF_TANKS, &bx, &by);
     for (int y = by - 4; y < by + MSP_FOOT_SQ + 4; y += 2) for (int x = bx - 4; x < bx + MSP_FOOT_SQ + 4; x += 2) {
-        int r = render_shelf_tap((float)(x + PAGE_X), (float)(y + PAGE_Y)); n++;
+        int r = render_shelf_tap((float)PAGE_FX(x), (float)PAGE_FY(y)); n++;
         hit[r >= SHELF_TAP_SLOT0 ? 10 : r]++;
     }
     printf("audit: the keeper foot's MY TANKS square, doubled -> MY TANKS's page there: none %d, CLOSE %d, LIBRARY %d, PREV %d, NEXT %d, padlock %d, a place %d (of %d)\n",
@@ -1181,7 +1196,7 @@ static void doubles_foot(void) {
         int bx, by; render_ms_foot_box(b, &bx, &by);
         int n = 0, shop[SHF_N] = { 0 }, coll_close = 0;
         for (int y = by; y < by + MSP_FOOT_SQ; y += 2) for (int x = bx; x < bx + MSP_FOOT_SQ; x += 2) {
-            float fx = (float)(x + PAGE_X), fy = (float)(y + PAGE_Y); n++;
+            float fx = (float)PAGE_FX(x), fy = (float)PAGE_FY(y); n++;
             for (int s2 = 0; s2 < SHF_N; s2++) if (hp_sfoot(fx, fy, s2)) shop[s2]++;
             if (render_collection_tap(&T, fx, fy) == COLL_TAP_CLOSE) coll_close++;
         }
@@ -1209,24 +1224,24 @@ static void doubles_foot(void) {
 static void doubles_e2e(void) {
     int bx, by; float x, y;
     /* the shop's X, double tapped (90 down / 100 up / 90 down) */
-    render_shop_foot_box(SHF_CLOSE, &bx, &by); x = PAGE_X + bx + MSP_FOOT_SQ / 2.0f; y = PAGE_Y + by + MSP_FOOT_SQ / 2.0f;
+    render_shop_foot_box(SHF_CLOSE, &bx, &by); x = PAGE_FX(bx + MSP_FOOT_SQ / 2.0f); y = PAGE_FY(by + MSP_FOOT_SQ / 2.0f);
     bare(); touch_port_show_shop(true); hold_for(800); tap(x, y, 90, 100); tap(x, y, 90, FRAME_MS);
     printf("audit: e2e - the shop's X double tapped: shop %d, keeper page %d\n", touch_port_shop(), touch_port_milestones());
     if (!touch_port_shop() && !touch_port_milestones()) AUD("e2e: a double tap on the shop's X closed the shop AND the keeper page (the tank is back)");
     /* the collection's CLOSE */
-    x = PAGE_X + MSP_CLOSE_X + MSP_CLOSE_W / 2.0f; y = PAGE_Y + MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f;
+    x = PAGE_FX(MSP_CLOSE_X + MSP_CLOSE_W / 2.0f); y = PAGE_FY(MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f);
     bare(); touch_port_show_collection(true); hold_for(800); tap(x, y, 90, 100); tap(x, y, 90, FRAME_MS);
     printf("audit: e2e - the collection's CLOSE double tapped: collection %d, keeper page %d\n", touch_port_collection(), touch_port_milestones());
     if (!touch_port_collection() && !touch_port_milestones()) AUD("e2e: a double tap on the collection's CLOSE closed it AND the keeper page");
     /* the keeper page's VISITORS, double tapped at its square's middle and its right part */
     for (int part = 0; part < 2; part++) {
-        render_ms_foot_box(MSF_VIS, &bx, &by); x = PAGE_X + bx + (part ? MSP_FOOT_SQ - 6 : MSP_FOOT_SQ / 2.0f); y = PAGE_Y + by + MSP_FOOT_SQ / 2.0f;
+        render_ms_foot_box(MSF_VIS, &bx, &by); x = PAGE_FX(bx + (part ? MSP_FOOT_SQ - 6 : MSP_FOOT_SQ / 2.0f)); y = PAGE_FY(by + MSP_FOOT_SQ / 2.0f);
         bare(); touch_port_show_milestones(true); hold_for(800); tap(x, y, 90, 100); tap(x, y, 90, FRAME_MS);
         printf("audit: e2e - the keeper page's VISITORS (%s) double tapped: collection %d, keeper page %d\n", part ? "right side" : "middle", touch_port_collection(), touch_port_milestones());
         if (!touch_port_collection()) AUD("e2e: a double tap on VISITORS (%s of its square) opened the collection and closed it again", part ? "the right side" : "the middle");
     }
     /* the keeper page's CLOSE mashed 3 times: taps 2 and 3 on the bare tank - the light */
-    render_ms_foot_box(MSF_CLOSE, &bx, &by); x = PAGE_X + bx + MSP_FOOT_SQ / 2.0f; y = PAGE_Y + by + MSP_FOOT_SQ / 2.0f;
+    render_ms_foot_box(MSF_CLOSE, &bx, &by); x = PAGE_FX(bx + MSP_FOOT_SQ / 2.0f); y = PAGE_FY(by + MSP_FOOT_SQ / 2.0f);
     bare(); T.light_auto = false; bool was = T.light_manual_off; touch_port_show_milestones(true); hold_for(800); T.tap_count = 0;
     tap(x, y, 90, 100); tap(x, y, 90, 100); tap(x, y, 90, 100);
     int tc = T.tap_count; hold_for(1500);
@@ -1256,9 +1271,9 @@ static void firm_second(void) {
     for (int hold = 100; hold <= 900; hold += 200) {
         bare(); T.sd_balance = 100000; T.sd_unlocks = 0; touch_port_show_shop(true); hold_for(800);
         const int bx = SHP_MODAL_X + (SHP_MODAL_W - MSP_HOW_W) / 2, by = SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H;
-        float x = PAGE_X + bx + MSP_HOW_W / 2.0f, y = -1;
+        float x = PAGE_FX(bx + MSP_HOW_W / 2.0f), y = -1;
         for (int j = SHP_PER_PAGE - 1; j >= 0 && y < 0; j--) { int top = SHP_ROW_Y0 + j * SHP_ROW_DY;
-            for (int yy = top - 8; yy < top + SHP_ROW_DY - 8; yy++) if (yy >= by - MSP_HOW_SLOP_UP && yy < by + MSP_HOW_H + MSP_HOW_SLOP_DN && !hp_sfoot(x, (float)(yy + PAGE_Y), SHF_EARN) && !hp_sfoot(x, (float)(yy + PAGE_Y), SHF_CRIT) && !hp_sfoot(x, (float)(yy + PAGE_Y), SHF_DECOR)) { y = (float)(PAGE_Y + yy + 4); break; } }
+            for (int yy = top - 8; yy < top + SHP_ROW_DY - 8; yy++) if (yy >= by - MSP_HOW_SLOP_UP && yy < by + MSP_HOW_H + MSP_HOW_SLOP_DN && !hp_sfoot(x, (float)PAGE_FY(yy), SHF_EARN) && !hp_sfoot(x, (float)PAGE_FY(yy), SHF_CRIT) && !hp_sfoot(x, (float)PAGE_FY(yy), SHF_DECOR)) { y = (float)PAGE_FY(yy + 4); break; } }
         if (y < 0) { printf("audit: firm second press - no shop row under the modal's button\n"); break; }
         tap(x, y, 90, 100);
         press(x, y, hold); lift(FRAME_MS);
@@ -1621,7 +1636,7 @@ static void r2_shelf_exits(void) {
         int bx, by; render_ms_foot_box(MSF_CLOSE, &bx, &by);
         printf("r2: (after it: shop %d, collection %d, settings %d)\n", touch_port_shop(), touch_port_collection(), touch_port_settings());
         printf("r2: MY TANKS CLOSE (from the keeper page) doubled at %.0f,%.0f: first tap %d, keeper page after the second %d (its CLOSE box x %d..%d y %d..)\n",
-               x, y, t1, touch_port_milestones(), PAGE_X + bx, PAGE_X + bx + MSP_FOOT_SQ, PAGE_Y + MSP_FOOT_HIT_Y);
+               x, y, t1, touch_port_milestones(), PAGE_FX(bx), PAGE_FX(bx + MSP_FOOT_SQ), PAGE_FY(MSP_FOOT_HIT_Y));
         if (t1 && !touch_port_milestones()) R2("a doubled MY TANKS CLOSE (opened from the keeper foot) also shut the keeper page it went back to - no page wait when main brings it back (TCH-4 sibling)");
         /* THE LIBRARY's BACK stands where CLOSE does (render_library_tap): its double reaches MY TANKS's CLOSE */
         bare(); touch_port_show_shelf(true); hold_for(800);
@@ -1744,7 +1759,7 @@ static void r2_card_doubled(void) {
     if (shop_row_under_button(&rx, &ry) >= 0) {
         bare(); T.sd_balance = 100000; T.sd_unlocks = 0; T.sd_shelved = 0; touch_port_show_shop(true); hold_for(800);
         tap(rx, ry, 90, 1000);                                /* the row: its modal, UNLOCK where the row was */
-        const float ux = PAGE_X + SHP_MODAL_X + (SHP_MODAL_W - MSP_HOW_W) / 2 + MSP_HOW_W / 2.0f, uy = PAGE_Y + SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H / 2.0f;
+        const float ux = PAGE_FX(SHP_MODAL_X + (SHP_MODAL_W - MSP_HOW_W) / 2 + MSP_HOW_W / 2.0f), uy = PAGE_FY(SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H / 2.0f);
         bool near = r2_near_gift(ux, uy, MSP_HOW_W / 2, MSP_HOW_H / 2, NULL, &x, &y);
         printf("r2: the shop modal's UNLOCK at %.0f,%.0f; a gift card button over it: %s\n", ux, uy, near ? (render_gift_hit(x, y) == GIFT_HIT_ACCEPT ? "ACCEPT" : "NO THANKS") : "none");
         if (near) {
@@ -1869,7 +1884,7 @@ static void r2g_card_doubled(void) {
     if (shop_row_under_button(&rx, &ry) >= 0) {
         bare(); T.sd_balance = 100000; T.sd_unlocks = 0; T.sd_shelved = 0; touch_port_show_shop(true); hold_for(800);
         tap(rx, ry, 90, 1000);
-        const float ux = PAGE_X + SHP_MODAL_X + (SHP_MODAL_W - MSP_HOW_W) / 2 + MSP_HOW_W / 2.0f, uy = PAGE_Y + SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H / 2.0f;
+        const float ux = PAGE_FX(SHP_MODAL_X + (SHP_MODAL_W - MSP_HOW_W) / 2 + MSP_HOW_W / 2.0f), uy = PAGE_FY(SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H / 2.0f);
         if (r2_near_gift(ux, uy, MSP_HOW_W / 2, MSP_HOW_H / 2, NULL, &x, &y)) {
             touch_port_take_shop(); r2_card_on(T.clock - 5); r2_card_double(x, y); int r = touch_port_take_shop();
             if (r >= SHOP_TAP_BUY && r < SHOP_TAP_MOVE) TFAIL("R2T-1: the gift card's answer doubled BOUGHT the shop piece whose modal stood under it");
@@ -2400,10 +2415,10 @@ static void sdg_dial_port(void) {
     setup_begin_sdgift(&T, LINK_RIGHT, 2); hold_for(200);
     if (!find_hit_aim(hit_setup, SETUP_HIT_NEXT, &nx, &ny)) { TFAIL("sd dial: NEXT cannot be reached"); setup_cancel(&T); g_link_page = false; bare(); return; }
     int down0 = g_link_down; g_sd_sent = 0; g_sd_edge = -1;
-    float dx = PAGE_X + (PAGE_W - (2 * SETUP_SLOT_PX + SETUP_SLOT_W)) / 2 + 2 * SETUP_SLOT_PX + SETUP_SLOT_W / 2.0f, dy = PAGE_Y + SETUP_SLOT_Y + SETUP_SLOT_H / 2.0f;
+    float dx = PAGE_FX((PAGE_W - (2 * SETUP_SLOT_PX + SETUP_SLOT_W)) / 2 + 2 * SETUP_SLOT_PX + SETUP_SLOT_W / 2.0f), dy = PAGE_FY(SETUP_SLOT_Y + SETUP_SLOT_H / 2.0f);
     if (!aim(dx, dy)) { TFAIL("sd dial: the ones digit cannot be reached"); setup_cancel(&T); g_link_page = false; bare(); return; }
     g_down = true; hold_for(80);
-    for (int k = 1; k <= 4; k++) { aim(dx, dy - k * (SETUP_SPIN_PX + 2)); hold_for(FRAME_MS); }
+    for (int k = 1; k <= 4; k++) { aim(dx, dy - k * PAGE_K * (SETUP_SPIN_PX + 2)); hold_for(FRAME_MS); }   /* (the spin is page px: PAGE_K frame px each) */
     lift(200);
     if (setup_sdgift_amount() != 4) TFAIL("sd dial: a drag up four steps gave %d", setup_sdgift_amount());
     tap(nx, ny, 90, 60); tap(nx, ny, 90, 200);                /* NEXT, doubled */
@@ -2477,11 +2492,11 @@ static void r2g_rule_rows(void) {
     int bx, by; render_shop_foot_box(SHF_CLOSE, &bx, &by);
     bare(); touch_port_show_milestones(true); hold_for(400); foot(MSF_UPG, &x, &y); tap(x, y, 90, FRAME_MS);
     if (!touch_port_shop()) TFAIL("rule rows: UPGRADES did not open the shop");
-    else { rule_tap(PAGE_X + bx + MSP_FOOT_SQ / 2.0f, PAGE_Y + by + MSP_FOOT_SQ / 2.0f, RULE_UP);
+    else { rule_tap(PAGE_FX(bx + MSP_FOOT_SQ / 2.0f), PAGE_FY(by + MSP_FOOT_SQ / 2.0f), RULE_UP);
            if (touch_port_shop() || !touch_port_milestones()) TFAIL("rule rows: the shop's X 0.3 s after the shop opened did not close it"); else n++; }
     bare(); touch_port_show_milestones(true); hold_for(400); foot(MSF_VIS, &x, &y); tap(x, y, 90, FRAME_MS);
     if (!touch_port_collection()) TFAIL("rule rows: VISITORS did not open the collection");
-    else { rule_tap(PAGE_X + MSP_CLOSE_X + MSP_CLOSE_W / 2.0f, PAGE_Y + MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f, RULE_UP);
+    else { rule_tap(PAGE_FX(MSP_CLOSE_X + MSP_CLOSE_W / 2.0f), PAGE_FY(MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f), RULE_UP);
            if (touch_port_collection() || !touch_port_milestones()) TFAIL("rule rows: the collection's CLOSE 0.3 s after it opened did not close it"); else n++; }
     float cx, cy, ux, uy;
     if (find_hit(hit_settings, SET_TAP_CLOSE, &cx, &cy) && find_hit(hit_updates, UPD_TAP_CLOSE, &ux, &uy)) {
@@ -2515,7 +2530,7 @@ static void r2g_rule_rows(void) {
     bare(); T.sd_balance = 100000; T.sd_unlocks = 0; T.sd_shelved = 0; touch_port_show_shop(true); hold_for(200); render_shop_leave();
     if (shop_row_under_button(&rx, &ry) >= 0) {
         bare(); T.sd_balance = 100000; T.sd_unlocks = 0; touch_port_show_shop(true); hold_for(400);
-        const float ux2 = PAGE_X + SHP_MODAL_X + (SHP_MODAL_W - MSP_HOW_W) / 2 + MSP_HOW_W / 2.0f, uy2 = PAGE_Y + SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H / 2.0f;
+        const float ux2 = PAGE_FX(SHP_MODAL_X + (SHP_MODAL_W - MSP_HOW_W) / 2 + MSP_HOW_W / 2.0f), uy2 = PAGE_FY(SHP_MODAL_Y + SHP_MODAL_H - 12 - MSP_HOW_H / 2.0f);
         tap(rx, ry, 90, FRAME_MS); touch_port_take_shop(); rule_tap(ux2, uy2, RULE_UP);
         int r = touch_port_take_shop();
         if (!(r >= SHOP_TAP_BUY && r < SHOP_TAP_MOVE)) TFAIL("rule rows: UNLOCK 0.3 s after the row opened its modal did not buy (%d)", r); else n++;
@@ -2562,7 +2577,7 @@ static void r2g_rule_rows(void) {
 static void r2g_rule_burst(void) {
     int n = 0; float x, y; int bx, by;
     render_shop_foot_box(SHF_CLOSE, &bx, &by);
-    const float xx = PAGE_X + bx + MSP_FOOT_SQ / 2.0f, xy = PAGE_Y + by + MSP_FOOT_SQ / 2.0f;
+    const float xx = PAGE_FX(bx + MSP_FOOT_SQ / 2.0f), xy = PAGE_FY(by + MSP_FOOT_SQ / 2.0f);
     bare(); touch_port_show_milestones(true); hold_for(400); foot(MSF_UPG, &x, &y);
     tap(x, y, 90, FRAME_MS);                                 /* the shop opens at this lift */
     tap(xx, xy, 40, 160);                                    /* about 0.05 s on: spent (the X, as a double's stray half) */
@@ -2594,7 +2609,7 @@ static void r2g_fast_keeper(void) {
     bare(); touch_port_show_milestones(true); hold_for(400);
     #define FK(cond, what) do { n++; if (!(cond)) { TFAIL("fast keeper: %s (tap %d, every 0.35 s)", what, n); bad++; } } while (0)
     foot(MSF_UPG, &x, &y); tap(x, y, 90, UP); FK(touch_port_shop(), "UPGRADES did not open the shop");
-    render_shop_foot_box(SHF_CLOSE, &bx, &by); tap(PAGE_X + bx + MSP_FOOT_SQ / 2.0f, PAGE_Y + by + MSP_FOOT_SQ / 2.0f, 90, UP);
+    render_shop_foot_box(SHF_CLOSE, &bx, &by); tap(PAGE_FX(bx + MSP_FOOT_SQ / 2.0f), PAGE_FY(by + MSP_FOOT_SQ / 2.0f), 90, UP);
     FK(!touch_port_shop() && touch_port_milestones(), "the shop's X did not close the shop");
     if (has_set) {
         foot(MSF_SET, &x, &y); tap(x, y, 90, UP); FK(touch_port_settings(), "the cog did not open settings");
@@ -2602,7 +2617,7 @@ static void r2g_fast_keeper(void) {
         tap(cx, cy, 90, UP); FK(!touch_port_settings() && touch_port_milestones(), "settings' CLOSE did not close settings");
     }
     foot(MSF_VIS, &x, &y); tap(x, y, 90, UP); FK(touch_port_collection(), "VISITORS did not open the collection");
-    tap(PAGE_X + MSP_CLOSE_X + MSP_CLOSE_W / 2.0f, PAGE_Y + MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f, 90, UP);
+    tap(PAGE_FX(MSP_CLOSE_X + MSP_CLOSE_W / 2.0f), PAGE_FY(MSP_CLOSE_Y + MSP_CLOSE_H / 2.0f), 90, UP);
     FK(!touch_port_collection() && touch_port_milestones(), "the collection's CLOSE did not close it");
     if (has_shelf) {
         foot(MSF_TANKS, &x, &y); tap(x, y, 90, FRAME_MS);
@@ -2970,6 +2985,8 @@ static void keeper_panel(const keeper_t *k, int q, float tx, float ty, int *px, 
     int irx = (int)lroundf(rx), iry = (int)lroundf(ry);
 #if defined(TANK_WATCH) || defined(TANK_SQUARE) || defined(TANK_ROUND)
     *px = irx; *py = iry;
+#elif defined(TANK_CYD)                                 /* map_touch's rx = TANK_W - 1 - fx, ry = TANK_H - 1 - fy (the panel px is the frame px), undone */
+    *px = TANK_W - 1 - irx; *py = TANK_H - 1 - iry;
 #else
     *px = iry; *py = TANK_W - 1 - irx;                      /* map_touch's rx = TANK_W - 1 - fy, ry = fx, undone */
 #endif
@@ -3096,12 +3113,15 @@ static void calib_guided(void) {
  *     a press it kept never restarts the hold; past the hold a tap picks the next letter at once.
  *  D. reach < the row: a tap squarely on the next letter picks it at once, one at the edge between them stays; hold 0 = none. */
 static int hit_setup_w(float x, float y, int want) { return setup_hit(x, y) == want; }
-static float slot_cx(int i) { return PAGE_X + SETUP_SLOT_X + i * SETUP_SLOT_PX + SETUP_SLOT_W * 0.5f; }
-static float slot_cy(void) { return PAGE_Y + SETUP_SLOT_Y + SETUP_SLOT_H * 0.5f; }
+static float slot_cx(int i) { return PAGE_FX(SETUP_SLOT_X + i * SETUP_SLOT_PX + SETUP_SLOT_W * 0.5f); }
+static float slot_cy(void) { return PAGE_FY(SETUP_SLOT_Y + SETUP_SLOT_H * 0.5f); }
+/* the wheel's thresholds (SETUP_SPIN_PX, the slop, the reach) are PAGE px; a drag is drawn in frame px: PF(p) is p page px
+   as frame px (PAGE_K; 1 on every board but the CYD, where a page px is 0.652 frame px) */
+#define PF(p) ((float)(p) * PAGE_K)
 static bool wdrag(float x, float y0, float y1, int frames, int up_ms) {   /* a finger down at (x, y0), drawn to y1 over `frames`, lifted */
-    if (!aim(x, y0)) return false;
+    if (!aim(x, y0)) { printf("      (wdrag: the start %.1f,%.1f is past the panel's reach)\n", x, y0); return false; }
     g_down = true; frame();
-    for (int k = 1; k <= frames; k++) { if (!aim(x, y0 + (y1 - y0) * k / frames)) return false; frame(); }
+    for (int k = 1; k <= frames; k++) { float yk = y0 + (y1 - y0) * k / frames; if (!aim(x, yk)) { printf("      (wdrag: frame %d at %.1f,%.1f is past the panel's reach)\n", k, x, yk); return false; } frame(); }
     lift(up_ms); return true;
 }
 static bool wtap(float x, float y, int down_ms, int up_ms) {   /* a tap that must land (a point the panel cannot read = a FAIL, never a silent pass) */
@@ -3120,19 +3140,19 @@ static void wheel_feel_port(void) {
     const float sp = SETUP_SPIN_PX, x0 = slot_cx(0), cy = slot_cy();
     #define NAME_IS(want, ...) do { if (strcmp(T.fish[0].name, (want))) { TFAIL(__VA_ARGS__); printf("      (the name is '%s', want '%s')\n", T.fish[0].name, (want)); } else n++; } while (0)
     /* A. from the up chevron, three steps up: aaa -> daa (the lift no fourth) */
-    if (!wdrag(x0, uy, uy - 3 * sp - 4, 12, 700)) TFAIL("wheel: the up chevron's drag off the glass");
+    if (!wdrag(x0, uy, uy - PF(3 * sp + 4), 12, 700)) TFAIL("wheel: the up chevron's drag off the glass");
     NAME_IS("daa", "wheel A: a drag begun on the UP chevron did not turn the letter three steps");
-    if (!wdrag(x0, dy, dy + 2 * sp + 4, 10, 700)) TFAIL("wheel: the down chevron's drag off the glass");   /* from the down chevron, two down: baa */
+    if (!wdrag(x0, dy, dy + PF(2 * sp + 4), 10, 700)) TFAIL("wheel: the down chevron's drag off the glass");   /* from the down chevron, two down: baa */
     NAME_IS("baa", "wheel A: a drag begun on the DOWN chevron did not turn the letter two steps");
     {   /* just under the letter: 8 px below the row's band (the down chevron's band, a tap there would step DOWN) */
-        const float yu = PAGE_Y + SETUP_SLOT_Y + SETUP_SLOT_H + 20 + 8;
+        const float yu = PAGE_FY(SETUP_SLOT_Y + SETUP_SLOT_H + 20 + 8);
         if (setup_hit(x0, yu) != SETUP_HIT_DOWN) TFAIL("wheel: 8 px under the row's band is not the down chevron's (%d)", setup_hit(x0, yu));
-        if (!wdrag(x0, yu, yu - sp - 4, 6, 700)) TFAIL("wheel: the under-letter drag off the glass");
+        if (!wdrag(x0, yu, yu - PF(sp + 4), 6, 700)) TFAIL("wheel: the under-letter drag off the glass");
     }
     NAME_IS("caa", "wheel A: a drag begun just under the letter did not turn it a step up");
-    if (!wdrag(x0, uy, uy + 16, 4, 700)) TFAIL("wheel: the short drag off the glass");                    /* past the slop, short of a step */
+    if (!wdrag(x0, uy, uy + PF(16), 4, 700)) TFAIL("wheel: the short drag off the glass");                    /* past the slop, short of a step */
     NAME_IS("caa", "wheel A: a 16 px drag on the UP chevron acted (a tap or a step)");
-    if (!wdrag(x0, uy, uy - 6, 2, 700)) TFAIL("wheel: the rolled tap off the glass");                     /* a tap that rolled 6 px */
+    if (!wdrag(x0, uy, uy - PF(6), 2, 700)) TFAIL("wheel: the rolled tap off the glass");                     /* a tap that rolled 6 px */
     NAME_IS("daa", "wheel A: a tap on UP that rolled 6 px did not step once");
     if (setup_slot() != 0) TFAIL("wheel A: the focus moved to %d", setup_slot());
     /* B + C: a change, then at once the next letter tapped: kept on slot 0; the focused letter's chevron and drag at once */
@@ -3146,7 +3166,7 @@ static void wheel_feel_port(void) {
         if (!aim(slot_cx(1), cy)) TFAIL("wheel: slot 1 off the glass");
         g_down = true; frame();
         int at = -1;
-        for (int k = 1; k <= 8 && at < 0; k++) { if (!aim(slot_cx(1), cy - k * 12.0f)) TFAIL("wheel: the drag's frame %d off the glass", k); frame(); if (T.fish[0].name[0] == 'g') at = k; }
+        for (int k = 1; k <= 8 && at < 0; k++) { if (!aim(slot_cx(1), cy - k * PF(12))) TFAIL("wheel: the drag's frame %d off the glass", k); frame(); if (T.fish[0].name[0] == 'g') at = k; }
         lift(120);
         if (at != 3) TFAIL("wheel B/C: a drag from the next letter inside the hold turned the focused letter at frame %d (want 3: 36 px, the step's own frame)", at); else n++;
         NAME_IS("gaa", "wheel C: the drag from the next letter inside the hold did not turn the focused one (or turned the next)");
@@ -3165,7 +3185,7 @@ static void wheel_feel_port(void) {
     /* D: reach 12 - squarely on the next letter picks it at once; 6 px past the edge between them stays */
     setup_wheel_tune(-1, 12, -1);
     wtap(ux, uy, 90, 120);                                                                        /* h -> i */
-    wtap(x0 + SETUP_SLOT_PX * 0.5f + 6, cy, 90, 120);
+    wtap(slot_cx(0) + PF(SETUP_SLOT_PX * 0.5f + 6), cy, 90, 120);
     if (setup_slot() != 0) TFAIL("wheel D: reach 12, a tap 6 px past the edge moved the focus to %d", setup_slot()); else n++;
     wtap(slot_cx(1), cy, 90, 120);
     if (setup_slot() != 1) TFAIL("wheel D: reach 12, a tap squarely on the next letter inside the hold left the focus on %d", setup_slot()); else n++;
@@ -3176,7 +3196,7 @@ static void wheel_feel_port(void) {
     NAME_IS("iba", "wheel D: the name after the reach / hold cases");
     /* A again, far along the row: a drag begun above a letter past the chevrons' reach picks that letter and turns it */
     setup_wheel_tune(500, 999, -1); hold_for(700);
-    if (!wdrag(slot_cx(3), uy, uy - sp - 4, 6, 700)) TFAIL("wheel: the far column's drag off the glass");
+    if (!wdrag(slot_cx(3), uy, uy - PF(sp + 4), 6, 700)) TFAIL("wheel: the far column's drag off the glass");
     if (setup_slot() != 3) TFAIL("wheel A: a drag above the fourth letter (past the chevrons) left the focus on %d", setup_slot()); else n++;
     NAME_IS("ibaa", "wheel A: a drag above the fourth letter did not turn it");
     #undef NAME_IS
@@ -3381,8 +3401,8 @@ int selftest_back_overlap(void) {
         if (diff) BF("A: the UPDATES page's BACK and the GRAPHICS page's differ at %d px (the guard reads its footprint from the GRAPHICS page's)", diff);
     }
     int gx, gy, gw, gh; render_gfx_page_box(GFXP_BOX_BACK, &gx, &gy, &gw, &gh);
-    const float my = PAGE_Y + gy + gh / 2.0f, mx = PAGE_X + gx + gw / 2.0f;
-    const float PX[3] = { mx, PAGE_X + gx - 9.0f, PAGE_X + gx + gw + 8.0f };   /* BACK's middle, its reach's left end, its right end */
+    const float my = PAGE_FY(gy + gh / 2.0f), mx = PAGE_FX(gx + gw / 2.0f);
+    const float PX[3] = { mx, PAGE_FX(gx - 9.0f), PAGE_FX(gx + gw + 8.0f) };   /* BACK's middle, its reach's left end, its right end */
     static const char *const PN[3] = { "middle (LINK)", "left end (UPDATES)", "right end (CLOSE)" };
     static const int PW[3] = { SET_TAP_LINK, SET_TAP_UPDATES, SET_TAP_CLOSE };
     for (int k = 0; k < 3; k++) { int v; if (render_settings_tap(PX[k], my, &v) != PW[k] || render_gfx_page_tap(PX[k], my, &v) != SET_TAP_GFX_PAGE) BF("(BACK's %s is not over that button on this board)", PN[k]); }
@@ -3403,20 +3423,20 @@ int selftest_back_overlap(void) {
         FROM_UPDATES(); hold_for(260); T.autofeed_off = false;
         if (!find_hit(hit_settings, SET_TAP_FEED, &x, &y)) BF("C: (no AUTO FEED)");
         else { render_settings_box(SET_BOX_GFX, &bx, &by, &bw, &bh);   /* AUTO FEED's OFF: the second segment */
-               x = PAGE_X + SET_SEG_X + SET_SEG_DX + SET_SEG_W / 2.0f; y = PAGE_Y + SET_ROW4_Y + 4.0f;
+               x = PAGE_FX(SET_SEG_X + SET_SEG_DX + SET_SEG_W / 2.0f); y = PAGE_FY(SET_ROW4_Y + 4.0f);
                tap(x, y, 90, FRAME_MS); w = touch_port_take_setting(&v);
                if (w != SET_TAP_FEED || v != 0) BF("C: AUTO FEED OFF 0.3 s after UPDATES' BACK -> %d/%d", w, v); }
         FROM_UPDATES(); hold_for(260); touch_port_take_setting(&v);
-        tap(PAGE_X + SET_BRT_X(40), PAGE_Y + SET_ROW1_Y + 4.0f, 90, FRAME_MS); w = touch_port_take_setting(&v);
+        tap(PAGE_FX(SET_BRT_X(40)), PAGE_FY(SET_ROW1_Y + 4.0f), 90, FRAME_MS); w = touch_port_take_setting(&v);
         if (w != SET_TAP_BRIGHT) BF("C: the BRIGHTNESS slider 0.3 s after UPDATES' BACK -> %d/%d", w, v);
         FROM_UPDATES(); hold_for(260);
         render_settings_box(SET_BOX_GFX, &bx, &by, &bw, &bh);
-        tap(PAGE_X + bx + bw / 2.0f, PAGE_Y + by + bh / 2.0f, 90, FRAME_MS);
+        tap(PAGE_FX(bx + bw / 2.0f), PAGE_FY(by + bh / 2.0f), 90, FRAME_MS);
         if (!render_gfx_page()) BF("C: the GRAPHICS tile 0.3 s after UPDATES' BACK did not open its page");
         render_gfx_page_show(false);
         FROM_UPDATES(); hold_for(260);
         render_settings_box(SET_BOX_CLOSE, &bx, &by, &bw, &bh);
-        x = PAGE_X + bx + bw - 6.0f; y = PAGE_Y + by + bh / 2.0f;
+        x = PAGE_FX(bx + bw - 6.0f); y = PAGE_FY(by + bh / 2.0f);
         if (render_gfx_page_tap(x, y, &v) == SET_TAP_GFX_PAGE) BF("C: (CLOSE's right side is inside BACK's footprint)");
         tap(x, y, 90, FRAME_MS);
         if (touch_port_settings()) BF("C: CLOSE, outside BACK's footprint, 0.3 s after UPDATES' BACK did not close settings");

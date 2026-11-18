@@ -17,6 +17,7 @@ SDL_LIBS   := $(shell sdl2-config --libs)
 # ./fishsim-round, built beside the rectangle's in build-round/.
 # `make WATCH=1`: the watch's 410 x 502 portrait tank (the Waveshare 2.06) as ./fishsim-watch
 # `make SQUARE=1`: the square's 480 x 480 tank (the Waveshare 2.16) as ./fishsim-square
+# `make CYD=1`: the CYD's 320 x 240 tank (the Freenove FNK0104B, 2.8-inch LCD) as ./fishsim-cyd
 ifdef ROUND
 BUILD   := build-round
 OUT     := fishsim-round
@@ -29,6 +30,10 @@ else ifdef SQUARE
 BUILD   := build-square
 OUT     := fishsim-square
 ROUNDF  := -DTANK_SQUARE
+else ifdef CYD
+BUILD   := build-cyd
+OUT     := fishsim-cyd
+ROUNDF  := -DTANK_CYD
 else
 BUILD   := build
 OUT     := fishsim
@@ -143,8 +148,8 @@ SELFTESTS := $(filter-out --selftest-llm --selftest-model,$(SELFTESTS))
 endif
 
 # `make check` tests the rectangle; `make ROUND=1 check` / `make WATCH=1 check` /
-# `make SQUARE=1 check` the same selftests in that board's world; `make check-all`
-# all four - the gate for anything in common/ (docs/BOARDS.md)
+# `make SQUARE=1 check` / `make CYD=1 check` the same selftests in that board's world;
+# `make check-all` all five - the gate for anything in common/ (docs/BOARDS.md)
 # GRAPHICS (0.4.2): the grass loop's own tests again at LOW (one moment of HIGH's plan, still day and night) and MEDIUM (HIGH by day, a night loop by night)
 SELFTESTS_LOW := --selftest-grassloop --selftest-grassloop-through --selftest-grassloop-nomask --selftest-grassloop-shrink --selftest-grasspatch
 check: $(OUT)
@@ -182,6 +187,7 @@ check-all:
 	$(MAKE) ROUND=1 check
 	$(MAKE) WATCH=1 check
 	$(MAKE) SQUARE=1 check
+	$(MAKE) CYD=1 check
 
 check-nomodel:
 	$(MAKE) NOMODEL=1 check

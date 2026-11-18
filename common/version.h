@@ -67,6 +67,9 @@
 #elif defined(TANK_SQUARE)
 #define PT_BOARD         "square216"
 #define PT_BOARD_NAME    "ESP32-S3-Touch-AMOLED-2.16"
+#elif defined(TANK_CYD)
+#define PT_BOARD         "cyd28"
+#define PT_BOARD_NAME    "Freenove ESP32-S3 Display 2.8 (FNK0104B)"
 #else
 #define PT_BOARD         "amoled18"
 #define PT_BOARD_NAME    "ESP32-S3-Touch-AMOLED-1.8"
@@ -76,7 +79,7 @@
 static inline const char *pt_board_words(const char *id) {
     if (!id) return NULL;
     return !strcmp(id, "amoled18") ? "1.8 INCH" : !strcmp(id, "round175c") ? "1.75 ROUND" :
-           !strcmp(id, "watch206") ? "2.06 WATCH" : !strcmp(id, "square216") ? "2.16 SQUARE" : NULL;
+           !strcmp(id, "watch206") ? "2.06 WATCH" : !strcmp(id, "square216") ? "2.16 SQUARE" : !strcmp(id, "cyd28") ? "2.8 CYD" : NULL;
 }
 #define PT_BOARD_MAGIC   "PTBOARD"             /* the image's board marker begins with these 8 bytes (with the NUL) */
 #define PT_BOARD_MARKER_OFFSET 0x120           /* ... at this offset in the app image: the image header (24) + the

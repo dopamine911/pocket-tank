@@ -45,7 +45,7 @@ static const int CARD[5] = { RENDER_CARD_SNAIL, RENDER_CARD_SHRIMP, RENDER_CARD_
 static int free_bubbles_rising(const tank_t *t) { int n = 0; for (int i = 0; i < MAX_BUBBLE; i++) if (!t->bubble[i].column && t->bubble[i].vy >= 35) n++; return n; }
 static void calm_bubbles(tank_t *t) { for (int i = 0; i < MAX_BUBBLE; i++) if (!t->bubble[i].column) t->bubble[i].vy = 0; }
 /* the shop, as main.c's helpers walk it (page coordinates in, the frame's to render_shop_tap) */
-static int stap(float px, float py) { return render_shop_tap(&T, PAGE_X + px, PAGE_Y + py); }
+static int stap(float px, float py) { return render_shop_tap(&T, PAGE_FX(px), PAGE_FY(py)); }
 static int srow(int item) {
     int a, pg, r;
     if (!render_shop_find(&T, item, &a, &pg, &r)) return -1;

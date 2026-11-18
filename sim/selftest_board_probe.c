@@ -36,7 +36,7 @@ static want_t old_decide(bool expander, uint8_t es, bool rtc, bool cst) {
 
 static want_t new_decide(bool expander, uint8_t es, bool rtc, bool cst) {
     if (getenv("PT_BOARD_PROBE_OLD")) return old_decide(expander, es, rtc, cst);
-    board_chips_t c = { expander, es, false, false };
+    board_chips_t c = { expander, es, false, false, true, false, false };   /* the AMOLEDs all have the PMIC; they never ask the CYD's touch or codec */
     /* the asks as display_port_init makes them: the RTC only for a mic board, the CST92xx only for a watch candidate */
     if (board_decide(c).mic) c.rtc = rtc;
     if (board_decide(c).watch) c.cst9217 = cst;
@@ -50,6 +50,50 @@ static int same(want_t a, want_t b) {
            ((!a.id && !b.id) || (a.id && b.id && !strcmp(a.id, b.id)));
 }
 static const char *show(want_t w) { return w.id ? w.id : "(none)"; }
+
+/* the CYD's decision (2026-11-18): the chips it asks, through the same board_decide the firmware runs */
+static want_t cyd_decide(bool expander, uint8_t es, bool pmic, bool ft6336, bool es8311) {
+    board_chips_t c = { expander, es, false, false, pmic, ft6336, es8311 };
+    board_kind_t k = board_decide(c);
+    want_t w = { k.is175, k.round, k.watch, k.square, board_kind_id(k, expander) };
+    return w;
+}
+/* 4. THE CYD (Freenove ESP32-S3 Display 2.8, FNK0104B): no expander, no ES7210, no PMIC, an FT6336 at 0x38 and an ES8311 at 0x18.
+ *    The rows are its signature and the boards that share a part with it (the AMOLEDs' touch and codec, the 1.75C's PMIC-less
+ *    neighbours); every combination of answers must say cyd28 exactly when the signature holds, and nothing else. */
+static int cyd_part(void) {
+    int fail = 0, n = 0;
+    struct { const char *name; bool exp; uint8_t es; bool pmic, ft, codec; const char *want; } C[] = {
+        { "CYD (FT6336 0x38, ES8311 0x18, no PMIC)",         false, 0,    false, true,  true,  "cyd28" },
+        { "CYD, the touch not answering",                    false, 0,    false, false, true,  NULL },
+        { "CYD, the codec not answering",                    false, 0,    false, true,  false, NULL },
+        { "a PMIC board with the CYD's touch and codec",     false, 0,    true,  true,  true,  NULL },
+        { "1.8 (expander, PMIC, FT3168 0x38, ES8311)",       true,  0,    true,  true,  true,  "amoled18" },
+        { "1.8 with its expander dead (PMIC, FT3168, codec)", false, 0,   true,  true,  true,  NULL },
+        { "1.75C (ES7210 0x40, PMIC, FT, codec)",            false, 0x40, true,  true,  true,  "round175c" },
+        { "1.75 / 1.75-B (expander + ES7210 0x42)",          true,  0x42, true,  true,  true,  "round175c" },
+    };
+    for (size_t i = 0; i < sizeof C / sizeof C[0]; i++, n++) {
+        want_t got = cyd_decide(C[i].exp, C[i].es, C[i].pmic, C[i].ft, C[i].codec);
+        bool r175 = C[i].want && !strcmp(C[i].want, "round175c");   /* the expander + ES7210 row is the 1.75 / 1.75-B (is175 too) */
+        want_t want = { C[i].exp && C[i].es != 0, r175, false, false, C[i].want };
+        int ok = same(got, want);
+        printf("selftest-board-probe: %-50s -> %-10s %s\n", C[i].name, show(got), ok ? "ok" : "WRONG");
+        if (!ok) fail++;
+    }
+    static const uint8_t ES[] = { 0, 0x40, 0x42, 0x34 };
+    for (int exp = 0; exp < 2; exp++) for (size_t e = 0; e < sizeof ES; e++) for (int pmic = 0; pmic < 2; pmic++)
+    for (int ft = 0; ft < 2; ft++) for (int codec = 0; codec < 2; codec++) {
+        bool sig = !exp && !board_probe_es7210_addr_ok(ES[e]) && !pmic && ft && codec;   /* the CYD's signature, as board_decide reads it: no ES7210 in its range */
+        want_t got = cyd_decide(exp, ES[e], pmic, ft, codec);
+        bool is_cyd = got.id && !strcmp(got.id, "cyd28");
+        n++;
+        if (is_cyd != sig) { fail++; printf("selftest-board-probe: expander %d ES7210 0x%02x PMIC %d FT6336 %d ES8311 %d -> %s, the CYD signature is %d\n",
+                                            exp, ES[e], pmic, ft, codec, show(got), sig); }
+    }
+    printf("selftest-board-probe: the CYD: %d cases, its signature and nothing else reads cyd28: %s\n", n, fail ? "FAIL" : "PASS");
+    return fail;
+}
 
 int selftest_board_probe(void) {
     int fail = 0, n = 0;
@@ -93,6 +137,7 @@ int selftest_board_probe(void) {
             printf("selftest-board-probe: expander %d ES7210 0x%02x RTC %d CST %d -> %s, wanted %s\n", exp, es, rtc, cst, show(got), show(want));
         }
     }
+    fail += cyd_part();
     printf("selftest-board-probe: %d cases (%d as 0.4.1 answered, %d with the mic chip moved, %d outside its range): %s\n",
            n, same041, moved, outside, fail ? "FAIL" : "PASS");
     return fail ? 1 : 0;

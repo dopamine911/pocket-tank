@@ -51,6 +51,32 @@
  * reset never driven, and the 1.8's rail trim cut ALDO1 - a dark glass. */
 #ifndef BOARD_PINS_H
 #define BOARD_PINS_H
+#ifdef TANK_CYD
+/* ---- the 2.8 CYD: Freenove ESP32-S3 Display 2.8, FNK0104B (2026-11-18) ----
+ * An ILI9341V IPS panel over 4-wire SPI (its reset is the chip's, so no pin here), an FT6336G touch on the shared
+ * I2C bus, an ES8311 codec on I2S and a power amplifier enabled LOW on GPIO1. Sources: the vendor's TFT_eSPI setup
+ * (Libraries/FNK0104AB/TFT_eSPI_Setups: FNK0104AB_2.8_240x320_ILI9341.h), its sketches (Tutorial_With_Touch) and the
+ * community port's board_pins (lmoiseichuk/pocket-tank-cyd). Taken as the vendor wires it; not measured on a board yet. */
+#define PIN_LCD_CS        10
+#define PIN_LCD_DC        46       /* high = data, low = command */
+#define PIN_LCD_SCLK      12
+#define PIN_LCD_MOSI      11
+#define PIN_LCD_MISO      13
+#define PIN_LCD_BL        45       /* backlight, active high: LEDC PWM for brightness */
+#define PIN_I2C_SDA       16       /* shared: touch, codec, the I2C socket */
+#define PIN_I2C_SCL       15
+#define PIN_TP_RST        18       /* FT6336G reset, low = reset */
+#define I2C_ADDR_FT6336   0x38
+#define PANEL_W           240      /* native portrait; the ILI9341 scans it turned to landscape (MADCTL) */
+#define PANEL_H           320
+#define PIN_I2S_MCLK      4
+#define PIN_I2S_BCLK      5
+#define PIN_I2S_WS        7
+#define PIN_I2S_DOUT      8        /* ESP -> codec DSDIN; GPIO6 is the microphone's way back, unused */
+#define PIN_AMP_EN        1        /* the amplifier's enable: the spec's "low level enable" */
+#define AMP_EN_ON         0
+#define PIN_BAT_ADC       9        /* the cell's voltage through the board's divider (the vendor's battery sketch: x2), ADC1 channel 8 */
+#else
 #define PIN_LCD_CS        12
 #define PIN_LCD_PCLK      11
 #define PIN_LCD_DATA0     4
@@ -60,11 +86,12 @@
 #define PIN_I2C_SDA       15
 #define PIN_I2C_SCL       14
 #define PIN_TP_INT        21
+#define PANEL_W           368      /* native portrait */
+#define PANEL_H           448
+#endif
 #define I2C_ADDR_EXPANDER 0x20     /* TCA9554: bit0 LCD_RST, bit1 DSI_PWR_EN, bit2 TOUCH_RST, bit7 SD_CS */
 #define I2C_ADDR_FT3168   0x38     /* V1 touch */
 #define I2C_ADDR_CST816   0x15     /* V2 touch (probe => V2 board) */
-#define PANEL_W           368      /* native portrait */
-#define PANEL_H           448
 #define V2_PANEL_X_GAP    0x10
 
 /* ---- the 1.75C ---- */

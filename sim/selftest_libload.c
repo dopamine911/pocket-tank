@@ -325,7 +325,12 @@ int selftest_libload(void) {
     H.page = lp_alloc(sizeof(uint16_t) * NPX); g_no_mem = true;
     for (int f = 0; f < 5; f++) lp_frame(&H, fa, f * 0.04f);
     { const uint16_t *none[JELLY_THEME_N] = { NULL, NULL, NULL }; draw_page(&H, fb2, none); }
-    if (H.pics || memcmp(fa, fb2, sizeof fa)) LF("H: with no memory for the pictures the page is not the plain page (no pictures, no bubbles)");
+    if (H.pics || memcmp(fa, fb2, sizeof fa)) {
+        int n = 0, x0 = TANK_W, y0 = TANK_H, x1 = -1, y1 = -1;
+        for (int i = 0; i < NPX; i++) if (fa[i] != fb2[i]) { int x = i % TANK_W, y = i / TANK_W; n++; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        LF("H: with no memory for the pictures the page is not the plain page (no pictures, no bubbles): pictures %s, %d px differ in %d,%d..%d,%d (first: %04x, drawn plain %04x)",
+           H.pics ? "kept" : "none", n, x0, y0, x1, y1, n ? fa[y0 * TANK_W + x0] : 0, n ? fb2[y0 * TANK_W + x0] : 0);
+    }
     if (render_library_tap(tx, ty, 2) != LIB_TAP_ROW0 + 1) LF("H: the page with no pictures does not take a tap");
     H.pick = true; H.baked = false; lp_frame(&H, fa, 0);
     draw_page(&H, fb2, (const uint16_t *const[JELLY_THEME_N]){ NULL, NULL, NULL });

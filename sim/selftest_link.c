@@ -578,6 +578,13 @@ static int d_bake_lent(tank_t *t) {
     dl_allocs = dl_frees = dl_fail = 0; render_set_modal_alloc(dl_alloc, dl_free);
     DL_DRAW(lent); DL_SAME("painted into a lent bake");
     DL_DRAW(lent); DL_SAME("copied from the lent bake");
+#if PAGE_SCALED
+    /* (the CYD bakes nothing - a bake is the card painted unscaled into a sprite, render.c THE CARDS BAKED: off on a scaled
+       page - so the claim there is the other one: never a take, never held, and the card drawn whole, as above, every frame) */
+    if (dl_allocs || render_modal_bakes_held(NULL)) { printf("FAIL: doors: 7k lent: the scaled page took %d bakes (want none)\n", dl_allocs); bad++; }
+    render_set_modal_alloc(NULL, NULL); render_set_modal_cache(NULL, NULL);
+    return bad;
+#endif
     if (dl_allocs != 1 || !render_modal_bakes_held(&held) || held != 1) { printf("FAIL: doors: 7k lent: %d takes, %d held after two frames (want 1, 1)\n", dl_allocs, held); bad++; }
     for (int q = 0; q < 70; q++) render_frame_begin();                         /* closed under 3 s: still held */
     if (dl_frees) { printf("FAIL: doors: 7k lent: given back after 70 frames (want held to 75)\n"); bad++; }
@@ -1148,8 +1155,9 @@ int selftest_doors(void) {
         DCHECK(GA.ask.on && GA.ask.uid == gu, "7c: A was not asked");
         render_tank(&DA, pfb, TANK_W); render_gift(&DA, pfb, TANK_W); D_SHOT(&DA, "4_gift");
         DCHECK(!d_bake_diff(&DA, true), "7c: the gift card from its bake is not the card drawn whole");
-        int ax = (TANK_W - GIFT_CARD_W) / 2 + 12 + GIFT_BTN_W / 2, ay = (TANK_H - GIFT_CARD_H) / 2 + GIFT_BTN_Y + GIFT_BTN_H / 2;
-        int nx = (TANK_W + GIFT_CARD_W) / 2 - 12 - GIFT_BTN_W / 2;
+        /* (the card is laid out in page px, centred on the page; PAGE_FX / PAGE_FY take its buttons' middles to the frame) */
+        int ax = PAGE_FX((PAGE_W - GIFT_CARD_W) / 2 + 12 + GIFT_BTN_W / 2), ay = PAGE_FY((PAGE_H - GIFT_CARD_H) / 2 + GIFT_BTN_Y + GIFT_BTN_H / 2);
+        int nx = PAGE_FX((PAGE_W + GIFT_CARD_W) / 2 - 12 - GIFT_BTN_W / 2);
         DCHECK(render_gift_hit((float)ax, (float)ay) == GIFT_HIT_ACCEPT && render_gift_hit((float)nx, (float)ay) == GIFT_HIT_NO, "7c: the gift card's buttons are not where they are drawn");
         /* THE TOUCH RULE (touch_gate.h, 11-06): a press begun before the card came is no answer; there is no hold (2 s before) */
         DCHECK(!gift_answer(&GA, GA.ask.seen - 0.05, DA.clock, true) && !gift_answer(&GA, GA.ask.seen - 0.05, DA.clock, false) && GA.ask.on && !GA.ask.answer, "7c: a press from before the gift card answered it");

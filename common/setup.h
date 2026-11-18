@@ -370,14 +370,14 @@ enum { SETUP_PG_ABOUT = SETUP_PG_RENAME + 1 };
 /* the stage: the clear spot each page leaves for the fish being edited
  * (tank_t.stage_*), top centre between the buttons */
 #define SETUP_STAGE_X   (TANK_W / 2)                    /* the stage is in the TANK: the frame's coordinates, under the page's title */
-#define SETUP_STAGE_NAME_Y (PAGE_Y + 104)
+#define SETUP_STAGE_NAME_Y (PAGE_FY(104))
 /* a name page for a fish not yet grown (0.4): it is staged at NOW, the left,
    and its GROWN UP form sits on a plate at the right, as in the editor - the
    keeper names the fish they designed, fins and markings in view */
 #define SETUP_NAME_PREVIEW_Y   106
 #define SETUP_NAME_GROWN_SIZE  1.3f
-#define SETUP_STAGE_EDIT_X (PAGE_X + SETUP_ED_NOW_X)   /* the editor's NOW */
-#define SETUP_STAGE_EDIT_Y (PAGE_Y + SETUP_ED_PREVIEW_Y)
+#define SETUP_STAGE_EDIT_X (PAGE_FX(SETUP_ED_NOW_X))   /* the editor's NOW */
+#define SETUP_STAGE_EDIT_Y (PAGE_FY(SETUP_ED_PREVIEW_Y))
 void setup_fish_removed(tank_t *t, int idx);   /* a fish left, the slots shifted: the page follows its fish (or closes) */
 
 /* the words the birth flow says of a fry (0.4.1; the tests read them): its announcement's two lines (FROM THE SHOP, /

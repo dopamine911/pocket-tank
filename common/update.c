@@ -150,7 +150,7 @@ static void atext_c(uint16_t *fb, int stride, int y, int scale, uint32_t rgb, co
     update_text(fb, stride, CX - update_text_w(s, scale) / 2, y, scale, rgb, s);
 }
 static void page_bg(uint16_t *fb, int stride) {
-    render_rect(fb, stride, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, C_INK);   /* the whole frame, not just the page (render.h) */
+    render_rect(fb, stride, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, C_INK);   /* the whole frame, not just the page (render.h) */
 }
 static bool in_box(float x, float y, int bx, int by, int bw, int bh, int slop) {
     return x >= bx - slop && x < bx + bw + slop && y >= by - slop && y < by + bh + slop;
@@ -201,12 +201,17 @@ static void wifi_mark(uint16_t *fb, int stride, int cx, int by, uint32_t rgb) { 
 }
 static void page_title(uint16_t *fb, int stride, const char *s) { text_c(fb, stride, SET_TITLE_Y, 3, C_TEXT, s); }
 static void page_back(uint16_t *fb, int stride) { render_button(fb, stride, UPD_CLOSE_X, UPD_CLOSE_Y, UPD_CLOSE_W, UPD_CLOSE_H, C_INNER, C_EDGE, "BACK", 2); }
+static int letters_in(int room) {   /* how many size-2 letters a run of `room` page px holds (12 px a letter, the last 10 - or the scaled page's own) */
+    char b[48]; int n = 0;
+    while (n < (int)sizeof b - 1) { memset(b, 'M', (size_t)n + 1); b[n + 1] = 0; if (render_text_w(b, 2) > room) break; n++; }
+    return n;
+}
 int updates_info_fit(const char *label, const char *value, char *out, size_t cap) {
     const int right = UPD_X + UPD_W;
     snprintf(out, cap, "%s", value);
     if (UPD_VAL_X + render_text_w(out, 2) <= right) return UPD_VAL_X;          /* in the column */
     const int min_x = UPD_X + render_text_w(label, 2) + 14;
-    wifi_name_fit(out, cap, value, (right - min_x + 2) / 12);                 /* (a size-2 letter: 12 px, the last one 10) */
+    wifi_name_fit(out, cap, value, letters_in(right - min_x));
     return right - render_text_w(out, 2);
 }
 static void info_row(uint16_t *fb, int stride, int row, const char *label, const char *value) {
@@ -270,7 +275,7 @@ void render_updates_page(uint16_t *fb, int stride) {
 /* the taps. BACK: the settings foot's band (no reach above it, 14 under, 12 to each side - the GRAPHICS page's BACK);
    the wide buttons 8 px out; a FORGET 8 to the sides and 3 up and down (half the gap to the next row's) */
 int updates_page_tap(float x, float y) {
-    x -= PAGE_X; y -= PAGE_Y;                           /* the page's own coordinates (render.h) */
+    x = FX_PAGE(x); y = FY_PAGE(y);                     /* the page's own coordinates (render.h) */
     if (y >= UPD_CLOSE_Y && y < UPD_CLOSE_Y + UPD_CLOSE_H + 14 && x >= UPD_CLOSE_X - 12 && x < UPD_CLOSE_X + UPD_CLOSE_W + 12)
         return s_nets ? UPD_TAP_NETS_BACK : UPD_TAP_CLOSE;
     if (!s_nets) {
@@ -641,7 +646,7 @@ void update_tick(float dt) {
 
 /* ---- hits ---- */
 int update_hit(float x, float y) {
-    x -= PAGE_X; y -= PAGE_Y;                           /* the page's own coordinates (render.h) */
+    x = FX_PAGE(x); y = FY_PAGE(y);                     /* the page's own coordinates (render.h) */
     switch (s.page) {
     case UPD_PG_POWER:
         return in_box(x, y, UPD_BTN_MID_X, UPD_BTN_Y, UPD_BTN_W, UPD_BTN_H, 10) ? HIT_BACK : HIT_NONE;
@@ -875,7 +880,7 @@ void render_update(uint16_t *fb, int stride, double clock) {
     case UPD_PG_CALIB: {
         int tx, ty, i = update_calib_target(&tx, &ty);
         if (i < 0) break;
-        tx -= PAGE_X; ty -= PAGE_Y;                      /* drawn on the page */
+        tx = (int)FX_PAGE(tx); ty = (int)FY_PAGE(ty);    /* drawn on the page */
         render_rect(fb, stride, tx - 24, ty - 1, 49, 3, C_EDGE); render_rect(fb, stride, tx - 1, ty - 24, 3, 49, C_EDGE);
         render_rect(fb, stride, tx - 4, ty - 4, 9, 9, C_TEXT);
         snprintf(line, sizeof line, "TAP THE CROSS  %d OF 9", i + 1);

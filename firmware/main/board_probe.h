@@ -27,6 +27,9 @@ typedef struct {
     uint8_t es7210;                /* the address the ES7210 answered at, 0 = none */
     bool    rtc;                   /* the PCF85063 (the watch, the square) */
     bool    cst9217;               /* the CST92xx touch chip (the square) */
+    bool    pmic;                  /* the AXP2101 PMIC (every Waveshare board; the CYD has none) */
+    bool    ft6336;                /* the FT6336G touch at 0x38 (the CYD asks; the AMOLEDs do not) */
+    bool    es8311;                /* the ES8311 codec at 0x18 (the CYD asks; the AMOLEDs do not) */
 } board_chips_t;
 
 typedef struct {
@@ -35,6 +38,7 @@ typedef struct {
     bool watch;                    /* the 2.06 watch */
     bool square;                   /* the 2.16 square */
     bool mic;                      /* no expander, an ES7210: the 1.75C / watch / square family */
+    bool cyd;                      /* the 2.8 CYD (Freenove FNK0104B): no expander, no ES7210, no PMIC, an FT6336 and an ES8311 */
 } board_kind_t;
 
 static inline bool board_probe_es7210_addr_ok(uint8_t a) {
@@ -42,19 +46,20 @@ static inline bool board_probe_es7210_addr_ok(uint8_t a) {
 }
 
 static inline board_kind_t board_decide(board_chips_t c) {
-    board_kind_t k = { false, false, false, false, false };
+    board_kind_t k = { false, false, false, false, false, false };
     bool es = board_probe_es7210_addr_ok(c.es7210);
     k.is175 = c.expander && es;
     k.mic   = !c.expander && es;
     k.watch = k.mic && c.rtc;
     k.round = k.is175 || (k.mic && !k.watch);
     if (k.watch && c.cst9217) { k.square = true; k.watch = false; }
+    k.cyd = !c.expander && !es && !c.pmic && c.ft6336 && c.es8311;
     return k;
 }
 
 /* the board as a release id (version.h PT_BOARD), NULL when the chips can't tell
  * (the 1.8's path taken on the PMIC alone, or a dead bus) */
 static inline const char *board_kind_id(board_kind_t k, bool expander) {
-    return k.square ? "square216" : k.watch ? "watch206" : k.round ? "round175c" : expander ? "amoled18" : NULL;
+    return k.cyd ? "cyd28" : k.square ? "square216" : k.watch ? "watch206" : k.round ? "round175c" : expander ? "amoled18" : NULL;
 }
 #endif

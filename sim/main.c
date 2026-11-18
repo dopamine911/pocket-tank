@@ -150,12 +150,13 @@ static void print_roster(const tank_t *t) {
  * the portrait watch (TANK_WATCH) - so a test never carries one board's
  * pixels: it asks the code. The pages are laid out in PAGE space (render.h)
  * and sit centered on each glass, and a tap is the frame's: PG_X / PG_Y put a
- * page point on this board's glass; the spots under them are where a finger
+ * page point on this board's glass (PAGE_FX / PAGE_FY: on the CYD the page is
+ * drawn scaled); the spots under them are where a finger
  * aims, from the layouts' own numbers (render.h MSP_ / SHP_ / SET_, setup.h,
  * update.h). The few bare numbers left are a page's own line heights that
  * render.c never named, and how far off a button a test presses on purpose. */
-#define PG_X(x) (PAGE_X + (x))
-#define PG_Y(y) (PAGE_Y + (y))
+#define PG_X(x) PAGE_FX(x)
+#define PG_Y(y) PAGE_FY(y)
 /* the milestones page, in page coordinates: row i's top (the NEW FRY row is
  * row n_fish), then inside a row the name / strip cluster, badge k's center */
 #define MS_ROW(i)      (MSP_ROW_Y0 + (i) * MSP_ROW_H)
@@ -818,8 +819,8 @@ static int selftest_pop(void) {
     if (tank.stage_fish != 0) { printf("FAIL: fish 0 not staged\n"); return 1; }
     tank.fish[0].x = 60; tank.fish[0].y = 300;
     for (int i = 0; i < 900; i++) tank_tick(&tank, 1.0f / 60.0f, advisor_rules);
-    if (tank_dist(tank.fish[0].x, tank.fish[0].y, SETUP_STAGE_EDIT_X, PAGE_Y + SETUP_NAME_PREVIEW_Y) > 45) {
-        printf("FAIL: staged fish at (%.0f,%.0f), stage (%d,%d)\n", tank.fish[0].x, tank.fish[0].y, SETUP_STAGE_EDIT_X, PAGE_Y + SETUP_NAME_PREVIEW_Y); return 1;
+    if (tank_dist(tank.fish[0].x, tank.fish[0].y, SETUP_STAGE_EDIT_X, PAGE_FY(SETUP_NAME_PREVIEW_Y)) > 45) {
+        printf("FAIL: staged fish at (%.0f,%.0f), stage (%d,%d)\n", tank.fish[0].x, tank.fish[0].y, SETUP_STAGE_EDIT_X, PAGE_FY(SETUP_NAME_PREVIEW_Y)); return 1;
     }
     const char *preset0 = tank_roster_name(tank.fish[0].preset);
     /* the wheel's bands: the row picks a slot, above / below the active one are the chevrons */
@@ -1741,7 +1742,9 @@ static int selftest_touch_lock(void) {
     for (int y = 0; y < TANK_H; y++) for (int x = 0; x < TANK_W; x++)
         if (render_shelf_tap((float)x, (float)y) == SHELF_TAP_TOUCH_LOCK) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     if (x1 < 0) { printf("FAIL: touch-lock: no tap reaches the padlock\n"); return 1; }
-    if (y1 - y0 < 30 || x1 - x0 < 40) { printf("FAIL: touch-lock: the padlock's tap area is only %dx%d\n", x1 - x0 + 1, y1 - y0 + 1); return 1; }
+    /* (in PAGE px: the CYD draws the page at PAGE_K, but its px are 2.25x the 1.8's (143 vs 322 ppi), so 40 x 30 page px
+       there is 4.6 x 3.5 mm on the glass against the 1.8's 3.2 x 2.4 - the finger's target is bigger, not smaller) */
+    if ((y1 - y0) / PAGE_K < 30 || (x1 - x0) / PAGE_K < 40) { printf("FAIL: touch-lock: the padlock's tap area is only %dx%d\n", x1 - x0 + 1, y1 - y0 + 1); return 1; }
     shelf_slot_t sl[8]; for (int i = 0; i < 8; i++) sl[i] = (shelf_slot_t){ i ? SHELF_EMPTY : SHELF_NOW, i ? "" : "MY TANK", false, NULL };
     render_shelf_set_touch_lock(false); render_shelf(fa, TANK_W, sl, 1, 1);
     render_shelf_free(); render_shelf(fb, TANK_W, sl, 1, 1);        /* (0.4: MY TANKS closed frees the planks' wood - the next open draws the same page) */
@@ -1773,9 +1776,10 @@ static int selftest_touch_lock(void) {
         for (int y = 0; y < TANK_H; y++) for (int x = 0; x < TANK_W; x++)
             if (render_milestones_tap(&tank, (float)x, (float)y) == MS_TAP_TANKS) { if (x < tx0) tx0 = x; if (x > tx1) tx1 = x; if (y < ty0) ty0 = y; if (y > ty1) ty1 = y; }
         render_milestones_leave();
-        if (tx1 < 0 || tx1 - tx0 < MSP_FOOT_SQ - 1 || ty1 - ty0 < MSP_FOOT_SQ - 1) { printf("FAIL: touch-lock: the keeper page's MY TANKS has no tap area of its own (%d..%d x %d..%d)\n", tx0, tx1, ty0, ty1); return 1; }
+        const int sq = PAGE_FX(MSP_FOOT_SQ) - PAGE_FX(0);   /* (the square's side in frame px: the page is drawn scaled on the CYD) */
+        if (tx1 < 0 || tx1 - tx0 < sq - 1 || ty1 - ty0 < sq - 1) { printf("FAIL: touch-lock: the keeper page's MY TANKS has no tap area of its own (%d..%d x %d..%d)\n", tx0, tx1, ty0, ty1); return 1; }
         int bx, by; render_ms_foot_box(MSF_TANKS, &bx, &by);
-        if (tx0 > bx + PAGE_X || tx1 < bx + PAGE_X + MSP_FOOT_SQ - 1) { printf("FAIL: touch-lock: MY TANKS's square is not all its own (%d..%d, the square %d..%d)\n", tx0, tx1, bx + PAGE_X, bx + PAGE_X + MSP_FOOT_SQ - 1); return 1; }
+        if (tx0 > PAGE_FX(bx) || tx1 < PAGE_FX(bx + MSP_FOOT_SQ) - 1) { printf("FAIL: touch-lock: MY TANKS's square is not all its own (%d..%d, the square %d..%d)\n", tx0, tx1, PAGE_FX(bx), PAGE_FX(bx + MSP_FOOT_SQ) - 1); return 1; }
         printf("selftest-touch-lock: the keeper page's MY TANKS %dx%d at %d,%d\n", tx1 - tx0 + 1, ty1 - ty0 + 1, tx0, ty0);
     }
     printf("selftest-touch-lock: the padlock %dx%d at %d,%d on the glass (tap area %dx%d); %d px between open and shut, the NOW tank's sign %d px\n",
@@ -4887,22 +4891,22 @@ static int shop_shot(const char *prefix) {
     tank.sd_balance = 697; tank.sd_unlocks |= SD_ITEM_CASTLE | SD_ITEM_SNAIL | SD_ITEM_BG(BG_RUINS) | SD_ITEM_BG(BG_REEF); tank.bg_now = BG_REEF;
     tank_castle_place(&tank); tank_snail_place(&tank);
     #define SHOT(name) do { render_shop(&tank, fb, TANK_W); snprintf(path, sizeof path, "%s_shop_%s.ppm", prefix, name); write_ppm(path, fb); } while (0)
-    #define FOOT(b) do { int fx_, fy_; render_shop_foot_box(b, &fx_, &fy_); render_shop_tap(&tank, PAGE_X + fx_ + MSP_FOOT_SQ / 2, PAGE_Y + fy_ + MSP_FOOT_SQ / 2); } while (0)
-    #define NEXT() render_shop_tap(&tank, PAGE_X + SHP_ARROW_X1 + SHP_ARROW_W / 2, PAGE_Y + SHP_ARROW_Y + SHP_ARROW_H / 2)
+    #define FOOT(b) do { int fx_, fy_; render_shop_foot_box(b, &fx_, &fy_); render_shop_tap(&tank, PAGE_FX(fx_ + MSP_FOOT_SQ / 2), PAGE_FY(fy_ + MSP_FOOT_SQ / 2)); } while (0)
+    #define NEXT() render_shop_tap(&tank, PAGE_FX(SHP_ARROW_X1 + SHP_ARROW_W / 2), PAGE_FY(SHP_ARROW_Y + SHP_ARROW_H / 2))
     render_shop_leave(); SHOT("decor1"); NEXT(); SHOT("decor2");
     FOOT(2); SHOT("critters1");
     FOOT(3); SHOT("bg1"); NEXT(); SHOT("bg2"); NEXT(); SHOT("bg3");
     render_shop_leave(); FOOT(3);
-    tank.clock += 5; render_shop_tap(&tank, PAGE_X + 100, PAGE_Y + SHP_ROW_Y0 + 20 + SHP_ROW_DY * 2); SHOT("bg_modal_twilight");   /* the third row: Kelp? (page 1: Open Water, Ruins, Kelp) */
-    tank.clock += 5; render_shop_tap(&tank, PAGE_X + 10, PAGE_Y + 10);
-    tank.clock += 5; render_shop_tap(&tank, PAGE_X + 100, PAGE_Y + SHP_ROW_Y0 + 20 + SHP_ROW_DY); SHOT("bg_modal_owned");   /* (past the 0.6 s wait the last close
+    tank.clock += 5; render_shop_tap(&tank, PAGE_FX(100), PAGE_FY(SHP_ROW_Y0 + 20 + SHP_ROW_DY * 2)); SHOT("bg_modal_twilight");   /* the third row: Kelp? (page 1: Open Water, Ruins, Kelp) */
+    tank.clock += 5; render_shop_tap(&tank, PAGE_FX(10), PAGE_FY(10));
+    tank.clock += 5; render_shop_tap(&tank, PAGE_FX(100), PAGE_FY(SHP_ROW_Y0 + 20 + SHP_ROW_DY)); SHOT("bg_modal_owned");   /* (past the 0.6 s wait the last close
                                                                                     leaves: the audit's P8 rule; this picture showed no modal - keeper-sees S7) */
-    tank.clock += 5; render_shop_tap(&tank, PAGE_X + 10, PAGE_Y + 10);
+    tank.clock += 5; render_shop_tap(&tank, PAGE_FX(10), PAGE_FY(10));
     FOOT(3); NEXT(); NEXT();                                               /* (0.4.2: the third page - Sunken Ship, Volcanic Vent, Mangroves) */
     for (int k = 0; k < 3; k++) {
         static const char *const NM[3] = { "bg_modal_ship", "bg_modal_vent", "bg_modal_mangroves" };
-        tank.clock += 5; render_shop_tap(&tank, PAGE_X + 100, PAGE_Y + SHP_ROW_Y0 + 20 + SHP_ROW_DY * k); SHOT(NM[k]);
-        tank.clock += 5; render_shop_tap(&tank, PAGE_X + 10, PAGE_Y + 10);
+        tank.clock += 5; render_shop_tap(&tank, PAGE_FX(100), PAGE_FY(SHP_ROW_Y0 + 20 + SHP_ROW_DY * k)); SHOT(NM[k]);
+        tank.clock += 5; render_shop_tap(&tank, PAGE_FX(10), PAGE_FY(10));
     }
     render_shop_leave();
     FOOT(0); SHOT("earn");
@@ -5193,11 +5197,14 @@ static int selftest_keeper(void) {
         tank.sd_balance = 697;
         char sc[64];
         render_milestones_leave();
-        render_milestones_counts(&kept0, &whole0, NULL);
+        int why0[MS_WHY_N], why1[MS_WHY_N];
+        render_milestones_counts(&kept0, &whole0, why0);
         snprintf(sc, sizeof sc, "%d fish, the page", nf);
         if (kp_run(&tank, 120, KP_PAGE, sc)) return 1;
-        render_milestones_counts(&kept, &whole, NULL);
-        if (kept - kept0 < 110) KEEP_FAIL("%s: only %d of 120 frames kept (%d whole) - a box left its zone?", sc, kept - kept0, whole - whole0);
+        render_milestones_counts(&kept, &whole, why1);
+        if (kept - kept0 < 110) KEEP_FAIL("%s: only %d of 120 frames kept (%d whole: new %d, zone %d, changed %d, over %d, gap %d, out %d)", sc, kept - kept0, whole - whole0,
+                                          why1[MS_WHY_NEW] - why0[MS_WHY_NEW], why1[MS_WHY_ZONE] - why0[MS_WHY_ZONE], why1[MS_WHY_CHANGED] - why0[MS_WHY_CHANGED],
+                                          why1[MS_WHY_OVER] - why0[MS_WHY_OVER], why1[MS_WHY_GAP] - why0[MS_WHY_GAP], why1[MS_WHY_OUT] - why0[MS_WHY_OUT]);
         printf("keeper: %d fish (the fry row %s, GROW %s): %d of 120 frames kept\n", nf, nreq ? "up" : "off", grow ? "in" : "out", kept - kept0);
         snprintf(sc, sizeof sc, "%d fish, the page changing", nf);   /* each of what the still page is drawn from */
         for (int step = 0; step < 8; step++) {
@@ -5257,12 +5264,12 @@ static int selftest_keeper(void) {
         render_milestones_leave();
         if (kp_run(&tank, 4, KP_PAGE, sc)) return 1;
         snprintf(sc, sizeof sc, "%d fish, a badge's modal", nf);
-        int r = render_milestones_tap(&tank, (float)(MSP_BADGE_X0 + 2 * MSP_BADGE_DX + 16 + PAGE_X), (float)(MSP_ROW_Y0 + MSP_ROW_BADGE + 16 + PAGE_Y));
+        int r = render_milestones_tap(&tank, (float)PAGE_FX(MSP_BADGE_X0 + 2 * MSP_BADGE_DX + 16), (float)PAGE_FY(MSP_ROW_Y0 + MSP_ROW_BADGE + 16));
         if (r != MS_TAP_KEPT) KEEP_FAIL("%s: the tap on fish 0's third badge gave %d", sc, r);
         if (kp_run(&tank, 40, KP_PAGE, sc)) return 1;
         render_milestones_leave();
         snprintf(sc, sizeof sc, "%d fish, the TANK tally", nf);
-        r = render_milestones_tap(&tank, (float)(100 + PAGE_X), (float)(MSP_TANK_Y + 9 + PAGE_Y));
+        r = render_milestones_tap(&tank, (float)PAGE_FX(100), (float)PAGE_FY(MSP_TANK_Y + 9));
         if (kp_run(&tank, 40, KP_PAGE, sc)) return 1;
         render_milestones_leave();
         snprintf(sc, sizeof sc, "%d fish, one buffer", nf);
@@ -5295,7 +5302,7 @@ static int keeper_shot(const char *prefix) {
     render_milestones_leave();
     render_tank(&tank, fb, TANK_W); render_milestones(&tank, fb, TANK_W);
     snprintf(path, sizeof path, "%s_keeper_p1.ppm", prefix); write_ppm(path, fb);
-    render_milestones_tap(&tank, (float)(MSP_TPG_X + 14 + PAGE_X), (float)(MSP_TANK_Y + 4 + MSP_ICON / 2 + PAGE_Y));
+    render_milestones_tap(&tank, (float)PAGE_FX(MSP_TPG_X + 14), (float)PAGE_FY(MSP_TANK_Y + 4 + MSP_ICON / 2));
     render_tank(&tank, fb, TANK_W); render_milestones(&tank, fb, TANK_W);
     snprintf(path, sizeof path, "%s_keeper_p2.ppm", prefix); write_ppm(path, fb);
     render_milestones_leave();
@@ -5460,13 +5467,13 @@ static int nature_shot(const char *prefix) {
 static uint16_t nat_565(uint32_t c) { return (uint16_t)((c >> 19 & 31) << 11 | (c >> 10 & 63) << 5 | (c >> 3 & 31)); }
 static bool nat_row(const uint16_t *fb, int cx, int y, int w, uint32_t rgb) {   /* w px centred on cx, all rgb */
     for (int x = cx - w / 2; x <= cx + w / 2; x++)
-        if (FB_SWAP16(fb[(PAGE_Y + y) * TANK_W + PAGE_X + x]) != nat_565(rgb)) return false;
+        if (FB_SWAP16(fb[PAGE_FY(y) * TANK_W + PAGE_FX(x)]) != nat_565(rgb)) return false;
     return true;
 }
 static int nat_heads(const uint16_t *fb, int y) {   /* pixels across a bar's width (and its marks' reach) not the panel's ink */
     const int vx = SETUP_FAM_VALUE_X + 12; int n = 0;
-    uint16_t ink = FB_SWAP16(fb[(PAGE_Y + y) * TANK_W + PAGE_X + vx - 30]);
-    for (int x = vx - 8; x <= vx + SETUP_FAM_BAR_W + 8; x++) n += FB_SWAP16(fb[(PAGE_Y + y) * TANK_W + PAGE_X + x]) != ink;
+    uint16_t ink = FB_SWAP16(fb[PAGE_FY(y) * TANK_W + PAGE_FX(vx - 30)]);
+    for (int x = vx - 8; x <= vx + SETUP_FAM_BAR_W + 8; x++) n += FB_SWAP16(fb[PAGE_FY(y) * TANK_W + PAGE_FX(x)]) != ink;
     return n;
 }
 static int selftest_nature_marks(void) {
@@ -5538,10 +5545,10 @@ static int breed_shot(const char *prefix) {
             tank.sd_balance = own ? 1240 : 1450;
             if (!render_shop_find(&tank, SHOP_ROW_BREED, &ar, &pg, &rw)) { printf("breed-shot: no SELECTIVE BREEDING row\n"); return 1; }
             render_shop_leave();
-            { int fx, fy; render_shop_foot_box(1 + ar, &fx, &fy); render_shop_tap(&tank, PAGE_X + fx + MSP_FOOT_SQ / 2, PAGE_Y + fy + MSP_FOOT_SQ / 2); }
-            for (int k = 0; k < pg; k++) render_shop_tap(&tank, PAGE_X + SHP_ARROW_X1 + SHP_ARROW_W / 2, PAGE_Y + SHP_ARROW_Y + SHP_ARROW_H / 2);
+            { int fx, fy; render_shop_foot_box(1 + ar, &fx, &fy); render_shop_tap(&tank, PAGE_FX(fx + MSP_FOOT_SQ / 2), PAGE_FY(fy + MSP_FOOT_SQ / 2)); }
+            for (int k = 0; k < pg; k++) render_shop_tap(&tank, PAGE_FX(SHP_ARROW_X1 + SHP_ARROW_W / 2), PAGE_FY(SHP_ARROW_Y + SHP_ARROW_H / 2));
             render_shop(&tank, fb, TANK_W); snprintf(path, sizeof path, "%s_%d_shop_row_%s.ppm", prefix, ++n, own ? "owned" : "for_sale"); write_ppm(path, fb);
-            tank.clock += 5; render_shop_tap(&tank, PAGE_X + 100, PAGE_Y + SHP_ROW_Y0 + 20 + SHP_ROW_DY * rw);
+            tank.clock += 5; render_shop_tap(&tank, PAGE_FX(100), PAGE_FY(SHP_ROW_Y0 + 20 + SHP_ROW_DY * rw));
             render_shop(&tank, fb, TANK_W); snprintf(path, sizeof path, "%s_%d_shop_modal_%s.ppm", prefix, ++n, own ? "owned" : "for_sale"); write_ppm(path, fb);
             render_shop_leave();
         }
@@ -5624,7 +5631,7 @@ static int fish_rename_dump(const char *prefix) {
             if (kb == SETUP_KBD_WHEEL) {
                 setup_activate(&tank, SETUP_HIT_UP); setup_activate(&tank, SETUP_HIT_UP); FRD_SHOT();
                 setup_activate(&tank, SETUP_HIT_SLOT0 + 5); setup_activate(&tank, SETUP_HIT_DOWN); FRD_SHOT();
-                float sx = PAGE_X + SETUP_SLOT_X + 2 * SETUP_SLOT_PX + SETUP_SLOT_W / 2, sy = PAGE_Y + SETUP_SLOT_Y + SETUP_SLOT_H / 2;
+                float sx = PAGE_FX(SETUP_SLOT_X + 2 * SETUP_SLOT_PX + SETUP_SLOT_W / 2), sy = PAGE_FY(SETUP_SLOT_Y + SETUP_SLOT_H / 2);
                 setup_touch(&tank, sx, sy, true);
                 for (int k = 1; k <= 8; k++) setup_touch(&tank, sx, sy - k * 12, true);
                 setup_touch(&tank, sx, sy - 96, false); FRD_SHOT();
@@ -6043,7 +6050,7 @@ static int selftest_settings_nav(void) {
             for (int y = 0; y < TANK_H; y += 2) for (int x = 0; x < TANK_W; x += 2) {
                 int u = 0; const int q = render_gfx_page_tap((float)x, (float)y, &u);
                 if (q != SET_TAP_GFX && q != SET_TAP_VIG) continue;
-                const int b = q == SET_TAP_GFX ? GFXP_BOX_Q_LOW + u - RENDER_GFX_LOW : u ? GFXP_BOX_V_ON : GFXP_BOX_V_OFF, px = x - PAGE_X, py = y - PAGE_Y;
+                const int b = q == SET_TAP_GFX ? GFXP_BOX_Q_LOW + u - RENDER_GFX_LOW : u ? GFXP_BOX_V_ON : GFXP_BOX_V_OFF, px = (int)FX_PAGE(x), py = (int)FY_PAGE(y);
                 swept++;
                 if (px < gp_x[b] - 12 || px >= gp_x[b] + gp_w[b] + 12 || py < gp_y[b] - 12 || py >= gp_y[b] + gp_h[b] + 18) SNF("GRAPHICS page: frame %d,%d reads %s, drawn more than its reach away", x, y, GN[b]);
             }
@@ -6089,7 +6096,7 @@ static int selftest_settings_nav(void) {
             render_set_gfx_level(lv); render_settings(&tank, fb2, TANK_W, 60, 100);
             for (int y = 0; y < TANK_H; y++) for (int x = 0; x < TANK_W; x++) {
                 if (fb[y * TANK_W + x] == fb2[y * TANK_W + x]) continue;
-                int px = x - PAGE_X, py = y - PAGE_Y;
+                int px = (int)FX_PAGE(x), py = (int)FY_PAGE(y);
                 if (px >= gx && px < gx + gw && py >= gy && py < gy + gh) inside++; else outside++;
             }
         }
@@ -6164,7 +6171,7 @@ static int selftest_settings_nav(void) {
         int r = render_settings_tap((float)x, (float)y, &v), b = snav_box_of(r);
         if (b < 0) continue;
         swept++;
-        if (!snav_near(b, x - PAGE_X, y - PAGE_Y)) SNF("frame %d,%d reads %s, drawn more than 12 px away", x, y, NAME[b]);
+        if (!snav_near(b, (int)FX_PAGE(x), (int)FY_PAGE(y))) SNF("frame %d,%d reads %s, drawn more than 12 px away", x, y, NAME[b]);
     }
     /* 6. the old text foot (until 0.4.2): UPDATES, LINK, CLOSE as they stood */
     {   const int fy = SET_FOOT_Y, lx = TANK_WORN ? 178 : 188, ly = TANK_WORN ? 348 : SET_FOOT_Y;
@@ -10444,7 +10451,7 @@ static int genes_shot(const char *prefix) {
     }
     /* the "first mutation" badge (0.4): the tank row's second page, its notice */
     tank.tank_ms_bits |= TMS_TRIO | TMS_FIRST_MUTATION; tank.tank_ms_seen = tank.tank_ms_bits & ~TMS_FIRST_MUTATION;
-    render_milestones_tap(&tank, PAGE_X + 426, PAGE_Y + 254 + 20);   /* the row's arrow: page 2 */
+    render_milestones_tap(&tank, PAGE_FX(426), PAGE_FY(254 + 20));   /* the row's arrow: page 2 */
     render_milestones(&tank, fb, TANK_W);
     snprintf(path, sizeof path, "%s_genes_badge_page.ppm", prefix); write_ppm(path, fb);
     render_milestones_leave();
@@ -11550,10 +11557,10 @@ static int pumpkin_shot(const char *prefix) {
     for (int owned = 0; owned < 2; owned++) {
         if (owned) tank.sd_unlocks |= SD_ITEM_PUMPKIN; else { tank.sd_unlocks &= ~SD_ITEM_PUMPKIN; tank.sd_balance = 80; }
         render_shop_leave(); render_shop(&tank, fb, TANK_W);
-        for (int k = 0; k < 2; k++) { render_shop_tap(&tank, PAGE_X + SHP_ARROW_X1 + SHP_ARROW_W / 2, PAGE_Y + SHP_ARROW_Y + SHP_ARROW_H / 2); render_shop(&tank, fb, TANK_W); }   /* the last page */
+        for (int k = 0; k < 2; k++) { render_shop_tap(&tank, PAGE_FX(SHP_ARROW_X1 + SHP_ARROW_W / 2), PAGE_FY(SHP_ARROW_Y + SHP_ARROW_H / 2)); render_shop(&tank, fb, TANK_W); }   /* the last page */
         snprintf(path, sizeof path, "%s_shop_%s.ppm", prefix, owned ? "owned" : "sale"); write_ppm(path, fb);
         if (owned) {
-            render_shop_tap(&tank, PAGE_X + 100, PAGE_Y + SHP_ROW_Y0 + 20); render_shop(&tank, fb, TANK_W);   /* its row (the page's first) -> the modal */
+            render_shop_tap(&tank, PAGE_FX(100), PAGE_FY(SHP_ROW_Y0 + 20)); render_shop(&tank, fb, TANK_W);   /* its row (the page's first) -> the modal */
             snprintf(path, sizeof path, "%s_shop_modal.ppm", prefix); write_ppm(path, fb);
         }
         render_shop_leave();
@@ -11694,7 +11701,7 @@ static int volcano_shot(const char *prefix) {
     for (int owned = 0; owned < 2; owned++) {
         if (owned) tank.sd_unlocks |= SD_ITEM_VOLCANO; else { tank.sd_unlocks &= ~SD_ITEM_VOLCANO; tank.sd_balance = 160; }
         render_shop_leave(); render_shop(&tank, fb, TANK_W);
-        for (int k = 0; k < 3; k++) { render_shop_tap(&tank, PAGE_X + SHP_ARROW_X1 + SHP_ARROW_W / 2, PAGE_Y + SHP_ARROW_Y + SHP_ARROW_H / 2); render_shop(&tank, fb, TANK_W); }   /* the last page */
+        for (int k = 0; k < 3; k++) { render_shop_tap(&tank, PAGE_FX(SHP_ARROW_X1 + SHP_ARROW_W / 2), PAGE_FY(SHP_ARROW_Y + SHP_ARROW_H / 2)); render_shop(&tank, fb, TANK_W); }   /* the last page */
         snprintf(path, sizeof path, "%s_shop_%s.ppm", prefix, owned ? "owned" : "sale"); write_ppm(path, fb);
         render_shop_leave();
     }
@@ -13270,7 +13277,7 @@ static int snapshot(const char *prefix, int seconds) {
         tank.sd_unlocks |= SD_ITEM_SHRIMP | SD_ITEM_SEAHORSE; tank.tank_ms_bits |= TMS_FULL_SCHOOL; tank.tank_ms_seen = tank.tank_ms_bits & ~TMS_FULL_SCHOOL;   /* (+ the seahorse bought: its badge, gray, on page 2 - 0.3.6) */
         render_milestones(&tank, fb, TANK_W);
         snprintf(path, sizeof path, "%s_milestones_shrimp.ppm", prefix); write_ppm(path, fb);
-        render_milestones_tap(&tank, PAGE_X + 426, PAGE_Y + 254 + 20);
+        render_milestones_tap(&tank, PAGE_FX(426), PAGE_FY(254 + 20));
         render_milestones(&tank, fb, TANK_W);
         snprintf(path, sizeof path, "%s_milestones_shrimp2.ppm", prefix); write_ppm(path, fb);
         render_milestones_leave();
@@ -13341,11 +13348,11 @@ static int snapshot(const char *prefix, int seconds) {
         render_milestones_leave();
         render_collection_leave(); render_collection(&vt, fb, TANK_W);
         snprintf(path, sizeof path, "%s_collection.ppm", prefix); write_ppm(path, fb);
-        render_collection_tap(&vt, PAGE_X + 24 + 46, PAGE_Y + 60 + 40);
+        render_collection_tap(&vt, PAGE_FX(24 + 46), PAGE_FY(60 + 40));
         render_collection(&vt, fb, TANK_W);
         snprintf(path, sizeof path, "%s_collection_card.ppm", prefix); write_ppm(path, fb);
         render_collection_tap(&vt, 0, 0);                              /* (back to the grid) - nori's card: its home renamed SAM'S REEF */
-        render_collection_tap(&vt, PAGE_X + 24 + 46 + 3 * 92, PAGE_Y + 60 + 40);
+        render_collection_tap(&vt, PAGE_FX(24 + 46 + 3 * 92), PAGE_FY(60 + 40));
         render_collection(&vt, fb, TANK_W); snprintf(path, sizeof path, "%s_collection_card_named.ppm", prefix); write_ppm(path, fb);
         {   static gift_book_t gb; memset(&gb, 0, sizeof gb); gift_attach(&vt, &gb);
           vt.vis_used[1] = false; gb.ask.on = true; passport_from_fish(&gb.ask.pp, &vt.fish[N_FISH_MAX], vt.vis_home[0], 3600); gb.ask.badge = 2; gb.ask.since = vt.clock - 10;
@@ -13443,9 +13450,9 @@ static int snapshot(const char *prefix, int seconds) {
         net_port_creds_set("Fishbowl", "abcdefgh");                /* a message with ONE action: TRY AGAIN centred over BACK TO TANK (2026-10-03) */
         setenv("POCKET_TANK_FAKE_UPDATE", "downloadfail", 1); update_begin(50, false);
         for (int i = 0; i < 4; i++) { net_sim_advance(1); update_tick(1); }
-        update_touch(PAGE_X + UPD_BTN_L_X + UPD_BTN_W / 2, PAGE_Y + UPD_BTN_Y + UPD_BTN_H / 2, true);   /* UPDATE, held its second */
-        for (int hk = 0; hk < 11; hk++) { update_tick(0.1f); update_touch(PAGE_X + UPD_BTN_L_X + UPD_BTN_W / 2, PAGE_Y + UPD_BTN_Y + UPD_BTN_H / 2, true); }
-        update_touch(PAGE_X + UPD_BTN_L_X + UPD_BTN_W / 2, PAGE_Y + UPD_BTN_Y + UPD_BTN_H / 2, false);
+        update_touch(PAGE_FX(UPD_BTN_L_X + UPD_BTN_W / 2), PAGE_FY(UPD_BTN_Y + UPD_BTN_H / 2), true);   /* UPDATE, held its second */
+        for (int hk = 0; hk < 11; hk++) { update_tick(0.1f); update_touch(PAGE_FX(UPD_BTN_L_X + UPD_BTN_W / 2), PAGE_FY(UPD_BTN_Y + UPD_BTN_H / 2), true); }
+        update_touch(PAGE_FX(UPD_BTN_L_X + UPD_BTN_W / 2), PAGE_FY(UPD_BTN_Y + UPD_BTN_H / 2), false);
         for (int i = 0; i < 4; i++) { net_sim_advance(1); update_tick(1); }
         render_update(fb, TANK_W, 0.3f);
         snprintf(path, sizeof path, "%s_update_one_action.ppm", prefix); write_ppm(path, fb);
@@ -13456,7 +13463,7 @@ static int snapshot(const char *prefix, int seconds) {
             for (int i = 0; i < 12 && update_page() != UPD_PG_OFFER; i++) { net_sim_advance(1); update_tick(1); }
             if (update_page() == UPD_PG_OFFER) {
                 render_update(ob, TANK_W, 0.3f); snprintf(path, sizeof path, "%s_update_offer_saved.ppm", prefix); write_ppm(path, ob);
-                const float hx = PAGE_X + UPD_BTN_L_X + UPD_BTN_W / 2, hy = PAGE_Y + UPD_BTN_Y + UPD_BTN_H / 2;
+                const float hx = PAGE_FX(UPD_BTN_L_X + UPD_BTN_W / 2), hy = PAGE_FY(UPD_BTN_Y + UPD_BTN_H / 2);
                 update_touch(hx, hy, true); for (int hk = 0; hk < 5; hk++) { update_tick(0.1f); update_touch(hx, hy, true); }
                 render_update(ob, TANK_W, 0.3f); snprintf(path, sizeof path, "%s_update_offer_saved_hold.ppm", prefix); write_ppm(path, ob);
                 update_touch(hx, hy, false);
@@ -13604,7 +13611,7 @@ static int snapshot(const char *prefix, int seconds) {
       snprintf(path, sizeof path, "%s_seahorse_card.ppm", prefix); write_ppm(path, fb);
       tank.sd_unlocks &= ~SD_ITEM_SEAHORSE; tank.sh_x = -1; }
     tank.sd_unlocks = 0; tank.sd_balance = 0;
-    render_milestones_tap(&tank, PAGE_X + 176 + 16, PAGE_Y + 4 + 40 + 20);           /* fish 1's first badge -> the detail modal */
+    render_milestones_tap(&tank, PAGE_FX(176 + 16), PAGE_FY(4 + 40 + 20));           /* fish 1's first badge -> the detail modal */
     render_milestones(&tank, fb, TANK_W);
     snprintf(path, sizeof path, "%s_milestone_modal.ppm", prefix); write_ppm(path, fb);
     render_milestones_leave();
@@ -13724,14 +13731,14 @@ static int snapshot(const char *prefix, int seconds) {
         tank.tank_ms_seen = tank.tank_ms_bits;
         render_milestones(&tank, fb, TANK_W);
         snprintf(path, sizeof path, "%s_milestones_fry.ppm", prefix); write_ppm(path, fb);
-        render_milestones_tap(&tank, PAGE_X + 176 + 16, PAGE_Y + 4 + 2 * 40 + 20);        /* the TRUST gate -> its modal */
+        render_milestones_tap(&tank, PAGE_FX(176 + 16), PAGE_FY(4 + 2 * 40 + 20));        /* the TRUST gate -> its modal */
         render_milestones(&tank, fb, TANK_W);
         snprintf(path, sizeof path, "%s_fry_modal.ppm", prefix); write_ppm(path, fb);
-        render_milestones_tap(&tank, PAGE_X + 56 + 336 / 2, PAGE_Y + 60 + 156 + 20 + 24 + 32 + 14 - 10 - 16);   /* HOW? -> the tip page */
+        render_milestones_tap(&tank, PAGE_FX(56 + 336 / 2), PAGE_FY(60 + 156 + 20 + 24 + 32 + 14 - 10 - 16));   /* HOW? -> the tip page */
         render_milestones(&tank, fb, TANK_W);
         snprintf(path, sizeof path, "%s_fry_tip.ppm", prefix); write_ppm(path, fb);
         render_milestones_leave();
-        render_milestones_tap(&tank, PAGE_X + 100, PAGE_Y + 4 + 2 * 40 + 10);              /* the name -> the tally */
+        render_milestones_tap(&tank, PAGE_FX(100), PAGE_FY(4 + 2 * 40 + 10));              /* the name -> the tally */
         render_milestones(&tank, fb, TANK_W);
         snprintf(path, sizeof path, "%s_fry_tally.ppm", prefix); write_ppm(path, fb);
         render_milestones_leave();
@@ -13832,7 +13839,7 @@ static int snapshot(const char *prefix, int seconds) {
         setup_cancel(&tank);
         tank.sd_unlocks |= SD_ITEM_CASTLE; tank_castle_place(&tank);
         { const int cr_ = shop_goto(2); render_shop(&tank, fb, TANK_W); shop_tap(SHOP_ROW_X, SHOP_ROW_Y(cr_)); }
-        render_shop(&tank, fb, TANK_W); SHOP_SETTLE(); render_shop_tap(&tank, PAGE_X + 48 + (352 - 216) / 2 + 116 + 50, PAGE_Y + 48 + 244 - 12 - 16);   /* SELL, armed */
+        render_shop(&tank, fb, TANK_W); SHOP_SETTLE(); render_shop_tap(&tank, PAGE_FX(48 + (352 - 216) / 2 + 116 + 50), PAGE_FY(48 + 244 - 12 - 16));   /* SELL, armed */
         render_shop(&tank, fb, TANK_W);
         snprintf(path, sizeof path, "%s_shop_sell.ppm", prefix); write_ppm(path, fb);
         render_shop_leave();
@@ -15030,7 +15037,7 @@ static int selftest_shop(void) {
                 const float mx = bx + MSP_FOOT_SQ / 2.0f;
                 if (ms_tap(mx, by + MSP_FOOT_SQ / 2.0f) != WANT[b] || ms_tap(mx, by + 2) != WANT[b]) { printf("FAIL: the foot's %s did not answer its tap (square %d,%d)\n", NAME[b], bx, by); return 1; }
                 if (PAGE_BOWL && b == MSF_SET) continue;                      /* (the bowl's cog is in the cap) */
-                if (ms_tap(mx, PAGE_H - 1 + (TANK_H - PAGE_H - PAGE_Y)) != WANT[b] || ms_tap(mx, MSP_FOOT_HIT_Y) != WANT[b]) {
+                if (ms_tap(mx, FY_PAGE(TANK_H - 1)) != WANT[b] || ms_tap(mx, MSP_FOOT_HIT_Y) != WANT[b]) {
                     printf("FAIL: the foot's strip under %s does not reach from half way up the gap to the glass's bottom\n", NAME[b]); return 1; }
                 if (ms_tap(mx, MSP_FOOT_HIT_Y - 1) == WANT[b]) {             /* (0.3.9.1: half the gap, Strato's quick taps) */
                     printf("FAIL: the foot's strip reaches past half way up the gap (%d, the TANK row ends at %d)\n", MSP_FOOT_HIT_Y, MSP_TANK_BOT); return 1; }
@@ -15043,11 +15050,11 @@ static int selftest_shop(void) {
                MSP_FOOT_GAP off a flat bottom - and one px lower would break one of them (as low as it goes, on every board) */
             int xs[MSF_N][2];
             for (int b = 0; b < MSF_N; b++) { int by; render_ms_foot_box(b, &xs[b][0], &by); xs[b][1] = MSP_FOOT_SQ; }
-            const int yb = MSP_FOOT_Y + MSP_CLOSE_H - 1 + PAGE_Y;                 /* the row's last line, in the frame */
+            const int yb = PAGE_FY(MSP_FOOT_Y + MSP_CLOSE_H - 1);                 /* the row's last line, in the frame */
             bool ok_at[2] = { true, true };
             for (int d = 0; d < 2; d++) for (int b = 0; b < MSF_N; b++) {
                 if (PAGE_BOWL && b == 1) continue;                                /* (the bowl's SETTINGS is in the cap) */
-                const float y = (float)(yb + d), xl = (float)(xs[b][0] + PAGE_X), xr = (float)(xs[b][0] + xs[b][1] - 1 + PAGE_X);
+                const float y = (float)(yb + d), xl = (float)PAGE_FX(xs[b][0]), xr = (float)PAGE_FX(xs[b][0] + xs[b][1] - 1);
                 for (int side = 0; side < 2; side++) {
                     const float x = side ? xr : xl; bool in;
 #ifdef TANK_ROUND
@@ -18172,15 +18179,15 @@ static int selftest_card(const char *prefix) {
     render_tank(&tank, fb, TANK_W); render_setup(&tank, fb, TANK_W, tank.clock);
     if (prefix) { snprintf(path, sizeof path, "%s_rename.ppm", prefix); write_ppm(path, fb); }
     /* CANCEL (a tap through the touch path, top left): the old name back, the card owed */
-    setup_touch(&tank, PAGE_X + SETUP_TOP_BACK_X + 20, PAGE_Y + SETUP_TOP_BTN_Y + 20, true);
-    setup_touch(&tank, PAGE_X + SETUP_TOP_BACK_X + 22, PAGE_Y + SETUP_TOP_BTN_Y + 22, false);
+    setup_touch(&tank, PAGE_FX(SETUP_TOP_BACK_X + 20), PAGE_FY(SETUP_TOP_BTN_Y + 20), true);
+    setup_touch(&tank, PAGE_FX(SETUP_TOP_BACK_X + 22), PAGE_FY(SETUP_TOP_BTN_Y + 22), false);
     if (setup_active() || strcmp(tank.fish[2].name, "cy") || tank.stage_fish != -1) CARD_FAIL("CANCEL left '%s' (active %d)", tank.fish[2].name, setup_active());
     if (setup_take_renamed() != 2 || setup_take_renamed() != -1) CARD_FAIL("CANCEL did not hand the card back, once");
     /* DONE (top right) keeps it and saves it; an emptied name is the preset's again */
     setup_begin_rename(&tank, 2);
     setup_activate(&tank, SETUP_HIT_UP);
-    setup_touch(&tank, PAGE_X + SETUP_TOP_NEXT_X + 20, PAGE_Y + SETUP_TOP_BTN_Y + 20, true);
-    setup_touch(&tank, PAGE_X + SETUP_TOP_NEXT_X + 22, PAGE_Y + SETUP_TOP_BTN_Y + 22, false);
+    setup_touch(&tank, PAGE_FX(SETUP_TOP_NEXT_X + 20), PAGE_FY(SETUP_TOP_BTN_Y + 20), true);
+    setup_touch(&tank, PAGE_FX(SETUP_TOP_NEXT_X + 22), PAGE_FY(SETUP_TOP_BTN_Y + 22), false);
     if (setup_active() || strcmp(tank.fish[2].name, "dy")) CARD_FAIL("DONE left '%s' (active %d)", tank.fish[2].name, setup_active());
     if (setup_take_renamed() != 2) CARD_FAIL("DONE did not hand the card back");
     render_milestones_show_fish(&tank, 2);
@@ -18547,7 +18554,7 @@ static int selftest_fishmore(void) {
             for (int x = 0; x < TANK_W; x++) {
                 if (fa[y * TANK_W + x] == fb2[y * TANK_W + x]) continue;
                 changed++;
-                int px = x - PAGE_X, py = y - PAGE_Y;
+                int px = (int)FX_PAGE(x), py = (int)FY_PAGE(y);
                 if (px < SETUP_X + 2 || px >= SETUP_X + SETUP_W / 2 || py < SETUP_Y + 2 || py >= SETUP_Y + SETUP_H / 2) outside++;
             }
         if (who == 0 && (changed < 300 || outside)) FM_FAIL("the starter fish's stamp: %d px drawn, %d outside the panel's top left quarter", changed, outside);
@@ -18574,8 +18581,8 @@ static int selftest_fishmore(void) {
                 tank.clock += 0.37;
                 render_debug_page_whole(true); render_milestones(&tank, fa, TANK_W); render_debug_page_whole(false);
                 uint32_t h = 2166136261u;
-                for (int y = PAGE_Y; y < PAGE_Y + PAGE_H && y < TANK_H; y++)
-                    for (int x = PAGE_X; x < PAGE_X + MSP_MODAL_X - 2 && x < TANK_W; x++) h = (h ^ fa[y * TANK_W + x]) * 16777619u;
+                for (int y = PAGE_FY(0); y < PAGE_FY(PAGE_H) && y < TANK_H; y++)
+                    for (int x = PAGE_FX(0); x < PAGE_FX(MSP_MODAL_X - 2) && x < TANK_W; x++) h = (h ^ fa[y * TANK_W + x]) * 16777619u;
                 hs[over][k] = h;
             }
         }
@@ -20214,23 +20221,30 @@ static int selftest_critter_nav(void) {
     static const int WH[5][2] = { { SNAIL_CARD_W, SNAIL_CARD_H }, { SHRIMP_CARD_W, SHRIMP_CARD_H }, { URCHIN_CARD_W, URCHIN_CARD_H },
                                   { SEAHORSE_CARD_W, SEAHORSE_CARD_H }, { CRAB_CARD_W, CRAB_CARD_H } };
     for (int k = 0; k < 5; k++) {
-        const int card = ORDER[k], X = (TANK_W - WH[k][0]) / 2, Y = (TANK_H - WH[k][1]) / 2, W = WH[k][0], H = WH[k][1];
+        /* (the cards are laid out in page px, centred on the page: the CYD draws them scaled - every point below is the page's,
+           taken to the frame by FF_X / FF_Y; elsewhere that is the frame's own px, as before) */
+#define FF_X(p) (PAGE_X + (p) * PAGE_K)
+#define FF_Y(p) (PAGE_Y + (p) * PAGE_K)
+        const int card = ORDER[k], X = (PAGE_W - WH[k][0]) / 2, Y = (PAGE_H - WH[k][1]) / 2, W = WH[k][0], H = WH[k][1];
         if (!render_critter_here(&tank, card)) CFAIL("card %d: its critter is not in the tank", card);
-        const float half = RENDER_CRIT_NAV_W / 2.0f;
-        const float lx = X + RENDER_CRIT_NAV_IN + half, rx = X + W - RENDER_CRIT_NAV_IN - half, by = Y + RENDER_CRIT_NAV_IN + half;
+        const float half = RENDER_CRIT_NAV_W / 2.0f, hf = half * PAGE_K;
+        const float lp = X + RENDER_CRIT_NAV_IN + half, rp = X + W - RENDER_CRIT_NAV_IN - half, bp = Y + RENDER_CRIT_NAV_IN + half;
+        const float lx = FF_X(lp), rx = FF_X(rp), by = FF_Y(bp);
         if (render_critter_nav_hit(card, lx, by) != -1 || render_critter_nav_hit(card, rx, by) != 1) CFAIL("card %d: an arrow's box does not answer", card);
-        if (render_critter_nav_hit(card, lx - half, by + half) != -1 || render_critter_nav_hit(card, rx + half, by + half) != 1) CFAIL("card %d: a box's outer corner does not answer", card);
-        if (render_critter_nav_hit(card, TANK_W / 2.0f, by) || render_critter_nav_hit(card, TANK_W / 2.0f, Y + H / 2.0f) ||
-            render_critter_nav_hit(card, lx, Y + H / 2.0f) || render_critter_nav_hit(card, rx, Y + H - 4.0f)) CFAIL("card %d: the card between the arrows answers as one", card);
+        if (render_critter_nav_hit(card, FF_X(lp - half), FF_Y(bp + half)) != -1 || render_critter_nav_hit(card, FF_X(rp + half), FF_Y(bp + half)) != 1) CFAIL("card %d: a box's outer corner does not answer", card);
+        if (render_critter_nav_hit(card, TANK_W / 2.0f, by) || render_critter_nav_hit(card, TANK_W / 2.0f, FF_Y(Y + H / 2.0f)) ||
+            render_critter_nav_hit(card, lx, FF_Y(Y + H / 2.0f)) || render_critter_nav_hit(card, rx, FF_Y(Y + H - 4.0f))) CFAIL("card %d: the card between the arrows answers as one", card);
         if (render_critter_nav_hit(0, lx, by) || render_critter_nav_hit(-1, rx, by)) CFAIL("a fish's card or none answers as a critter's arrow");
         for (int c = 0; c < 4; c++) {                        /* each box's four corners on the glass (the bowl's circle included) */
-            float cx = (c & 1 ? rx + half : lx - half), cy = by + (c & 2 ? half : -half);
+            float cx = (c & 1 ? rx + hf : lx - hf), cy = by + (c & 2 ? hf : -hf);
             if (cx < 0 || cx >= TANK_W || cy < 0 || cy >= TANK_H) CFAIL("card %d: an arrow off the frame", card);
 #ifdef TANK_ROUND
             if (hypotf(cx - TANK_W / 2.0f, cy - TANK_H / 2.0f) > TANK_W / 2.0f - 4) CFAIL("card %d: an arrow outside the bowl's circle", card);
 #endif
         }
     }
+#undef FF_X
+#undef FF_Y
     int c = RENDER_CARD_SNAIL;                               /* round, both ways */
     for (int k = 1; k <= 5; k++) { c = render_critter_step(&tank, c, 1); if (c != ORDER[k % 5]) CFAIL("right, step %d -> %d", k, c); }
     for (int k = 1; k <= 5; k++) { c = render_critter_step(&tank, c, -1); if (c != ORDER[(5 - k) % 5]) CFAIL("left, step %d -> %d", k, c); }

@@ -174,18 +174,18 @@ static void dial_rules(void) {
     SCHECK(!setup_active() && setup_take_sdgift(NULL) == 0, "a page taken away sent");
     /* by touch, as the glass does: a drag on the ones digit turns it, the SEND on the foot */
     setup_begin_sdgift(&t, LINK_RIGHT, 2);
-    float x = PAGE_X + (PAGE_W - (2 * SETUP_SLOT_PX + SETUP_SLOT_W)) / 2 + 2 * SETUP_SLOT_PX + SETUP_SLOT_W / 2, y = PAGE_Y + SETUP_SLOT_Y + 20;
+    float x = PAGE_FX((PAGE_W - (2 * SETUP_SLOT_PX + SETUP_SLOT_W)) / 2 + 2 * SETUP_SLOT_PX + SETUP_SLOT_W / 2), y = PAGE_FY(SETUP_SLOT_Y + 20);
     setup_touch(&t, x, y, true); for (int k = 1; k <= 3 * SETUP_SPIN_PX + 4; k++) setup_touch(&t, x, y - k, true); setup_touch(&t, x, y - 3 * SETUP_SPIN_PX - 4, false);
     SCHECK(setup_sdgift_amount() == 3, "a drag up three steps: %d", setup_sdgift_amount());
-    { float cy = PAGE_Y + SETUP_SLOT_Y - SETUP_ARROW_GAP;   /* the letter wheel's feel (0.4.2): a drag from the chevron turns it too */
+    { float cy = PAGE_FY(SETUP_SLOT_Y - SETUP_ARROW_GAP);   /* the letter wheel's feel (0.4.2): a drag from the chevron turns it too */
       setup_touch(&t, x, cy, true); for (int k = 1; k <= 2 * SETUP_SPIN_PX + 4; k++) setup_touch(&t, x, cy + k, true); setup_touch(&t, x, cy + 2 * SETUP_SPIN_PX + 4, false);
       SCHECK(setup_sdgift_amount() == 1, "a drag down two steps from the chevron: %d", setup_sdgift_amount());
       for (int k = 0; k < 2; k++) { setup_touch(&t, x, y, true); for (int j = 1; j <= SETUP_SPIN_PX + 4; j++) setup_touch(&t, x, y - j, true); setup_touch(&t, x, y - SETUP_SPIN_PX - 4, false); } }
     SCHECK(setup_sdgift_amount() == 3, "back up to 3: %d", setup_sdgift_amount());
-    float nx = PAGE_X + SETUP_TOP_NEXT_X + SETUP_TOP_BTN_W / 2, ny = PAGE_Y + SETUP_TOP_BTN_Y + SETUP_BTN_H / 2;
+    float nx = PAGE_FX(SETUP_TOP_NEXT_X + SETUP_TOP_BTN_W / 2), ny = PAGE_FY(SETUP_TOP_BTN_Y + SETUP_BTN_H / 2);
     setup_touch(&t, nx, ny, true); setup_touch(&t, nx, ny, false); SCHECK(setup_sdgift_confirming(), "a tap on NEXT");
     setup_touch(&t, nx, ny, true); setup_touch(&t, nx, ny, false); SCHECK(setup_sdgift_confirming(), "a second tap where NEXT was sent it");
-    float sx = PAGE_X + SETUP_NEXT_X + SETUP_BTN_W / 2, sy = PAGE_Y + SETUP_BTN_Y + SETUP_BTN_H / 2;
+    float sx = PAGE_FX(SETUP_NEXT_X + SETUP_BTN_W / 2), sy = PAGE_FY(SETUP_BTN_Y + SETUP_BTN_H / 2);
     setup_touch(&t, sx, sy, true); setup_touch(&t, sx, sy, false);
     SCHECK(!setup_active() && setup_take_sdgift(NULL) == 3, "SEND by touch");
 }

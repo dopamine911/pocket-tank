@@ -1412,9 +1412,22 @@ static const uint8_t lt_minnows_px[4536] = {
 };
 #endif
 
+static uint16_t lt_at(const uint8_t *px, const uint16_t *pal, int k) { unsigned b = (unsigned)k * 6, v = (unsigned)px[b >> 3] | (unsigned)px[(b >> 3) + ((b & 7) > 2)] << 8; return pal[(v >> (b & 7)) & 63]; }
 bool lib_thumb(int which, uint16_t *out, int w, int h) {
-    if (w != LT_W || h != LT_H || which < 0 || which > 1) return false;
+    if (which < 0 || which > 1) return false;
     const uint16_t *pal = which ? lt_minnows_pal : lt_piranha_pal; const uint8_t *px = which ? lt_minnows_px : lt_piranha_px;
-    for (int k = 0; k < LT_W * LT_H; k++) { unsigned b = (unsigned)k * 6, v = (unsigned)px[b >> 3] | (unsigned)px[(b >> 3) + ((b & 7) > 2)] << 8; out[k] = pal[(v >> (b & 7)) & 63]; }
+    if (w == LT_W && h == LT_H) { for (int k = 0; k < LT_W * LT_H; k++) out[k] = lt_at(px, pal, k); return true; }
+#ifdef TANK_CYD
+    /* the CYD's pictures are its scaled glass's size (render.c SH_THUMB_W/H): the 1.8's art, box-filtered down (no art of its own) */
+    if (w > LT_W || h > LT_H || w <= 0 || h <= 0) return false;
+    for (int j = 0; j < h; j++)
+        for (int i = 0; i < w; i++) {
+            int x0 = i * LT_W / w, x1 = (i + 1) * LT_W / w, y0 = j * LT_H / h, y1 = (j + 1) * LT_H / h, r = 0, g = 0, b = 0, n = 0;
+            for (int y = y0; y < y1; y++) for (int x = x0; x < x1; x++) { uint16_t v = lt_at(px, pal, y * LT_W + x); r += v >> 11; g += (v >> 5) & 63; b += v & 31; n++; }
+            out[j * w + i] = n ? (uint16_t)((r / n) << 11 | (g / n) << 5 | (b / n)) : 0;
+        }
     return true;
+#else
+    return false;
+#endif
 }

@@ -50,8 +50,8 @@ void net_sim_cut_at(int k);
 void net_sim_cold(int n);
 
 #define WF(...) do { printf("FAIL: wifi3: "); printf(__VA_ARGS__); printf("\n"); return 1; } while (0)
-#define PGX(x) (PAGE_X + (x))
-#define PGY(y) (PAGE_Y + (y))
+#define PGX(x) PAGE_FX(x)
+#define PGY(y) PAGE_FY(y)
 #define ADV(secs) do { net_sim_advance(secs); update_tick(secs); } while (0)
 #define TAP(X, Y) (update_touch(PGX(X), PGY(Y), true), update_touch(PGX(X), PGY(Y), false))
 #define KEY(cell) TAP(UPD_KB_X + ((cell) % UPD_KB_COLS) * UPD_KB_PX + UPD_KB_W / 2, UPD_KB_Y + ((cell) / UPD_KB_COLS) * UPD_KB_PY + UPD_KB_H / 2)
@@ -98,9 +98,10 @@ static const char *frame_fits(int rows, int *bx, int *by) {
            check mark starts 8 px in), so a letter's white, a caption's teal or any other color in the strip still fails,
            on every line, as before. */
         if (rows > 0 && x >= PGX(UPD_FORGET_X - 8) && x < PGX(UPD_FORGET_X) && y >= PGY(UPD_NET_Y0) && y < PGY(UPD_NET_Y0 + rows * UPD_NET_DY)) {
-            const int ry = (y - PGY(UPD_NET_Y0)) % UPD_NET_DY, top = y - ry;
-            if (ry >= UPD_NET_H) return "between two rows";          /* (the gap under a row: ink only) */
-            const uint16_t want = (ry == 0 || ry == UPD_NET_H - 1) ? fb[top * TANK_W + PGX(UPD_X) + 2] : fb[(top + 2) * TANK_W + PGX(UPD_X) + 2];
+            int top = -1, bot = -1;                              /* the row this frame line is on, its first and last frame line (a scaled page's rows) */
+            for (int k = 0; k < rows; k++) { const int t = PGY(UPD_NET_Y0 + k * UPD_NET_DY), b = PGY(UPD_NET_Y0 + k * UPD_NET_DY + UPD_NET_H) - 1; if (y >= t && y <= b) { top = t; bot = b; } }
+            if (top < 0) return "between two rows";              /* (the gap under a row: ink only) */
+            const uint16_t want = (y == top || y == bot) ? fb[top * TANK_W + PGX(UPD_X) + 2] : fb[(top + 2) * TANK_W + PGX(UPD_X) + 2];
             if (fb[y * TANK_W + x] != want) return "between a name and its FORGET";
         }
     }
@@ -453,8 +454,11 @@ int selftest_wifi3(void) {
     for (int r = 0; r < 3; r++) {
         if (updates_page_tap(PGX(FORGET_X), PGY(FORGET_Y(r))) != UPD_TAP_FORGET + r) WF("H: row %d's FORGET reads %d", r, updates_page_tap(PGX(FORGET_X), PGY(FORGET_Y(r))));
         if (updates_page_tap(PGX(UPD_FORGET_X - 12), PGY(FORGET_Y(r))) != UPD_TAP_NONE) WF("H: a network's name is a FORGET (row %d)", r);
-        for (int y = UPD_FORGET_Y + r * UPD_NET_DY - 3; y < UPD_FORGET_Y + (r + 1) * UPD_NET_DY - 3; y++)
-            if (updates_page_tap(PGX(FORGET_X), PGY(y)) != UPD_TAP_FORGET + r) WF("H: page y %d reads %d, not row %d's FORGET", y, updates_page_tap(PGX(FORGET_X), PGY(y)), r);
+        /* (frame rows: a scaled page's frame row covers 1.5 page rows, so the rows at a band's two ends are shared with the
+           next band and its gap - the rows inside it must all answer; on the other glasses that is every row, as before) */
+        const int e = PAGE_SCALED, ya = UPD_FORGET_Y + r * UPD_NET_DY - 3, yb = UPD_FORGET_Y + (r + 1) * UPD_NET_DY - 3;
+        for (int fy = PGY(ya) + e; fy < PGY(yb) - e; fy++)
+            if (updates_page_tap(PGX(FORGET_X), fy) != UPD_TAP_FORGET + r) WF("H: frame y %d reads %d, not row %d's FORGET", fy, updates_page_tap(PGX(FORGET_X), fy), r);
     }
     if (updates_page_tap(PGX(FORGET_X), PGY(UPD_FORGET_Y + 3 * UPD_NET_DY)) != UPD_TAP_NONE) WF("H: a FORGET under the third row");
     if (updates_page_tap(PGX(UPD_X + UPD_W / 2), PGY(UPD_ADD_Y + UPD_BTN40 / 2)) != UPD_TAP_ADD) WF("H: ADD A NETWORK");

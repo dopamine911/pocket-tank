@@ -34,7 +34,7 @@ static double tap_press(const tank_t *t) { return g_tap_press_on && g_tap_press 
 /* a draw target: fb + stride + night dim, plus the window it covers in tank
  * coordinates (ox,oy,w,h) - the frame is (0,0,TANK_W,TANK_H); the stats card
  * cache is a small sprite that still gets drawn in tank coordinates */
-typedef struct { uint16_t *fb; int stride; float dim; int ox, oy, w, h; } ctx_t;
+typedef struct { uint16_t *fb; int stride; float dim; int ox, oy, w, h; bool pg; } ctx_t;   /* pg: a SCALED page's (render.h PAGE_SCALED) */
 /* every draw target made outside the keeper page counts: the page keeps a framebuffer only while nothing else drew
    (THE PAGE KEPT, render_milestones) */
 static unsigned g_ctx_other; static bool g_ms_in;
@@ -49,12 +49,44 @@ static ctx_t ctx_full(uint16_t *fb, int stride, float dim) {
 static bool g_dirty_hold;                          /* below, with the dirty mask */
 static ctx_t ctx_page(uint16_t *fb, int stride) {
     CTX_MADE();
+#if PAGE_SCALED
+    ctx_t c = { fb, stride, 1.0f, 0, 0, TANK_W, TANK_H, true };   /* the frame's own window: px / span / draw_text map the page onto it */
+#else
     ctx_t c = { fb, stride, 1.0f, -PAGE_X, -PAGE_Y, TANK_W, TANK_H };
+#endif
     g_dirty_hold = true;                           /* a page's coordinates must never reach the mask */
     return c;
 }
 #define CTX_IN(c, x, y) ((unsigned)((x) - (c)->ox) < (unsigned)(c)->w && (unsigned)((y) - (c)->oy) < (unsigned)(c)->h)
 #define CTX_PX(c, x, y) ((c)->fb[((y) - (c)->oy) * (c)->stride + ((x) - (c)->ox)])
+/* THE SCALED PAGE (render.h): page px x covers frame px PG_X(x) .. PG_X(x + 1) - 1 - none when PAGE_K < 1 puts two
+ * page px on one frame px. An opaque shape lands every page px (a 1 px rule never drops out: it lands on the frame px
+ * its neighbour also takes); a blend only the page px whose cell is not empty, one per frame px, so a panel's alpha
+ * is laid once and never twice */
+#if PAGE_SCALED
+#define PG_X(x) PAGE_FX(x)
+#define PG_Y(y) PAGE_FY(y)
+static inline ctx_t ctx_unpaged(const ctx_t *c) { ctx_t f = *c; f.pg = false; return f; }
+#endif
+/* a raw write of one 565 px (no marks, as before): on a scaled page its page px lands on the frame px it maps to */
+static inline void raw_px(ctx_t *c, int x, int y, uint16_t v) {
+#if PAGE_SCALED
+    if (c->pg) {
+        const int fx = PG_X(x), fy = PG_Y(y);
+        if (x >= 0 && y >= 0 && x < PAGE_W && y < PAGE_H && (unsigned)fx < TANK_W && (unsigned)fy < TANK_H) c->fb[fy * c->stride + fx] = FB_SWAP16(v);
+        return;
+    }
+#endif
+    if (CTX_IN(c, x, y)) CTX_PX(c, x, y) = FB_SWAP16(v);
+}
+/* a frame-space view of a page ctx (or of a frame ctx): tank coordinates for the things that are placed on the tank
+   (a ring round a fish), whichever way the page ctx maps */
+static inline ctx_t ctx_tank(const ctx_t *c) { ctx_t f = *c; f.ox = 0; f.oy = 0; f.w = TANK_W; f.h = TANK_H; f.pg = false; return f; }
+/* a box laid out in page px (centred on the page) -> the frame's corners (the taps and the getters answer in frame px) */
+static inline void frame_rect(int *x, int *y, int *w, int *h) {
+    const int x0 = PAGE_FX(*x), y0 = PAGE_FY(*y), x1 = PAGE_FX(*x + *w), y1 = PAGE_FY(*y + *h);
+    *x = x0; *y = y0; *w = x1 - x0; *h = y1 - y0;
+}
 
 /* Dirty mask (2026-09-01): one bit per pixel, set by everything drawn over
  * the baked scene (px, span, blends), cleared every frame. The porthole
@@ -549,6 +581,9 @@ static inline void bg_mark(int x0, int x1, int y) {
     if (y < g_sg_top) g_sg_top = y;
 }
 static void px(ctx_t *c, int x, int y, uint16_t col) {
+#if PAGE_SCALED
+    if (c->pg) { ctx_t f = ctx_unpaged(c); px(&f, PG_X(x), PG_Y(y), col); return; }
+#endif
     if (CTX_IN(c, x, y)) {
         CTX_PX(c, x, y) = FB_SWAP16(col);
         bb_add(x, x, y);
@@ -576,6 +611,12 @@ static inline void blend565(uint16_t *p, const src_t *s, int a) {
     *p = FB_SWAP16((uint16_t)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)));
 }
 static inline void px_blend_s(ctx_t *c, int x, int y, const src_t *s, int a) {
+#if PAGE_SCALED
+    if (c->pg) {
+        if (PG_X(x + 1) == PG_X(x) || PG_Y(y + 1) == PG_Y(y)) return;   /* (an empty cell: its frame px is another page px's) */
+        ctx_t f = ctx_unpaged(c); px_blend_s(&f, PG_X(x), PG_Y(y), s, a); return;
+    }
+#endif
     if (CTX_IN(c, x, y) && !under_bg(x, y)) {
 #ifdef PT_PERF
         g_pf_blend++;
@@ -589,6 +630,14 @@ static void px_blend(ctx_t *c, int x, int y, uint32_t rgb, int a) {
 }
 /* horizontal span [x0,x1] on row y, clipped to the frame, pre-dimmed source */
 static inline void span(ctx_t *c, int x0, int x1, int y, const src_t *s, int alpha) {
+#if PAGE_SCALED
+    if (c->pg) {
+        const int fy = PG_Y(y); int fx0 = PG_X(x0), fx1 = PG_X(x1 + 1) - 1;
+        if (alpha < 255 && PG_Y(y + 1) == fy) return;
+        if (fx1 < fx0) { if (alpha < 255) return; fx1 = fx0; }
+        ctx_t f = ctx_unpaged(c); span(&f, fx0, fx1, fy, s, alpha); return;
+    }
+#endif
     if ((unsigned)(y - c->oy) >= (unsigned)c->h) return;
     if (x0 < c->ox) x0 = c->ox;
     if (x1 > c->ox + c->w - 1) x1 = c->ox + c->w - 1;
@@ -8250,6 +8299,12 @@ static void ring(ctx_t *c, float cx, float cy, float r, uint32_t rgb) {
 /* blend one native RGB565 pixel (icon art is pre-colored; no dim - the card
  * ignores night, matching px_blend's use with c->dim = 1) */
 static void px565_blend(ctx_t *c, int x, int y, uint16_t v, int a) {
+#if PAGE_SCALED
+    if (c->pg) {                                   /* (an icon on a scaled page: one of its px a frame px, as px_blend_s) */
+        if (PG_X(x + 1) == PG_X(x) || PG_Y(y + 1) == PG_Y(y)) return;
+        ctx_t f = ctx_unpaged(c); px565_blend(&f, PG_X(x), PG_Y(y), v, a); return;
+    }
+#endif
     if (!CTX_IN(c, x, y)) return;
     uint16_t *p = &CTX_PX(c, x, y), cur = FB_SWAP16(*p);
     int r = (cur >> 11)       + (((v >> 11)       - (cur >> 11))       * a >> 8);
@@ -8345,22 +8400,22 @@ static void card_draw(ctx_t c, const tank_t *t, int fish_idx) {
         { &icon_trust,  f->trust,          0xffd166 },
     };
     for (int i = 0; i < 4; i++) {
-        int ry = Y + 30 + i * 27;
+        int ry = Y + CARD_NEED_Y + i * CARD_NEED_DY;
         blit_icon(&c, X + 8, ry, needs[i].ic, 255);
         meter(&c, X + 38, ry + 7, 5, 14, needs[i].v / 10.0f, needs[i].rgb);
     }
 
     /* divider between the zones */
-    for (int x = X + 8; x < X + W - 8; x++) px_blend(&c, x, Y + 142, 0x2a3f45, 200);
+    for (int x = X + 8; x < X + W - 8; x++) px_blend(&c, x, Y + CARD_DIV_Y, 0x2a3f45, 200);
 
     /* who they are: spectrum sliders, revealed by behaviour you have seen
        this fish do (docs/progression.md habits) */
     bool saw_bold = f->ms_bits & MS_FIRST_DART;
     bool saw_social = f->ms_bits & MS_FIRST_FOLLOW;
     bool saw_curious = f->ms_bits & (MS_INSPECTED | MS_FIRST_BUBBLES);
-    slider(&c, X + 8, Y + 152, W - 16, f->bold,             0xffffff, &icon_shy,      &icon_bold,    saw_bold);
-    slider(&c, X + 8, Y + 178, W - 16, f->sociable,         0x38dcc7, &icon_solo,     &icon_social,  saw_social);
-    slider(&c, X + 8, Y + 204, W - 16, f->curiosity / 10.0f, 0x6db9ff, &icon_cautious, &icon_curious, saw_curious);
+    slider(&c, X + 8, Y + CARD_SLIDER_Y, W - 16, f->bold,             0xffffff, &icon_shy,      &icon_bold,    saw_bold);
+    slider(&c, X + 8, Y + CARD_SLIDER_Y + CARD_SLIDER_DY, W - 16, f->sociable,         0x38dcc7, &icon_solo,     &icon_social,  saw_social);
+    slider(&c, X + 8, Y + CARD_SLIDER_Y + 2 * CARD_SLIDER_DY, W - 16, f->curiosity / 10.0f, 0x6db9ff, &icon_cautious, &icon_curious, saw_curious);
 
     /* the way onward (2026-09-16): a MORE button in the pages' dress at the
        foot of the card. The whole card was already the tap that opens the
@@ -8386,7 +8441,12 @@ void render_set_card_cache(uint16_t *buf) { g_card = buf; g_card_fish = -1; }
    far"): a ring on the snail, a centred box in the modal's dress - the
    upright sprite at 2x, SNAIL, the tally. Drawn every frame (no cache: a
    few hundred blended pixels, nothing like the fish card's meters). */
-static int  text_w(const char *s, int scale);                                  /* the pixel font, below */
+static int  text_w_px(const char *s, int scale);                               /* the pixel font, below */
+#if PAGE_SCALED
+static int  text_w(const char *s, int scale);                                  /* (a SCALED page's: in page px, below) */
+#else
+#define text_w text_w_px
+#endif
 static void draw_text(ctx_t *c, int x, int y, int scale, uint32_t rgb, const char *s);
 static void rect_edge(ctx_t *c, int x, int y, int w, int h, uint32_t rgb);
 static void blit_icon_scaled(ctx_t *c, int x, int y, const icon_t *ic, int s, bool lit);
@@ -8402,8 +8462,8 @@ static void crit_spot(const tank_t *t, int k, float *x, float *y, float *r) {
     }
 }
 static void snail_card_draw(ctx_t *c, const tank_t *t) {
-    { float rx, ry, rr; crit_spot(t, CRIT_NAME_SNAIL, &rx, &ry, &rr); ring(c, rx, ry, rr, 0x9fd8e2); }
-    const int W = SNAIL_CARD_W, H = SNAIL_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    { ctx_t fr = ctx_tank(c); float rx, ry, rr; crit_spot(t, CRIT_NAME_SNAIL, &rx, &ry, &rr); ring(&fr, rx, ry, rr, 0x9fd8e2); }
+    const int W = SNAIL_CARD_W, H = SNAIL_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     src_t bg = src_color(0x04141a, 1.0f);
     for (int y = Y; y < Y + H; y++) span(c, X, X + W - 1, y, &bg, 235);
     rect_edge(c, X, Y, W, H, 0x9fd8e2); rect_edge(c, X + 1, Y + 1, W - 2, H - 2, 0x1c2f36);
@@ -8425,11 +8485,11 @@ static void snail_card_draw(ctx_t *c, const tank_t *t) {
    a ring on it, a centred card - the crab facing the glass at 2x (its own grid: the tank's may be a profile),
    STRAWBERRY CRAB, the pellets it has found, what it is doing */
 static void crab_collect_box(int *x, int *y, int *w, int *h) {   /* the crab card's COLLECT, where the status line stands */
-    *w = 156; *h = MSP_CLOSE_H; *x = (TANK_W - *w) / 2; *y = (TANK_H - CRAB_CARD_H) / 2 + CRAB_CARD_H - CRIT_NAME_ROW_H - *h - 12;   /* (over the NAME row, 0.4.2) */
+    *w = 156; *h = MSP_CLOSE_H; *x = (PAGE_W - *w) / 2; *y = (PAGE_H - CRAB_CARD_H) / 2 + CRAB_CARD_H - CRIT_NAME_ROW_H - *h - 12;   /* (PAGE; over the NAME row, 0.4.2) */
 }
 bool render_crab_collect_hit(const tank_t *t, float x, float y) {
     if (t->cr_find <= 0) return false;
-    int bx, by, bw, bh; crab_collect_box(&bx, &by, &bw, &bh);
+    int bx, by, bw, bh; crab_collect_box(&bx, &by, &bw, &bh); frame_rect(&bx, &by, &bw, &bh);
     return x >= bx - 8 && x < bx + bw + 8 && y >= by - 8 && y < by + bh + 8;
 }
 /* the crab's portrait (its card at 2x; the name wheel's box at 1x, 0.4.2): top left (ox, oy) */
@@ -8448,8 +8508,8 @@ static void crab_card_art(ctx_t *c, const tank_t *t, int ox, int oy, int S) {
         }
 }
 static void crab_card_draw(ctx_t *c, const tank_t *t) {
-    { float rx, ry, rr; crit_spot(t, CRIT_NAME_CRAB, &rx, &ry, &rr); ring(c, rx, ry, rr, 0x9fd8e2); }
-    const int W = CRAB_CARD_W, H = CRAB_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    { ctx_t fr = ctx_tank(c); float rx, ry, rr; crit_spot(t, CRIT_NAME_CRAB, &rx, &ry, &rr); ring(&fr, rx, ry, rr, 0x9fd8e2); }
+    const int W = CRAB_CARD_W, H = CRAB_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     src_t bg = src_color(0x04141a, 1.0f);
     for (int y = Y; y < Y + H; y++) span(c, X, X + W - 1, y, &bg, 235);
     rect_edge(c, X, Y, W, H, 0x9fd8e2); rect_edge(c, X + 1, Y + 1, W - 2, H - 2, 0x1c2f36);
@@ -8495,8 +8555,8 @@ static void urchin_card_art(ctx_t *c, const tank_t *t, int ox, int oy, int S) {
         }
 }
 static void urchin_card_draw(ctx_t *c, const tank_t *t) {
-    { float rx, ry, rr; crit_spot(t, CRIT_NAME_URCHIN, &rx, &ry, &rr); ring(c, rx, ry, rr, 0x9fd8e2); }
-    const int W = URCHIN_CARD_W, H = URCHIN_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    { ctx_t fr = ctx_tank(c); float rx, ry, rr; crit_spot(t, CRIT_NAME_URCHIN, &rx, &ry, &rr); ring(&fr, rx, ry, rr, 0x9fd8e2); }
+    const int W = URCHIN_CARD_W, H = URCHIN_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     src_t bg = src_color(0x04141a, 1.0f);
     for (int y = Y; y < Y + H; y++) span(c, X, X + W - 1, y, &bg, 235);
     rect_edge(c, X, Y, W, H, 0x9fd8e2); rect_edge(c, X + 1, Y + 1, W - 2, H - 2, 0x1c2f36);
@@ -8557,12 +8617,12 @@ void render_hearts(uint16_t *fb, int stride, int x, int y, int lit, int scale) {
 static void passport_card_draw(ctx_t *c, uint16_t *fb, int stride, const tank_t *t, int k) {
     const fish_t *f = &t->fish[N_FISH_MAX + k];
     const uint32_t GOLD = 0xe8c872, INK = 0x13324f, LBL = 0x7fa3b5;
-    ring(c, f->x, f->y, 17 * f->size, GOLD);
-    const int W = PASSPORT_CARD_W, H = PASSPORT_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    { ctx_t fr = ctx_tank(c); ring(&fr, f->x, f->y, 17 * f->size, GOLD); }
+    const int W = PASSPORT_CARD_W, H = PASSPORT_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     src_t bg = src_color(0x0e2233, 1.0f);
     for (int y = Y; y < Y + H; y++) span(c, X, X + W - 1, y, &bg, 240);
     for (int y = Y + 34; y < Y + H - 30; y += 7)              /* the page's fine wavy lines */
-        for (int x = X + 3; x < X + W - 3; x++) px_blend(c, x, y + (int)(2.0f * sinf(x * 0.11f + y * 0.37f)), 0x2b4a63, 80);
+        for (int x = X + 3; x < X + W - 3; x++) px_blend(c, x, y + (int)(2.0f * sinf(PAGE_FX(x) * 0.11f + PAGE_FY(y) * 0.37f)), 0x2b4a63, 80);   /* (the wave's phase: the frame's px) */
     src_t band = src_color(INK, 1.0f);
     for (int y = Y; y < Y + 26; y++) span(c, X, X + W - 1, y, &band, 255);
     const char *title = "POCKET TANK PASSPORT";
@@ -8571,7 +8631,7 @@ static void passport_card_draw(ctx_t *c, uint16_t *fb, int stride, const tank_t 
     /* the photo */
     const int PX = X + 12, PY = Y + 36, PW = 100, PH = 84;
     rect_fill(c, PX, PY, PW, PH, 0x0a1824); rect_edge(c, PX, PY, PW, PH, 0x9fd8e2);
-    render_fish_portrait(fb, stride, PX + PW / 2.0f - PAGE_X, PY + PH / 2.0f - PAGE_Y, 1.3f, f, PW - 20, t->clock);   /* (page coordinates) */
+    render_fish_portrait(fb, stride, PX + PW / 2.0f, PY + PH / 2.0f, 1.3f, f, PW - 20, t->clock);   /* (page coordinates) */
     /* the fields */
     const int FX = PX + PW + 12;
     int vb = t->vis_badge[k];
@@ -8617,7 +8677,7 @@ static void passport_card_draw(ctx_t *c, uint16_t *fb, int stride, const tank_t 
     /* the machine line */
     char m1[64], m2[64], nm[FISH_NAME_MAX + 1];
     int i = 0; for (; f->name[i] && i < FISH_NAME_MAX; i++) nm[i] = f->name[i]; nm[i] = 0;
-    int cols = (W - 20) / 6; if (cols > 60) cols = 60;
+    int cols = (int)(((W - 20) * PAGE_K + 1) / 6); if (cols > 60) cols = 60;   /* (a size-1 glyph is 6 drawn px: fits the card's page px) */
     snprintf(m1, sizeof m1, "P<FISH<<%s", nm);
     snprintf(m2, sizeof m2, "%08X<<%08X<<%d", (unsigned)f->uid, (unsigned)t->vis_home[k], f->stage & 3);
     for (int j = (int)strlen(m1); j < cols; j++) m1[j] = '<';
@@ -8653,15 +8713,21 @@ static void passport_card_draw(ctx_t *c, uint16_t *fb, int stride, const tank_t 
 typedef struct { uint16_t *buf; uint32_t key; int h; bool ok; } bake_t;
 static bake_t g_bake_gm, g_bake_gift;
 static uint16_t *g_bake_bufs[2];
+/* THE CARDS BAKED OFF ON THE SCALED PAGE (the CYD): a bake is painted at the page's own size and copied to the frame, which a
+ * scaled page cannot do (PAGE_K < 1) - so the cards are drawn live there, and no buffer is ever taken (bake_want stays out) */
 void render_set_modal_cache(uint16_t *give, uint16_t *gift) {
+#if PAGE_SCALED
+    (void)give; (void)gift;
+#else
     g_bake_bufs[0] = give; g_bake_bufs[1] = gift;
     g_bake_gm.buf = give; g_bake_gift.buf = gift; g_bake_gm.ok = g_bake_gift.ok = false;
+#endif
 }
 static unsigned g_rframe;                            /* (THE PAGE KEPT's frame count, below) */
-static bool g_bake_off;                                 /* (the director's `link bake off`) */
+static bool g_bake_off = PAGE_SCALED;                /* (the director's `link bake off`; always on the scaled page) */
 void render_modal_cache_on(bool on) {   /* (the director's `link bake on|off`: the same build measured both ways) */
-    g_bake_off = !on;
-    g_bake_gm.buf = on ? g_bake_bufs[0] : NULL; g_bake_gift.buf = on ? g_bake_bufs[1] : NULL; g_bake_gm.ok = g_bake_gift.ok = false;
+    g_bake_off = !on || PAGE_SCALED;
+    g_bake_gm.buf = on && !PAGE_SCALED ? g_bake_bufs[0] : NULL; g_bake_gift.buf = on && !PAGE_SCALED ? g_bake_bufs[1] : NULL; g_bake_gm.ok = g_bake_gift.ok = false;
 }
 /* THE CARDS LENT (0.4.2, the PSRAM census): on the device the two bakes (2 x 166 KB) were held from boot for cards that are
  * up a few minutes a day. With an allocator set they are taken when a card is first drawn and given back once it has not
@@ -8713,7 +8779,7 @@ static void gift_paint(ctx_t *c, const tank_t *t) {
     const passport_t *pp = &g->ask.pp;
     fish_t f; memset(&f, 0, sizeof f); passport_to_fish(pp, &f);
     const uint32_t GOLD = 0xe8c872, INK = 0x13324f, LBL = 0x7fa3b5;   /* (GIVE_GOLD, the passport's gold) */
-    const int W = GIFT_CARD_W, H = GIFT_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    const int W = GIFT_CARD_W, H = GIFT_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     rect_fill(c, X, Y, W, H, 0x0e2233);
     rect_fill(c, X, Y, W, 26, INK);
     const char *title = "A GIFT FOR YOUR TANK";
@@ -8771,9 +8837,9 @@ void render_gift(const tank_t *t, uint16_t *fb, int stride) {
     if (!g_ms_in && g_rframe && g_gift_frame == g_rframe) return;   /* (the keeper page drew it this frame) */
     g_gift_frame = g_rframe;
     if (!g->ask.shown) { g->ask.shown = true; g->ask.seen = t->clock; g_gift_cue = true; }   /* first seen: its hold and its cue from now */
-    ctx_t cc = ctx_full(fb, stride, 1.0f); ctx_t *c = &cc;
+    ctx_t cc = ctx_page(fb, stride); ctx_t *c = &cc;
     const passport_t *pp = &g->ask.pp;
-    const int W = GIFT_CARD_W, H = GIFT_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    const int W = GIFT_CARD_W, H = GIFT_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     bake_want(&g_bake_gift, 1);
     if (g_bake_gift.buf) {
         uint32_t key = bake_hash(bake_hash(bake_hash(2166136261u, g->ask.uid), g->ask.nonce), (uint32_t)(g->ask.badge + 1));
@@ -8784,29 +8850,31 @@ void render_gift(const tank_t *t, uint16_t *fb, int stride) {
             gift_paint(&bc, t);
             bake_end(&g_bake_gift, key, H, tm, hold);
         }
-        bake_blit(&g_bake_gift, X, Y, W, H, fb, stride);
+        bake_blit(&g_bake_gift, PAGE_FX(X), PAGE_FY(Y), W, H, fb, stride);
     } else gift_paint(c, t);
     fish_t f; memset(&f, 0, sizeof f); passport_to_fish(pp, &f);      /* live: the fish in its box, the bar running down */
     const int PX = X + 12, PY = Y + 36, PW = 100, PH = 84;
-    render_fish_portrait(fb, stride, PX + PW / 2.0f - PAGE_X, PY + PH / 2.0f - PAGE_Y, 1.3f, &f, PW - 20, t->clock);   /* (page coordinates) */
+    render_fish_portrait(fb, stride, PX + PW / 2.0f, PY + PH / 2.0f, 1.3f, &f, PW - 20, t->clock);   /* (page coordinates) */
     float left = 1.0f - (float)(t->clock - g->ask.since) / (LINK_GIVE_ASK_MS / 1000.0f);   /* the time left to answer */
     left = left < 0 ? 0 : left > 1 ? 1 : left;
     if (left > 0) rect_fill(c, X + 25, Y + 187, (int)((W - 50) * left), 4, 0x9fd8e2);
 }
 int render_gift_hit(float x, float y) {
-    const int W = GIFT_CARD_W, H = GIFT_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    const int W = GIFT_CARD_W, H = GIFT_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     const int BY = Y + GIFT_BTN_Y, gap = W - 2 * GIFT_BTN_W - 24;
-    if (y >= BY - 10 && y < BY + GIFT_BTN_H + 14 && x >= X && x < X + W) return x < X + 12 + GIFT_BTN_W + gap / 2 ? GIFT_HIT_ACCEPT : GIFT_HIT_NO;
-    return x >= X && x < X + W && y >= Y && y < Y + H ? GIFT_HIT_CARD : GIFT_HIT_NONE;
+    const int fx0 = PAGE_FX(X), fx1 = PAGE_FX(X + W), fy0 = PAGE_FY(Y), fy1 = PAGE_FY(Y + H), div = PAGE_FX(X + 12 + GIFT_BTN_W + gap / 2);
+    if (y >= PAGE_FY(BY) - 10 && y < PAGE_FY(BY + GIFT_BTN_H) + 14 && x >= fx0 && x < fx1) return x < div ? GIFT_HIT_ACCEPT : GIFT_HIT_NO;
+    return x >= fx0 && x < fx1 && y >= fy0 && y < fy1 ? GIFT_HIT_CARD : GIFT_HIT_NONE;
 }
 int render_passport_hit(float x, float y) {
-    const int W = PASSPORT_CARD_W, H = PASSPORT_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    const int W = PASSPORT_CARD_W, H = PASSPORT_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     const int BY = Y + PASSPORT_BTN_Y, BW = PASSPORT_BTN_W, gap = W - 2 * BW - 24;
-    if (y >= BY - 8 && y < BY + PASSPORT_BTN_H + 10) {
-        if (x >= X + 4 && x < X + 12 + BW + gap / 2) return PASSPORT_HIT_DEPORT;
-        if (x >= X + 12 + BW + gap / 2 && x < X + W - 4) return PASSPORT_HIT_COLLECT;
+    const int fx0 = PAGE_FX(X), fx1 = PAGE_FX(X + W), fy0 = PAGE_FY(Y), fy1 = PAGE_FY(Y + H), div = PAGE_FX(X + 12 + BW + gap / 2);
+    if (y >= PAGE_FY(BY - 8) && y < PAGE_FY(BY + PASSPORT_BTN_H + 10)) {
+        if (x >= PAGE_FX(X + 4) && x < div) return PASSPORT_HIT_DEPORT;
+        if (x >= div && x < PAGE_FX(X + W - 4)) return PASSPORT_HIT_COLLECT;
     }
-    return x >= X && x < X + W && y >= Y && y < Y + H ? PASSPORT_HIT_CARD : PASSPORT_HIT_NONE;
+    return x >= fx0 && x < fx1 && y >= fy0 && y < fy1 ? PASSPORT_HIT_CARD : PASSPORT_HIT_NONE;
 }
 
 /* the shrimp school's card (2026-09-29, Strato: "one tap should bring up a
@@ -8818,8 +8886,8 @@ static void shrimp_card_draw(ctx_t *c, const tank_t *t) {
     for (int i = 0; i < n; i++) { cx += t->shrimp[i].x; cy += t->shrimp[i].y; }
     cx /= n; cy /= n;
     for (int i = 0; i < n; i++) { float d = tank_dist(cx, cy, t->shrimp[i].x, t->shrimp[i].y); if (d > r) r = d; }
-    ring(c, cx, cy, fminf(fmaxf(r + 14, 22), 90), 0x9fd8e2);
-    const int W = SHRIMP_CARD_W, H = SHRIMP_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    { ctx_t fr = ctx_tank(c); ring(&fr, cx, cy, fminf(fmaxf(r + 14, 22), 90), 0x9fd8e2); }
+    const int W = SHRIMP_CARD_W, H = SHRIMP_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     src_t bg = src_color(0x04141a, 1.0f);
     for (int y = Y; y < Y + H; y++) span(c, X, X + W - 1, y, &bg, 235);
     rect_edge(c, X, Y, W, H, 0x9fd8e2); rect_edge(c, X + 1, Y + 1, W - 2, H - 2, 0x1c2f36);
@@ -8880,8 +8948,8 @@ static void seahorse_card_art(ctx_t *c, const tank_t *t, int ox, int oy, int S) 
         }
 }
 static void seahorse_card_draw(ctx_t *c, const tank_t *t) {
-    { float rx, ry, rr; crit_spot(t, CRIT_NAME_SEAHORSE, &rx, &ry, &rr); ring(c, rx, ry, rr, 0x9fd8e2); }
-    const int W = SEAHORSE_CARD_W, H = SEAHORSE_CARD_H, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    { ctx_t fr = ctx_tank(c); float rx, ry, rr; crit_spot(t, CRIT_NAME_SEAHORSE, &rx, &ry, &rr); ring(&fr, rx, ry, rr, 0x9fd8e2); }
+    const int W = SEAHORSE_CARD_W, H = SEAHORSE_CARD_H, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     src_t bg = src_color(0x04141a, 1.0f);
     for (int y = Y; y < Y + H; y++) span(c, X, X + W - 1, y, &bg, 235);
     rect_edge(c, X, Y, W, H, 0x9fd8e2); rect_edge(c, X + 1, Y + 1, W - 2, H - 2, 0x1c2f36);
@@ -8925,17 +8993,16 @@ bool render_critter_here(const tank_t *t, int card) {
     default:                   return false;
     }
 }
-static bool crit_card_rect(int card, int *x, int *y, int *w) {   /* every critter card is centred; their heights differ */
-    int h;
+static bool crit_card_rect(int card, int *x, int *y, int *w, int *h) {   /* every critter card is centred on the PAGE (page px); their heights differ */
     switch (card) {
-    case RENDER_CARD_SNAIL:    *w = SNAIL_CARD_W; h = SNAIL_CARD_H; break;
-    case RENDER_CARD_SHRIMP:   *w = SHRIMP_CARD_W; h = SHRIMP_CARD_H; break;
-    case RENDER_CARD_URCHIN:   *w = URCHIN_CARD_W; h = URCHIN_CARD_H; break;
-    case RENDER_CARD_SEAHORSE: *w = SEAHORSE_CARD_W; h = SEAHORSE_CARD_H; break;
-    case RENDER_CARD_CRAB:     *w = CRAB_CARD_W; h = CRAB_CARD_H; break;
+    case RENDER_CARD_SNAIL:    *w = SNAIL_CARD_W; *h = SNAIL_CARD_H; break;
+    case RENDER_CARD_SHRIMP:   *w = SHRIMP_CARD_W; *h = SHRIMP_CARD_H; break;
+    case RENDER_CARD_URCHIN:   *w = URCHIN_CARD_W; *h = URCHIN_CARD_H; break;
+    case RENDER_CARD_SEAHORSE: *w = SEAHORSE_CARD_W; *h = SEAHORSE_CARD_H; break;
+    case RENDER_CARD_CRAB:     *w = CRAB_CARD_W; *h = CRAB_CARD_H; break;
     default: return false;
     }
-    *x = (TANK_W - *w) / 2; *y = (TANK_H - h) / 2;
+    *x = (PAGE_W - *w) / 2; *y = (PAGE_H - *h) / 2;
     return true;
 }
 static int crit_count(const tank_t *t) {
@@ -8953,12 +9020,12 @@ int render_critter_step(const tank_t *t, int card, int dir) {
     }
     return card;
 }
-int render_critter_nav_hit(int card, float x, float y) {
-    int X, Y, W;
-    if (!crit_card_rect(card, &X, &Y, &W)) return 0;
-    if (y < Y - 12 || y >= Y + RENDER_CRIT_NAV_IN + RENDER_CRIT_NAV_W + 14) return 0;      /* the box plus slop, most of it below and out */
-    if (x >= X - 12 && x < X + RENDER_CRIT_NAV_IN + RENDER_CRIT_NAV_W + 12) return -1;
-    if (x >= X + W - RENDER_CRIT_NAV_IN - RENDER_CRIT_NAV_W - 12 && x < X + W + 12) return 1;
+int render_critter_nav_hit(int card, float x, float y) {   /* the frame's tap: the arrows' boxes and their slop in frame px */
+    int X, Y, W, H;
+    if (!crit_card_rect(card, &X, &Y, &W, &H)) return 0;
+    if (y < PAGE_FY(Y) - 12 || y >= PAGE_FY(Y + RENDER_CRIT_NAV_IN + RENDER_CRIT_NAV_W) + 14) return 0;      /* the box plus slop, most of it below and out */
+    if (x >= PAGE_FX(X) - 12 && x < PAGE_FX(X + RENDER_CRIT_NAV_IN + RENDER_CRIT_NAV_W) + 12) return -1;
+    if (x >= PAGE_FX(X + W - RENDER_CRIT_NAV_IN - RENDER_CRIT_NAV_W) - 12 && x < PAGE_FX(X + W) + 12) return 1;
     return 0;
 }
 static void crit_nav_box(ctx_t *c, int bx, int by, int dir, uint32_t rgb) {
@@ -8971,8 +9038,8 @@ static void crit_nav_box(ctx_t *c, int bx, int by, int dir, uint32_t rgb) {
     }
 }
 static void crit_nav_draw(ctx_t *c, const tank_t *t, int card) {
-    int X, Y, W;
-    if (!crit_card_rect(card, &X, &Y, &W)) return;
+    int X, Y, W, H;
+    if (!crit_card_rect(card, &X, &Y, &W, &H)) return;
     const uint32_t rgb = crit_count(t) > 1 ? 0x9fd8e2 : 0x2c4a52;   /* dim with one: nowhere to go (brightness, never hue) */
     crit_nav_box(c, X + RENDER_CRIT_NAV_IN, Y + RENDER_CRIT_NAV_IN, -1, rgb);
     crit_nav_box(c, X + W - RENDER_CRIT_NAV_IN - RENDER_CRIT_NAV_W, Y + RENDER_CRIT_NAV_IN, 1, rgb);
@@ -8997,11 +9064,15 @@ int render_card_of_crit_name(int k) {
     default:                 return -1;
     }
 }
-bool render_crit_name_box(int card, int *x, int *y, int *w, int *h) {   /* the button, the frame's coordinates */
-    int X, Y, W;
-    if (render_crit_name_of_card(card) < 0 || !crit_card_rect(card, &X, &Y, &W)) return false;
-    const int H = card == RENDER_CARD_SNAIL ? SNAIL_CARD_H : card == RENDER_CARD_URCHIN ? URCHIN_CARD_H : card == RENDER_CARD_CRAB ? CRAB_CARD_H : SEAHORSE_CARD_H;
+static bool crit_name_box(int card, int *x, int *y, int *w, int *h) {   /* the button, PAGE */
+    int X, Y, W, H;
+    if (render_crit_name_of_card(card) < 0 || !crit_card_rect(card, &X, &Y, &W, &H)) return false;
     *w = RENDER_CRIT_NAME_W; *h = MSP_HOW_H; *x = X + W / 2 - RENDER_CRIT_FOOT_GAP / 2 - *w; *y = Y + H - CRIT_NAME_ROW_H + 2;   /* (SHELVE at its right, 0.4.2) */
+    return true;
+}
+bool render_crit_name_box(int card, int *x, int *y, int *w, int *h) {   /* the button, the frame's coordinates */
+    if (!crit_name_box(card, x, y, w, h)) return false;
+    frame_rect(x, y, w, h);
     return true;
 }
 /* ---- THE CRITTER SHELF on the card (0.4.2): SHELVE at the foot - right of NAME, alone on the shrimp school's - asked
@@ -9010,10 +9081,6 @@ bool render_crit_name_box(int card, int *x, int *y, int *w, int *h) {   /* the b
 #define CRIT_SHELVE_ARM_S 4.0
 static int    g_cs_card = -1;
 static double g_cs_clock = -1e9;
-static int crit_card_h(int card) {
-    return card == RENDER_CARD_SNAIL ? SNAIL_CARD_H : card == RENDER_CARD_SHRIMP ? SHRIMP_CARD_H : card == RENDER_CARD_URCHIN ? URCHIN_CARD_H
-         : card == RENDER_CARD_CRAB ? CRAB_CARD_H : SEAHORSE_CARD_H;
-}
 int render_crit_item_of_card(int card) {
     switch (card) {
     case RENDER_CARD_SNAIL:    return 1;
@@ -9024,11 +9091,16 @@ int render_crit_item_of_card(int card) {
     default:                   return -1;
     }
 }
-bool render_crit_shelve_box(int card, int *x, int *y, int *w, int *h) {   /* the button, the frame's coordinates */
-    int X, Y, W;
-    if (render_crit_item_of_card(card) < 0 || !crit_card_rect(card, &X, &Y, &W)) return false;
-    *w = RENDER_CRIT_NAME_W; *h = MSP_HOW_H; *y = Y + crit_card_h(card) - CRIT_NAME_ROW_H + 2;
+static bool crit_shelve_box(int card, int *x, int *y, int *w, int *h) {   /* the button, PAGE */
+    int X, Y, W, H;
+    if (render_crit_item_of_card(card) < 0 || !crit_card_rect(card, &X, &Y, &W, &H)) return false;
+    *w = RENDER_CRIT_NAME_W; *h = MSP_HOW_H; *y = Y + H - CRIT_NAME_ROW_H + 2;
     *x = card == RENDER_CARD_SHRIMP ? X + (W - *w) / 2 : X + W / 2 + RENDER_CRIT_FOOT_GAP / 2;   /* (the school has no name: alone, centred) */
+    return true;
+}
+bool render_crit_shelve_box(int card, int *x, int *y, int *w, int *h) {   /* the button, the frame's coordinates */
+    if (!crit_shelve_box(card, x, y, w, h)) return false;
+    frame_rect(x, y, w, h);
     return true;
 }
 bool render_critter_shelve_hit(const tank_t *t, int card, float x, float y) {
@@ -9055,8 +9127,8 @@ static const char *crit_waits(const tank_t *t, int item, char *out, size_t n) {
     return out;
 }
 static void crit_shelve_foot(ctx_t *c, const tank_t *t, int card) {
-    int bx, by, bw, bh, X, Y, W;
-    if (!render_crit_shelve_box(card, &bx, &by, &bw, &bh) || !crit_card_rect(card, &X, &Y, &W)) return;
+    int bx, by, bw, bh, X, Y, W, H;
+    if (!crit_shelve_box(card, &bx, &by, &bw, &bh) || !crit_card_rect(card, &X, &Y, &W, &H)) return;
     if (!cs_armed(t, card)) { button(c, bx, by, bw, bh, 0x1c2f36, 0x9fd8e2, "SHELVE", 2); return; }
     button(c, bx, by, bw, bh, 0x9fd8e2, 0x9fd8e2, "SURE?", 2);                 /* armed: lit, ink lettering (as SELL's +N OK?) */
     draw_text(c, bx + (bw - text_w("SURE?", 2)) / 2, by + (bh - 14) / 2, 2,  0x031015, "SURE?");
@@ -9083,7 +9155,7 @@ bool render_critter_name_hit(const tank_t *t, int card, float x, float y) {
 }
 static void crit_name_foot(ctx_t *c, const tank_t *t, int card) {
     int bx, by, bw, bh, k = render_crit_name_of_card(card);
-    if (k < 0 || !render_crit_name_box(card, &bx, &by, &bw, &bh)) return;
+    if (k < 0 || !crit_name_box(card, &bx, &by, &bw, &bh)) return;
     button(c, bx, by, bw, bh, 0x1c2f36, 0x9fd8e2, t->crit_name[k][0] ? "RENAME" : "NAME", 2);
 }
 bool render_crit_spot(const tank_t *t, int k, float *x, float *y, float *r) {
@@ -9106,7 +9178,7 @@ static void tools_draw(ctx_t *c, const tank_t *t, int fish);   /* the toolbox an
 static void next_draw(ctx_t *c, const tank_t *t);    /* the NEXT FISH arrow, below */
 void render_stats_card(const tank_t *t, int fish_idx, uint16_t *fb, int stride) {
     if (render_critter_here(t, fish_idx)) {
-        ctx_t sc = ctx_full(fb, stride, 1.0f);
+        ctx_t sc = ctx_page(fb, stride);
         switch (fish_idx) {
         case RENDER_CARD_SHRIMP:   shrimp_card_draw(&sc, t); break;
         case RENDER_CARD_URCHIN:   urchin_card_draw(&sc, t); break;
@@ -9121,7 +9193,7 @@ void render_stats_card(const tank_t *t, int fish_idx, uint16_t *fb, int stride) 
     }
     if (tank_is_visitor(fish_idx)) {                  /* a visitor: its passport */
         if (!t->vis_used[fish_idx - N_FISH_MAX]) return;
-        ctx_t sc = ctx_full(fb, stride, 1.0f);
+        ctx_t sc = ctx_page(fb, stride);
         passport_card_draw(&sc, fb, stride, t, fish_idx - N_FISH_MAX);
         return;
     }
@@ -9158,6 +9230,9 @@ void render_stats_card(const tank_t *t, int fish_idx, uint16_t *fb, int stride) 
  * dark (~8.7k pixels for the price of a copy; blended, the card's 28k cost
  * ~7 ms on the device). */
 static void shade_box(ctx_t *c, int x, int y, int w, int h) {
+#if PAGE_SCALED
+    if (c->pg) { ctx_t f = ctx_unpaged(c); const int fx = PG_X(x), fy = PG_Y(y); shade_box(&f, fx, fy, PG_X(x + w) - fx, PG_Y(y + h) - fy); return; }
+#endif
     const uint16_t base = rgb565(0x04141a, 0.875f);
     for (int yy = y; yy < y + h; yy++) {
         if ((unsigned)(yy - c->oy) >= (unsigned)c->h) continue;
@@ -9203,6 +9278,10 @@ static int give_look(const tank_t *t, int fish);
 #define TILE_H 54
 #define TILE_GAP 6
 #define TILE_PAD 8
+#ifdef TANK_CYD
+_Static_assert(RENDER_TOOLS_Y + 2 * TILE_PAD + 2 * TILE_H + TILE_GAP <= TANK_H && RENDER_TOOLS_X + 2 * TILE_PAD + 2 * TILE_W + TILE_GAP <= TANK_W,
+               "the toolbox must fit the 240 px glass");
+#endif
 static int tools_layout(const tank_t *t, int fish, int *tile, int *tx, int *ty, int *bx, int *by, int *bw, int *bh) {
     int n = 0;
     tile[n++] = TOOL_SPONGE; tile[n++] = TOOL_SCISSORS;
@@ -9214,6 +9293,10 @@ static int tools_layout(const tank_t *t, int fish, int *tile, int *tx, int *ty, 
     for (int k = 0; k < n; k++) { tx[k] = *bx + TILE_PAD; ty[k] = *by + TILE_PAD + k * (TILE_H + TILE_GAP); }
 #elif defined(TANK_WATCH) || defined(TANK_SQUARE)
     *bx = RENDER_CARD_X; *by = RENDER_CARD_Y + RENDER_CARD_H + RENDER_TOOLS_GAP;
+    *bw = 2 * TILE_PAD + 2 * TILE_W + TILE_GAP; *bh = 2 * TILE_PAD + (n > 2 ? 2 * TILE_H + TILE_GAP : TILE_H);
+    for (int k = 0; k < n; k++) { tx[k] = *bx + TILE_PAD + (k % 2) * (TILE_W + TILE_GAP); ty[k] = *by + TILE_PAD + (k / 2) * (TILE_H + TILE_GAP); }
+#elif defined(TANK_CYD)        /* the 240 px glass: the toolbox beside the card, under the NEXT arrow, two a row */
+    *bx = RENDER_TOOLS_X; *by = RENDER_TOOLS_Y;
     *bw = 2 * TILE_PAD + 2 * TILE_W + TILE_GAP; *bh = 2 * TILE_PAD + (n > 2 ? 2 * TILE_H + TILE_GAP : TILE_H);
     for (int k = 0; k < n; k++) { tx[k] = *bx + TILE_PAD + (k % 2) * (TILE_W + TILE_GAP); ty[k] = *by + TILE_PAD + (k / 2) * (TILE_H + TILE_GAP); }
 #else
@@ -9392,8 +9475,19 @@ static const uint8_t *glyph(char ch) {
     const char *p = ch ? strchr(FONT_CHARS, ch) : NULL;
     return p ? FONT5X7[p - FONT_CHARS] : NULL;
 }
-static int text_w(const char *s, int scale) { int n = (int)strlen(s); return n ? n * 6 * scale - scale : 0; }
+static int text_w_px(const char *s, int scale) { int n = (int)strlen(s); return n ? n * 6 * scale - scale : 0; }   /* drawn px, at that scale */
+#if PAGE_SCALED
+/* on a SCALED page a label is drawn at PAGE_TEXT(scale) from its mapped corner: its width in page px is what it covers
+ * there, so a label centred or right-aligned by its width lands so on the glass */
+static int text_w(const char *s, int scale) { return (int)ceilf(text_w_px(s, PAGE_TEXT(scale)) / PAGE_K); }
+#endif
 static void draw_text(ctx_t *c, int x, int y, int scale, uint32_t rgb, const char *s) {
+#if PAGE_SCALED
+    if (c->pg) {                                   /* the whole scale nearest the page's, its rows centred on the mapped ones */
+        ctx_t f = ctx_unpaged(c); const int s2 = PAGE_TEXT(scale);
+        draw_text(&f, PG_X(x), PG_Y(y) + ((int)(7 * scale * PAGE_K + 0.5f) - 7 * s2) / 2, s2, rgb, s); return;
+    }
+#endif
     src_t col = src_color(rgb, c->dim);
     for (; *s; s++, x += 6 * scale) {
         const uint8_t *g = glyph(*s);
@@ -9417,7 +9511,7 @@ static bool stamp_ink(int u, int v, int w, int h, const char *l1, const char *l2
     const int lh = 7 * scale, gap = 3 * scale, n = l2 && l2[0] ? 2 : 1, th = n * lh + (n - 1) * gap, ty = (h - th) / 2;
     for (int i = 0; i < n; i++) {
         const char *l = i ? l2 : l1;
-        int y0 = ty + i * (lh + gap), x0 = (w - text_w(l, scale)) / 2;
+        int y0 = ty + i * (lh + gap), x0 = (w - text_w_px(l, scale)) / 2;
         if (v < y0 || v >= y0 + lh || u < x0) continue;
         int k = (u - x0) / (6 * scale), cx = (u - x0) % (6 * scale) / scale, r = (v - y0) / scale;
         if (k >= (int)strlen(l) || cx >= 5) continue;
@@ -9428,7 +9522,7 @@ static bool stamp_ink(int u, int v, int w, int h, const char *l1, const char *l2
 }
 void render_stamp(uint16_t *fb, int stride, int cx, int cy, float deg, uint32_t rgb, const char *l1, const char *l2, int scale) {
     ctx_t c = ctx_page(fb, stride);
-    const int n = l2 && l2[0] ? 2 : 1, tw = n == 2 && text_w(l2, scale) > text_w(l1, scale) ? text_w(l2, scale) : text_w(l1, scale);
+    const int n = l2 && l2[0] ? 2 : 1, tw = n == 2 && text_w_px(l2, scale) > text_w_px(l1, scale) ? text_w_px(l2, scale) : text_w_px(l1, scale);
     const int w = tw + 2 * (8 + scale * 2), h = n * 7 * scale + (n - 1) * 3 * scale + 2 * (8 + scale * 2);
     const float a = -deg * 3.14159265f / 180.0f, ca = cosf(a), sa = sinf(a);
     const int R = (int)(sqrtf((float)(w * w + h * h)) / 2) + 2;
@@ -9450,6 +9544,9 @@ void render_stamp(uint16_t *fb, int stride, int cx, int cy, float deg, uint32_t 
  * only lengthens strokes and never thickens a bar - Strato wanted the line
  * smaller than the page's text (14 px) but not the font's 7 px. */
 static void draw_text_8px(ctx_t *c, int x, int y, uint32_t rgb, const char *s) {
+#if PAGE_SCALED
+    if (c->pg) { ctx_t f = ctx_unpaged(c); draw_text(&f, PG_X(x), PG_Y(y), 1, rgb, s); return; }   /* (the font's own 7 px: the smallest there is) */
+#endif
     src_t col = src_color(rgb, c->dim);
     for (; *s; s++, x += 6) {
         const uint8_t *g = glyph(*s);
@@ -9468,10 +9565,39 @@ static void draw_text_8px(ctx_t *c, int x, int y, uint32_t rgb, const char *s) {
  * asks before the save is wiped. Opaque stores only, so a frame with it up
  * costs about what the milestones page does. */
 static void rect_fill(ctx_t *c, int x, int y, int w, int h, uint32_t rgb) {
+#if PAGE_SCALED
+    if (c->pg && w > 0 && h > 0) {                 /* a scaled page's box: the rect mapped whole, both axes alike (as rect_edge), never under 1 px */
+        int x0 = PG_X(x), x1 = PG_X(x + w) - 1, y0 = PG_Y(y), y1 = PG_Y(y + h) - 1;
+        if (x1 < x0) x1 = x0;
+        if (y1 < y0) y1 = y0;
+        ctx_t f = ctx_unpaged(c); rect_fill(&f, x0, y0, x1 - x0 + 1, y1 - y0 + 1, rgb); return;
+    }
+#endif
     src_t f = src_color(rgb, 1.0f);
     for (int yy = y; yy < y + h; yy++) span(c, x, x + w - 1, yy, &f, 255);
 }
 static void rect_edge(ctx_t *c, int x, int y, int w, int h, uint32_t rgb) {
+#if PAGE_SCALED
+    /* a scaled page's rule: the rect mapped whole (its far edges on the last frame px of their cells). Below a scale of 1
+       no mapping keeps every pair of neighbouring page px apart, so a ring drawn ONE PAGE PX INSIDE the ring before it
+       (a button's, a panel's double edge: the calls come in that order) is kept one frame px inside that ring on all four
+       sides - mapped alone, it could take the outer ring's column or row and paint over it (the CYD's welcome panel lost
+       its right border, then its top, 2026-11-18) */
+    static int lx = 1 << 20, ly, lw, lh, f0x, f0y, f1x, f1y;   /* the last ring: its page rect, its frame rect */
+    if (c->pg) {
+        int x0 = PG_X(x), x1 = PG_X(x + w) - 1, y0 = PG_Y(y), y1 = PG_Y(y + h) - 1;
+        if (x == lx + 1 && y == ly + 1 && w == lw - 2 && h == lh - 2) {
+            if (x0 <= f0x) x0 = f0x + 1;
+            if (y0 <= f0y) y0 = f0y + 1;
+            if (x1 >= f1x) x1 = f1x - 1;
+            if (y1 >= f1y) y1 = f1y - 1;
+        }
+        if (x1 < x0) x1 = x0;
+        if (y1 < y0) y1 = y0;
+        lx = x; ly = y; lw = w; lh = h; f0x = x0; f0y = y0; f1x = x1; f1y = y1;
+        ctx_t f = ctx_unpaged(c); rect_edge(&f, x0, y0, x1 - x0 + 1, y1 - y0 + 1, rgb); return;
+    }
+#endif
     src_t e = src_color(rgb, 1.0f);
     span(c, x, x + w - 1, y, &e, 255); span(c, x, x + w - 1, y + h - 1, &e, 255);
     for (int yy = y + 1; yy < y + h - 1; yy++) { px(c, x, yy, e.v); px(c, x + w - 1, yy, e.v); }
@@ -9504,6 +9630,12 @@ void render_button(uint16_t *fb, int stride, int x, int y, int w, int h, uint32_
 }
 void render_glyph(uint16_t *fb, int stride, int x, int y, int scale, uint32_t rgb, const uint8_t *rows) {
     ctx_t c = ctx_page(fb, stride); src_t col = src_color(rgb, 1.0f);
+#if PAGE_SCALED
+    if (c.pg) {                                    /* (a scaled page: the glyph at the whole scale draw_text uses, from its mapped corner - crisp, as the font) */
+        const int s2 = PAGE_TEXT(scale); c = ctx_unpaged(&c);
+        x = PG_X(x); y = PG_Y(y) + ((int)(7 * scale * PAGE_K + 0.5f) - 7 * s2) / 2; scale = s2;
+    }
+#endif
     for (int r = 0; r < 7; r++)
         for (int k = 0; k < 5; k++)
             if (rows[r] & (0x10 >> k))
@@ -9611,7 +9743,7 @@ void render_confirm_reset(uint16_t *fb, int stride, float frac) {   /* the page 
     rp_bar(&c, RENDER_CONFIRM_X, RENDER_CONFIRM_Y, RENDER_CONFIRM_W, RENDER_CONFIRM_H, frac);
 }
 int render_confirm_hit(float x, float y) {
-    x -= PAGE_X; y -= PAGE_Y;                    /* the page's own coordinates */
+    x = FX_PAGE(x); y = FY_PAGE(y);              /* the page's own coordinates */
     const int m = 10;                                   /* a fingertip's slop around each button */
     if (y < RENDER_CONFIRM_BTN_Y - m || y >= RENDER_CONFIRM_BTN_Y + RENDER_CONFIRM_BTN_H + m) return 0;
     if (x >= RENDER_CONFIRM_NO_X - m  && x < RENDER_CONFIRM_NO_X  + RENDER_CONFIRM_BTN_W + m) return -1;
@@ -9668,7 +9800,7 @@ int render_reset_erase_ready(void) {
 bool render_reset_erase_armed(void) { return s_rp.armed != 0; }
 int render_reset_hit(float x, float y) {
     if (s_rp.page == RESET_PG_TANK) { int h = render_confirm_hit(x, y); return h > 0 ? RESET_BTN_YES : h < 0 ? RESET_BTN_BACK : RESET_BTN_NONE; }
-    x -= PAGE_X; y -= PAGE_Y;
+    x = FX_PAGE(x); y = FY_PAGE(y);
     switch (s_rp.page) {
     case RESET_PG_CHOOSE:                           /* (a fingertip's slop of 4: the two choices are 8 apart, and never share a point) */
         if (rp_in(x, y, RP_BX, RP_CH_TANK_Y,  RP_BW, RP_CH_BH, 4)) return RESET_BTN_TANK;
@@ -9845,7 +9977,7 @@ void render_reset_prompt(uint16_t *fb, int stride, float frac) {
             rp_paint(&bc);
             bake_end(&g_bake_rp, key, H, tm, hold);
         }
-        bake_blit(&g_bake_rp, PAGE_X + X, PAGE_Y + Y, W, H, fb, stride);
+        bake_blit(&g_bake_rp, PAGE_FX(X), PAGE_FY(Y), W, H, fb, stride);
         ctx_t c = ctx_page(fb, stride);
         rp_live(&c, frac);
         return;
@@ -9855,7 +9987,9 @@ void render_reset_prompt(uint16_t *fb, int stride, float frac) {
     rp_live(&c, frac);
 }
 bool render_reset_text_fits(void) {
-    const int inner = RP_W - 16, choice = RP_BW - 16, pair = RENDER_CONFIRM_BTN_W - 12;
+    /* the choice buttons' labels keep 8 px either side on every glass, 6 on a scaled page: a scale-3 label there is 2 frame px a unit, so
+       ERASE EVERYTHING (16 characters) measures 291 page px in its 304 px button (1.8: 285 in 304); 6.5 px each side is still inside */
+    const int inner = RP_W - 16, choice = RP_BW - (PAGE_SCALED ? 12 : 16), pair = RENDER_CONFIRM_BTN_W - 12;
     return text_w(RP_CH_TITLE, 3) <= inner && text_w(RP_TANK_TITLE, 3) <= RENDER_CONFIRM_W - 16 && text_w(RP_ER_TITLE, 3) <= inner && text_w(RP_HO_TITLE, 3) <= inner
         && text_w(RP_CH_TANK, 3) <= choice && text_w(RP_CH_ERASE, 3) <= choice
         && text_w(RP_CH_TANK1, 2) <= choice && text_w(RP_CH_TANK2, 2) <= choice && text_w(RP_CH_ERASE1, 2) <= choice && text_w(RP_CH_ERASE2, 2) <= choice
@@ -9869,7 +10003,7 @@ bool render_reset_text_fits(void) {
         && text_w(RP_RF_TITLE, 3) <= inner && text_w(RP_RF_L1, 2) <= inner && text_w(RP_RF_L2, 2) <= inner && text_w(RP_RF_L3, 2) <= inner
         && text_w("BACK", 3) <= pair && text_w("NEXT", 3) <= pair && text_w("YES", 3) <= pair && text_w("NO", 3) <= pair
         /* the panel on every glass: inside the frame, and on the round one inside the circle (its corners 8 px clear) */
-        && PAGE_X + RP_X >= 4 && PAGE_X + RP_X + RP_W <= TANK_W - 4 && PAGE_Y + RP_Y >= 4 && PAGE_Y + RP_Y + RP_H <= TANK_H - 4
+        && PAGE_FX(RP_X) >= 4 && PAGE_FX(RP_X + RP_W) <= TANK_W - 4 && PAGE_FY(RP_Y) >= 4 && PAGE_FY(RP_Y + RP_H) <= TANK_H - 4
 #ifdef TANK_ROUND
         && (RP_W / 2) * (RP_W / 2) + (RP_H / 2) * (RP_H / 2) <= (TANK_W / 2 - 8) * (TANK_W / 2 - 8)
 #endif
@@ -9883,7 +10017,7 @@ bool render_reset_text_fits(void) {
  * this charge, what a full charge lasts - and the cell voltage, dim, for
  * the curious. Rows the clock cannot answer are left out. ---- */
 void render_battery_info(uint16_t *fb, int stride, const bat_info_t *bi, double clock) {
-    ctx_t c = ctx_full(fb, stride, 1.0f);
+    ctx_t c = ctx_page(fb, stride);
     bool pw = BAT_ON_POWER(bi->state);
     char lab[3][16], val[3][32], d[16]; int nr = 0;
     if (bi->since_min >= 0) {
@@ -9900,7 +10034,7 @@ void render_battery_info(uint16_t *fb, int stride, const bat_info_t *bi, double 
         snprintf(lab[nr], sizeof lab[nr], "BATTERY LIFE");
         battery_fmt_dur(d, sizeof d, bi->life_min); snprintf(val[nr], sizeof val[nr], "~%s", d); nr++;
     }
-    const int W = 336, H = (bi->mv > 0 ? 170 : 154) + nr * 26, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    const int W = 336, H = (bi->mv > 0 ? 170 : 154) + nr * 26, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     src_t bg = src_color(0x04141a, 1.0f);
     for (int y = Y; y < Y + H; y++) span(&c, X, X + W - 1, y, &bg, 240);
     rect_edge(&c, X, Y, W, H, 0x9fd8e2); rect_edge(&c, X + 1, Y + 1, W - 2, H - 2, 0x1c2f36);
@@ -10327,7 +10461,7 @@ static void gm_split(const char *s, char *a, char *b, int n) {   /* two lines at
     snprintf(a, n, "%.*s", best, s); snprintf(b, n, "%s", s + best + 1);
 }
 static int gm_card_h(void) { return g_gm.step == RENDER_GM_PICK ? GM_PICK_H : GM_H; }
-static void gm_frame(int *X, int *Y) { *X = (TANK_W - GM_W) / 2; *Y = (TANK_H - gm_card_h()) / 2; }
+static void gm_frame(int *X, int *Y) { *X = (PAGE_W - GM_W) / 2; *Y = (PAGE_H - gm_card_h()) / 2; }   /* (the page's space: the card drawn in a page ctx) */
 /* the card but its portrait and its bar's fill (gm_draw draws those live) */
 static void gm_paint(ctx_t *c, const tank_t *t, int step) {
     const gift_book_t *g = gift_of(t);
@@ -10408,7 +10542,7 @@ static void gm_draw(const tank_t *t, uint16_t *fb, int stride) {
                                                                    fresh hold - its buttons were never seen (the 11-02 sweep) */
     g_gm.drawn_frame = g_rframe;
     const gift_book_t *g = gift_of(t);
-    ctx_t cc = ctx_full(fb, stride, 1.0f); ctx_t *c = &cc;
+    ctx_t cc = ctx_page(fb, stride); ctx_t *c = &cc;
     const int W = GM_W, H = gm_card_h(); int X, Y; gm_frame(&X, &Y);
     bake_want(&g_bake_gm, 0);
     if (g_bake_gm.buf) {
@@ -10418,17 +10552,17 @@ static void gm_draw(const tank_t *t, uint16_t *fb, int stride) {
             gm_paint(&bc, t, step);
             bake_end(&g_bake_gm, key, H, tm, hold);
         }
-        bake_blit(&g_bake_gm, X, Y, W, H, fb, stride);
+        bake_blit(&g_bake_gm, PAGE_FX(X), PAGE_FY(Y), W, H, fb, stride);
     } else gm_paint(c, t, step);
     if (step == RENDER_GM_PICK) return;
     int i = gm_fish(t);                                /* live: the fish swims in its box, the bar runs down */
     const int PX = X + 12, PY = Y + 36, PW = 100, PH = 84;
     if (step == RENDER_GM_BOWL) {                      /* the fish in the bowl: from its passport, as a gift's card draws one */
         if (g_bm_pp_ok) { fish_t f; memset(&f, 0, sizeof f); passport_to_fish(&g_bm_pp, &f);
-            render_fish_portrait(fb, stride, PX + PW / 2.0f - PAGE_X - 8, PY + PH / 2.0f - PAGE_Y - 8, 1.2f, &f, PW - 30, t->clock); }
+            render_fish_portrait(fb, stride, PX + PW / 2.0f - 8, PY + PH / 2.0f - 8, 1.2f, &f, PW - 30, t->clock); }
         return;
     }
-    if (i >= 0) render_fish_portrait(fb, stride, PX + PW / 2.0f - PAGE_X, PY + PH / 2.0f - PAGE_Y, 1.3f, &t->fish[i], PW - 20, t->clock);   /* (page coordinates) */
+    if (i >= 0) render_fish_portrait(fb, stride, PX + PW / 2.0f, PY + PH / 2.0f, 1.3f, &t->fish[i], PW - 20, t->clock);   /* (page coordinates) */
     if (step == RENDER_GM_ASKING) {
         float left = g && g->asking_uid == g_gm.uid ? 1.0f - (float)(t->clock - g->asking_since) / (LINK_GIVE_ASK_MS / 1000.0f) : 1.0f;
         left = left < 0 ? 0 : left > 1 ? 1 : left;
@@ -10444,7 +10578,7 @@ const char *render_give_modal_line(const tank_t *t) {
     return step == RENDER_GM_CONFIRM ? "IT WOULD LIVE THERE" : step == RENDER_GM_ASKING ? "ASKING THEIR KEEPER" : step == RENDER_GM_PICK ? "" : g_gm.line;
 }
 void render_give_modal(const tank_t *t, uint16_t *fb, int stride) { if (!g_ms_in) gm_draw(t, fb, stride); }   /* (the keeper page draws its own) */
-bool render_give_modal_button(const tank_t *t, int which, int *x, int *y) {
+static bool gm_button_page(const tank_t *t, int which, int *x, int *y) {   /* the button's centre, page coordinates */
     int step = gm_eval(t);
     if (step == RENDER_GM_OFF) return false;
     int X, Y; gm_frame(&X, &Y); const int H = gm_card_h(), W = GM_W, BY = Y + H - GM_BTN_H - 12 + GM_BTN_H / 2;
@@ -10467,7 +10601,13 @@ bool render_give_modal_button(const tank_t *t, int which, int *x, int *y) {
     if ((which == RENDER_GM_TAP_CALLOFF && step == RENDER_GM_ASKING) || (which == RENDER_GM_TAP_OK && step != RENDER_GM_ASKING)) { *x = X + W / 2; *y = BY; return true; }
     return false;
 }
+bool render_give_modal_button(const tank_t *t, int which, int *x, int *y) {   /* the button's centre, frame coordinates */
+    if (!gm_button_page(t, which, x, y)) return false;
+    *x = PAGE_FX(*x); *y = PAGE_FY(*y);
+    return true;
+}
 int render_give_modal_tap(const tank_t *t, float x, float y) {
+    x = FX_PAGE(x); y = FY_PAGE(y);                        /* the touch port's frame -> the page */
     int step = gm_eval(t);
     if (step == RENDER_GM_OFF) return RENDER_GM_TAP_NONE;
     gift_book_t *g = gift_of(t);
@@ -10779,6 +10919,8 @@ static uint32_t ms_key(const tank_t *t, const fry_req_t *req, int nreq, bool sta
 static void ms_fry_label(ctx_t *c, int top, const ms_box_t *clip) {
     ctx_t cw = *c;
     if (clip) {
+        /* the clip is a kept box, in the px bb_add saw: the ctx's own (page px) on the unscaled glass, the frame's on a scaled
+           page - where this window is the frame's too (its mapped draws go through a frame ctx) */
         int x0 = clip->x0, y0 = clip->y0, x1 = clip->x1, y1 = clip->y1;
         if (x0 < c->ox) x0 = c->ox;
         if (y0 < c->oy) y0 = c->oy;
@@ -10804,7 +10946,7 @@ static double ms_clock(const tank_t *t, bool over) {
 }
 static double g_ms_now;                                       /* (this frame's clock for the page's fish: ms_clock, set in render_milestones) */
 static bool ms_anim(const tank_t *t, uint16_t *fb, int stride, int k, const fry_req_t *req, int nreq, bool staged, ms_box_t *zone) {
-    zone->x0 = (short)-PAGE_X; zone->y0 = (short)-PAGE_Y; zone->x1 = 88; zone->y1 = (short)(MSP_TANK_Y - 6);   /* left of the names (x 92) and
+    zone->x0 = (short)PAGE_FX0; zone->y0 = (short)PAGE_FY0; zone->x1 = 88; zone->y1 = (short)(MSP_TANK_Y - 6);   /* left of the names (x 92) and
                                                                                                   the strips (~91), above the TANK row's line */
     if (k < t->n_fish) {
         const fish_t *f = &t->fish[k];
@@ -10835,6 +10977,17 @@ static bool ms_anim(const tank_t *t, uint16_t *fb, int stride, int k, const fry_
 static void ms_bb_begin(void) { g_bb_on = true; g_bb_x0 = g_bb_y0 = 1 << 20; g_bb_x1 = g_bb_y1 = -1; }
 static ms_box_t ms_bb_end(void) { g_bb_on = false; ms_box_t b = { (short)g_bb_x0, (short)g_bb_y0, (short)g_bb_x1, (short)g_bb_y1 }; if (g_bb_x1 < 0) b.x0 = 1, b.x1 = 0; return b; }
 static bool ms_box_in(ms_box_t b, ms_box_t z) { return b.x0 > b.x1 || (b.x0 >= z.x0 && b.x1 <= z.x1 && b.y0 >= z.y0 && b.y1 <= z.y1); }
+/* the boxes are where bb_add saw the pixels: page px, or on a SCALED page frame px (its mapped primitives draw through a
+ * frame ctx) - a zone is given in page px and turned into theirs; ms_boxes_do turns them into the frame's */
+#if PAGE_SCALED
+static ms_box_t ms_zone_box(ms_box_t z) { ms_box_t r = { (short)PAGE_FX(z.x0), (short)PAGE_FY(z.y0), (short)(PAGE_FX(z.x1 + 1) - 1), (short)(PAGE_FY(z.y1 + 1) - 1) }; return r; }
+#define MSB_FX(x) (x)
+#define MSB_FY(y) (y)
+#else
+#define ms_zone_box(z) (z)
+#define MSB_FX(x) ((x) + PAGE_X)
+#define MSB_FY(y) ((y) + PAGE_Y)
+#endif
 static ms_box_t ms_box_or(ms_box_t a, ms_box_t b) {
     if (a.x0 > a.x1) return b;
     if (b.x0 > b.x1) return a;
@@ -10847,12 +11000,12 @@ static void ms_boxes_do(uint16_t *fb, int stride, const ms_box_t *b, int n, bool
     for (int i = 0; i < n; i++) if (b[i].x0 <= b[i].x1) { if (b[i].y0 < y0) y0 = b[i].y0; if (b[i].y1 > y1) y1 = b[i].y1; }
     const uint16_t ink = FB_SWAP16(rgb565(MSP_INK, 1));
     for (int y = y0; y <= y1; y++) {
-        int fy = y + PAGE_Y;
+        int fy = MSB_FY(y);
         if ((unsigned)fy >= (unsigned)TANK_H) continue;
         int xs[MS_ANIM_MAX][2], m = 0;                  /* this row's runs, sorted and merged */
         for (int i = 0; i < n; i++) {
             if (b[i].x0 > b[i].x1 || y < b[i].y0 || y > b[i].y1) continue;
-            int a = b[i].x0 + PAGE_X, e = b[i].x1 + PAGE_X, j = m++;
+            int a = MSB_FX(b[i].x0), e = MSB_FX(b[i].x1), j = m++;
             if (a < 0) a = 0;
             if (e > TANK_W - 1) e = TANK_W - 1;
             while (j > 0 && xs[j - 1][0] > a) { xs[j][0] = xs[j - 1][0]; xs[j][1] = xs[j - 1][1]; j--; }
@@ -10877,7 +11030,7 @@ static bool ms_kept_draw(const tank_t *t, uint16_t *fb, int stride, ms_kept_t *k
         ms_bb_begin();
         ms_anim(t, fb, stride, i, req, nreq, staged, &z);
         nb[i] = ms_bb_end();
-        if (!ms_box_in(nb[i], z) || (modal && !ms_box_in(nb[i], k->b[i]))) return false;   /* (under a modal the pixels round a box are halved ink) */
+        if (!ms_box_in(nb[i], ms_zone_box(z)) || (modal && !ms_box_in(nb[i], k->b[i]))) return false;   /* (under a modal the pixels round a box are halved ink) */
     }
     if (modal) ms_boxes_do(fb, stride, k->b, k->n, true);
     else memcpy(k->b, nb, sizeof nb[0] * (size_t)k->n);
@@ -10913,7 +11066,7 @@ void render_milestones(const tank_t *t, uint16_t *fb, int stride) {
         const bool grow = kp->fb == fb && kp->ok && kp->key == key && g_ms_caption[0];   /* (under a modal: the boxes only grow while nothing changes) */
         for (int y = 0; y < TANK_H; y++)
             for (int x = 0; x < TANK_W; x++) fb[y * stride + x] = FB_SWAP16(rgb565(MSP_INK, 1));
-#define MS_ANIM(i) do { ms_box_t _z; ms_bb_begin(); ms_anim(t, fb, stride, (i), req, nreq, staged, &_z); ab[i] = ms_bb_end(); \
+#define MS_ANIM(i) do { ms_box_t _z; ms_bb_begin(); ms_anim(t, fb, stride, (i), req, nreq, staged, &_z); _z = ms_zone_box(_z); ab[i] = ms_bb_end(); \
                         in = in && ms_box_in(ab[i], _z); if (grow && (i) < kp->n) ab[i] = ms_box_or(ab[i], kp->b[i]); an = (i) + 1; } while (0)
     for (int i = 0; i < t->n_fish; i++) {
         const fish_t *f = &t->fish[i];
@@ -11138,6 +11291,7 @@ void render_keeper_about(const tank_t *t, uint16_t *fb, int stride, double clock
         ms_bb_begin();
         setup_about_band_draw(t, fb, stride, clock);
         ms_box_t nb = ms_bb_end(), z = { (short)band[0], (short)band[1], (short)band[2], (short)band[3] };
+        z = ms_zone_box(z);                              /* (the band is page px; the boxes are where bb_add saw the pixels: ms_zone_box) */
         if (ms_box_in(nb, z)) g_ab_band_n++;
         else { render_setup(t, fb, stride, clock); g_ab_panel_n++; }   /* (a fish out of its band: the panel whole, this frame) */
     } else if (!still) { render_setup(t, fb, stride, clock); g_ab_panel_n++; }
@@ -11149,7 +11303,7 @@ void render_keeper_about_panel_counts(int *band, int *panel) { *band = g_ab_band
 
 int render_milestones_tap(const tank_t *t, float x, float y) {
     if (gm_eval(t) != RENDER_GM_OFF) { render_give_modal_tap(t, x, y); return MS_TAP_KEPT; }   /* the GIVE modal over the page has every tap */
-    x -= PAGE_X; y -= PAGE_Y;                    /* the page's own coordinates */
+    x = FX_PAGE(x); y = FY_PAGE(y);              /* the page's own coordinates */
     if (g_ms_caption[0]) {                       /* a modal is up */
         if (!g_ms_tip) {                         /* the arrows at its top corners: the previous / next of the group */
             fry_req_t req[FRY_REQ_MAX]; bool staged; int idx;
@@ -11300,7 +11454,7 @@ static int ms_open(const tank_t *t, int row, bool tank_row, bool fry_row, int k,
    previous (rightward), no wrap. False = not a page swipe (the platforms then
    treat the release as they did before). */
 bool render_milestones_swipe(const tank_t *t, float x, float y, float dx) {
-    (void)x; y -= PAGE_Y;
+    (void)x; y = FY_PAGE(y);
     if (g_ms_caption[0] || tank_pages(t) < 2 || y < MSP_TANK_Y - 6 || y >= MSP_FOOT_HIT_Y) return false;
     int p = g_ms_tpage + (dx < 0 ? 1 : -1);
     if (p >= 0 && p < tank_pages(t)) g_ms_tpage = p;
@@ -11338,8 +11492,8 @@ int  render_collection_page(void) { return g_coll_page; }
 void render_collection_set_page(int page) { int np = collection_pages(); g_coll_page = page < 0 ? 0 : page >= np ? np - 1 : page; }
 bool render_collection_arrow(bool right, int *x, int *y) {
     if (collection_pages() < 2) return false;
-    if (x) *x = PAGE_X + (right ? PAGE_W - COLL_NAV_X - RENDER_CRIT_NAV_W / 2 : COLL_NAV_X + RENDER_CRIT_NAV_W / 2);
-    if (y) *y = PAGE_Y + COLL_NAV_Y + RENDER_CRIT_NAV_W / 2;
+    if (x) *x = PAGE_FX(right ? PAGE_W - COLL_NAV_X - RENDER_CRIT_NAV_W / 2 : COLL_NAV_X + RENDER_CRIT_NAV_W / 2);
+    if (y) *y = PAGE_FY(COLL_NAV_Y + RENDER_CRIT_NAV_W / 2);
     return true;
 }
 static void fmt_dur(char *out, size_t n, uint32_t s) {
@@ -11371,11 +11525,11 @@ static void entry_fish(fish_t *f, const coll_entry_t *e) {
 /* a collected fish's passport, with its history here */
 static void entry_card_draw(ctx_t *c, uint16_t *fb, int stride, const coll_entry_t *e, double clock) {
     const uint32_t GOLD = 0xe8c872, INK = 0x13324f, LBL = 0x7fa3b5;
-    const int W = PASSPORT_CARD_W, H = PASSPORT_BTN_Y, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    const int W = PASSPORT_CARD_W, H = PASSPORT_BTN_Y, X = (PAGE_W - W) / 2, Y = (PAGE_H - H) / 2;
     src_t bg = src_color(0x0e2233, 1.0f);
     for (int y = Y; y < Y + H; y++) span(c, X, X + W - 1, y, &bg, 248);
     for (int y = Y + 34; y < Y + H - 30; y += 7)
-        for (int x = X + 3; x < X + W - 3; x++) px_blend(c, x, y + (int)(2.0f * sinf(x * 0.11f + y * 0.37f)), 0x2b4a63, 80);
+        for (int x = X + 3; x < X + W - 3; x++) px_blend(c, x, y + (int)(2.0f * sinf(PAGE_FX(x) * 0.11f + PAGE_FY(y) * 0.37f)), 0x2b4a63, 80);   /* (the wave's phase: the frame's px) */
     src_t band = src_color(INK, 1.0f);
     for (int y = Y; y < Y + 26; y++) span(c, X, X + W - 1, y, &band, 255);
     draw_text(c, X + (W - text_w("POCKET TANK PASSPORT", 2)) / 2, Y + 7, 2, GOLD, "POCKET TANK PASSPORT");
@@ -11383,7 +11537,7 @@ static void entry_card_draw(ctx_t *c, uint16_t *fb, int stride, const coll_entry
     const int PX = X + 12, PY = Y + 36, PW = 100, PH = 84;
     rect_fill(c, PX, PY, PW, PH, 0x0a1824); rect_edge(c, PX, PY, PW, PH, 0x9fd8e2);
     fish_t f; entry_fish(&f, e);
-    render_fish_portrait(fb, stride, PX + PW / 2.0f - PAGE_X, PY + PH / 2.0f - PAGE_Y, 1.3f, &f, PW - 20, clock);
+    render_fish_portrait(fb, stride, PX + PW / 2.0f, PY + PH / 2.0f, 1.3f, &f, PW - 20, clock);   /* (page coordinates) */
     const int FX = PX + PW + 12;
     static const char *const STAGE_W[4] = { "FRY", "JUVENILE", "ADULT", "ELDER" };
     char home[24], form[24], met[24], here[24], visits[24];
@@ -11414,7 +11568,7 @@ static void entry_card_draw(ctx_t *c, uint16_t *fb, int stride, const coll_entry
     int sw = text_w(st, 2) + 12, sx0 = X + W - sw - 10, sy0 = Y + 139;
     rect_edge(c, sx0, sy0, sw, 24, GOLD); rect_edge(c, sx0 + 2, sy0 + 2, sw - 4, 20, GOLD);
     draw_text(c, sx0 + 6, sy0 + 5, 2, GOLD, st);
-    char m1[64]; int cols = (W - 20) / 6; if (cols > 60) cols = 60;
+    char m1[64]; int cols = (int)(((W - 20) * PAGE_K + 1) / 6); if (cols > 60) cols = 60;   /* (a size-1 glyph is 6 drawn px: fits the card's page px) */
     snprintf(m1, sizeof m1, "P<FISH<<%s<<%08X", f.name, (unsigned)e->uid);
     for (int j = (int)strlen(m1); j < cols; j++) m1[j] = '<';
     m1[cols] = 0;
@@ -11466,14 +11620,14 @@ void render_collection(const tank_t *t, uint16_t *fb, int stride) {
     button(&c, MSP_CLOSE_X, MSP_CLOSE_Y, MSP_CLOSE_W, MSP_CLOSE_H, 0x1c2f36, MSP_TEAL, "CLOSE", 2);
     if (g_coll_sel >= 0 && g_coll_sel < n) {           /* its passport, the page dimmed under it */
         for (int y = 0; y < TANK_H; y++) for (int x = 0; x < TANK_W; x++) fb[y * stride + x] = (uint16_t)((fb[y * stride + x] >> 1) & 0x7bef);
-        ctx_t fc = ctx_full(fb, stride, 1.0f);
+        ctx_t fc = ctx_page(fb, stride);
         entry_card_draw(&fc, fb, stride, collection_get(g_coll_sel), t->clock);
     }
 }
 int render_collection_tap(const tank_t *t, float x, float y) {
     (void)t;
     if (g_coll_sel >= 0) { g_coll_sel = -1; return COLL_TAP_KEPT; }   /* any tap: back to the grid */
-    float px = x - PAGE_X, py = y - PAGE_Y;
+    float px = FX_PAGE(x), py = FY_PAGE(y);
     if (px >= MSP_CLOSE_X - 8 && py >= MSP_CLOSE_Y - 6) return COLL_TAP_CLOSE;
     int np = collection_pages();
     if (np > 1 && py < COLL_NAV_Y + RENDER_CRIT_NAV_W + 12) {   /* the arrows: their box and 12 px round it (the grid starts below) */
@@ -11492,29 +11646,29 @@ void render_milestones_show_fish(const tank_t *t, int fish) {
 bool render_milestones_card(const tank_t *t, int *fish, int *rename_x, int *sell_x, int *btn_y) {
     if (!ms_card(t)) return false;
     if (fish) *fish = g_ms_row;
-    if (rename_x) *rename_x = PAGE_X + ms_card_btn_x(t, g_ms_row, CB_RENAME) + MSP_CARD_ICON / 2;   /* (RENAME | GIVE, linked | MOVE, with a second tank | SELL | MORE) */
-    if (sell_x)   *sell_x   = PAGE_X + ms_card_btn_x(t, g_ms_row, CB_SELL) + MSP_CARD_ICON / 2;
-    if (btn_y)    *btn_y    = PAGE_Y + ms_card_btn_y(t) + MSP_CARD_ICON / 2;
+    if (rename_x) *rename_x = PAGE_FX(ms_card_btn_x(t, g_ms_row, CB_RENAME) + MSP_CARD_ICON / 2);   /* (RENAME | GIVE, linked | MOVE, with a second tank | SELL | MORE) */
+    if (sell_x)   *sell_x   = PAGE_FX(ms_card_btn_x(t, g_ms_row, CB_SELL) + MSP_CARD_ICON / 2);
+    if (btn_y)    *btn_y    = PAGE_FY(ms_card_btn_y(t) + MSP_CARD_ICON / 2);
     return true;
 }
 const char *render_milestones_line(void) { return g_ms_sub; }
 const char *render_milestones_caption(int line) { return line ? g_ms_caption2 : g_ms_caption; }
 bool render_milestones_give(const tank_t *t, int *x, int *y) {
     if (!ms_card(t) || give_look(t, g_ms_row) == GV_HIDDEN) return false;
-    if (x) *x = PAGE_X + ms_card_btn_x(t, g_ms_row, CB_GIVE) + MSP_CARD_ICON / 2;
-    if (y) *y = PAGE_Y + ms_card_btn_y(t) + MSP_CARD_ICON / 2;
+    if (x) *x = PAGE_FX(ms_card_btn_x(t, g_ms_row, CB_GIVE) + MSP_CARD_ICON / 2);
+    if (y) *y = PAGE_FY(ms_card_btn_y(t) + MSP_CARD_ICON / 2);
     return true;
 }
 bool render_milestones_more(const tank_t *t, int *x, int *y) {
     if (!ms_card(t) || give_look(t, g_ms_row) == GV_LEAVING) return false;
-    if (x) *x = PAGE_X + ms_card_btn_x(t, g_ms_row, CB_MORE) + MSP_CARD_ICON / 2;
-    if (y) *y = PAGE_Y + ms_card_btn_y(t) + MSP_CARD_ICON / 2;
+    if (x) *x = PAGE_FX(ms_card_btn_x(t, g_ms_row, CB_MORE) + MSP_CARD_ICON / 2);
+    if (y) *y = PAGE_FY(ms_card_btn_y(t) + MSP_CARD_ICON / 2);
     return true;
 }
 bool render_milestones_move(const tank_t *t, int *x, int *y) {   /* MOVE: the travel bowl (0.4.2) */
     if (!ms_card(t) || give_look(t, g_ms_row) == GV_LEAVING || !move_shown()) return false;
-    if (x) *x = PAGE_X + ms_card_btn_x(t, g_ms_row, CB_MOVE) + MSP_CARD_ICON / 2;
-    if (y) *y = PAGE_Y + ms_card_btn_y(t) + MSP_CARD_ICON / 2;
+    if (x) *x = PAGE_FX(ms_card_btn_x(t, g_ms_row, CB_MOVE) + MSP_CARD_ICON / 2);
+    if (y) *y = PAGE_FY(ms_card_btn_y(t) + MSP_CARD_ICON / 2);
     return true;
 }
 /* THE WAITING ROW (0.4.2): the keeper page's sixth row - never a fish's (five live here) nor the NEW FRY's (it sits under
@@ -11522,23 +11676,23 @@ bool render_milestones_move(const tank_t *t, int *x, int *y) {   /* MOVE: the tr
 #define MSP_BOWL_ROW_Y (MSP_ROW_Y0 + (N_FISH_MAX - 1) * MSP_ROW_H)
 bool render_bowl_row(int *x, int *y, int *w, int *h) {
     if (!progression_bowl_has()) return false;
-    if (x) *x = PAGE_X + 24;
-    if (y) *y = PAGE_Y + MSP_BOWL_ROW_Y;
-    if (w) *w = PAGE_W - 48;
-    if (h) *h = MSP_ROW_H;
+    if (x) *x = PAGE_FX(24);
+    if (y) *y = PAGE_FY(MSP_BOWL_ROW_Y);
+    if (w) *w = PAGE_FX(24 + PAGE_W - 48) - PAGE_FX(24);        /* (frame px, as x and y: the CYD draws the page scaled) */
+    if (h) *h = PAGE_FY(MSP_BOWL_ROW_Y + MSP_ROW_H) - PAGE_FY(MSP_BOWL_ROW_Y);
     return true;
 }
 bool render_milestones_arrow(const tank_t *t, bool right, int *x, int *y) {
     if (!g_ms_caption[0] || g_ms_tip) return false;
-    if (x) *x = PAGE_X + (right ? MSP_MODAL_X + MSP_MODAL_W - MSP_ARROW_IN - MSP_ARROW_W / 2 : MSP_MODAL_X + MSP_ARROW_IN + MSP_ARROW_W / 2);
-    if (y) *y = PAGE_Y + ms_modal_y(t) + MSP_ARROW_IN + MSP_ARROW_H / 2;
+    if (x) *x = PAGE_FX(right ? MSP_MODAL_X + MSP_MODAL_W - MSP_ARROW_IN - MSP_ARROW_W / 2 : MSP_MODAL_X + MSP_ARROW_IN + MSP_ARROW_W / 2);
+    if (y) *y = PAGE_FY(ms_modal_y(t) + MSP_ARROW_IN + MSP_ARROW_H / 2);
     return true;
 }
 void render_milestones_modal_box(const tank_t *t, int *x, int *y, int *w, int *h) {
-    if (x) *x = PAGE_X + MSP_MODAL_X;
-    if (y) *y = PAGE_Y + ms_modal_y(t);
-    if (w) *w = MSP_MODAL_W;
-    if (h) *h = ms_modal_h(t);
+    if (x) *x = PAGE_FX(MSP_MODAL_X);
+    if (y) *y = PAGE_FY(ms_modal_y(t));
+    if (w) *w = PAGE_FX(MSP_MODAL_X + MSP_MODAL_W) - PAGE_FX(MSP_MODAL_X);
+    if (h) *h = PAGE_FY(ms_modal_y(t) + ms_modal_h(t)) - PAGE_FY(ms_modal_y(t));
 }
 /* SAND DOLLAR GIFTS (0.4.2): the coin, turned about its upright axis - each column samples the icon at x / cos(spin)
    (the back face a shade darker), so a spin reads as a coin turning, not a squash */
@@ -11560,8 +11714,8 @@ void render_sd_coin(uint16_t *fb, int stride, int x, int y, float spin) {
     }
 }
 void render_milestones_row(int row, int *name_x, int *y) {
-    if (name_x) *name_x = PAGE_X + 100;
-    if (y)      *y      = PAGE_Y + MSP_ROW_Y0 + row * MSP_ROW_H + MSP_ROW_MID;
+    if (name_x) *name_x = PAGE_FX(100);
+    if (y)      *y      = PAGE_FY(MSP_ROW_Y0 + row * MSP_ROW_H + MSP_ROW_MID);
 }
 
 /* ---- announcement modal (notice.h, 2026-09-15) ----
@@ -12009,7 +12163,7 @@ static void shelf_slot(ctx_t *c, int x, int y, const tank_t *t, int item, int s)
     if (crit_jar_idx(item) >= 0) {                                    /* a critter: its jar (0.4.2) - the row's thumb, the modal's live */
         if (s == 1 && (g_cjar_built & (1 << crit_jar_idx(item)))) {
             const uint16_t *th = ds()->crit_thumb[crit_jar_idx(item)];
-            for (int yy = 0; yy < H; yy++) for (int xx = 0; xx < W; xx++) if (CTX_IN(c, x + xx, y + yy)) CTX_PX(c, x + xx, y + yy) = FB_SWAP16(th[yy * SHELF_THUMB + xx]);
+            for (int yy = 0; yy < H; yy++) for (int xx = 0; xx < W; xx++) raw_px(c, x + xx, y + yy, th[yy * SHELF_THUMB + xx]);
         } else if (s == 2) crit_jar_paint(c, t, item, x, y);
         else blit_icon(c, x, y, shop_icon(item), 255);
         crit_jar_glass(c, x, y, W);
@@ -12017,7 +12171,7 @@ static void shelf_slot(ctx_t *c, int x, int y, const tank_t *t, int item, int s)
     }
     if (k >= 0 && g_shelf_key[k]) {                                   /* the little tank: the thumb, the glass, a glint */
         const uint16_t *th = ds()->shelf_thumb[k];
-        for (int yy = 0; yy < H; yy++) for (int xx = 0; xx < W; xx++) if (CTX_IN(c, x + xx, y + yy)) CTX_PX(c, x + xx, y + yy) = FB_SWAP16(th[(yy / s) * SHELF_THUMB + xx / s]);
+        for (int yy = 0; yy < H; yy++) for (int xx = 0; xx < W; xx++) raw_px(c, x + xx, y + yy, th[(yy / s) * SHELF_THUMB + xx / s]);
         rect_edge(c, x, y, W, H, MSP_TEAL);
         for (int i = 1; i < 3 * s; i++) px_blend(c, x + 2 * s + i, y + 2 * s, 0xffffff, 110);
         return;
@@ -12029,7 +12183,7 @@ static void shelf_slot(ctx_t *c, int x, int y, const tank_t *t, int item, int s)
 void render_shop(const tank_t *t, uint16_t *fb, int stride) {
     shelf_prepare(t, fb, stride);                             /* (the shelf's thumbs first: the frame is their scratch) */
     ctx_t c = ctx_page(fb, stride);
-    rect_fill(&c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(&c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     blit_icon(&c, SHP_COIN_X, SHP_COIN_Y, &icon_shop_sand_dollar_64, 255);
     draw_text(&c, SHP_HEAD_X, SHP_COIN_Y + 6, 2, MSP_TEAL, "SAND DOLLARS");
     char bal[16]; snprintf(bal, sizeof bal, "%d", (int)t->sd_balance);
@@ -12190,7 +12344,7 @@ int render_shop_tap(const tank_t *t, float x, float y) {
     return r;
 }
 static int shp_tap(const tank_t *t, float x, float y) {
-    x -= PAGE_X; y -= PAGE_Y;                    /* the page's own coordinates */
+    x = FX_PAGE(x); y = FY_PAGE(y);              /* the page's own coordinates */
     if (g_shp_earn) { g_shp_earn = false; return SHOP_TAP_KEPT; }
     if (g_shp_modal >= 0 && shp_fresh(t)) return SHOP_TAP_KEPT;   /* the row's tap doubled: spent, the modal stays (BUY,
                                                                    MOVE, SHELVE, a close) (THE TOUCH RULE: not restarted) */
@@ -12302,9 +12456,9 @@ void render_sd_toast(const tank_t *t, uint16_t *fb, int stride) {
         g_toast_until = t->clock + TOAST_S;
     }
     if (t->clock >= g_toast_until || t->clock < g_toast_until - TOAST_S - 1) return;   /* (a reset sends the clock back) */
-    ctx_t c = ctx_full(fb, stride, 1.0f);
+    ctx_t c = ctx_page(fb, stride);
     char txt[16]; snprintf(txt, sizeof txt, "+%d", g_toast_n);
-    const int W = 30 + text_w(txt, 2), H = 22, X = (TANK_W - W) / 2, Y = PAGE_BOWL ? 44 : 8;   /* (the bowl's top is a narrow cap: lower) */
+    const int W = 30 + text_w(txt, 2), H = 22, X = (PAGE_W - W) / 2, Y = (int)FY_PAGE(PAGE_BOWL ? 44 : 8);   /* (the bowl's top is a narrow cap: lower) */
     for (int y = Y; y < Y + H; y++)
         for (int x = X; x < X + W; x++) px_blend(&c, x, y, 0x04141a, 215);
     rect_edge(&c, X, Y, W, H, MSP_TEAL);
@@ -12465,7 +12619,7 @@ void render_gfx_page_box(int which, int *x, int *y, int *w, int *h) {
     *x = SET_SEG_X + (q ? which - GFXP_BOX_Q_LOW : which - GFXP_BOX_V_ON) * SET_SEG_DX; *y = SET_SEG_Y(q ? SET_ROW1_Y : SET_ROW2_Y); *w = SET_SEG_W; *h = SET_SEG_H;
 }
 static void gfx_page_draw(ctx_t *c) {
-    rect_fill(c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     draw_text(c, (PAGE_W - text_w("GRAPHICS", 3)) / 2, SET_TITLE_Y, 3, 0xffffff, "GRAPHICS");
     set_row(c, SET_ROW1_Y, "QUALITY", GFXP_Q, 3, render_gfx_level() - RENDER_GFX_LOW);
     set_row(c, SET_ROW2_Y, "VIGNETTE", SET_FEED, 2, render_vignette() ? 0 : 1);
@@ -12475,7 +12629,7 @@ static void gfx_page_draw(ctx_t *c) {
 void render_settings(const tank_t *t, uint16_t *fb, int stride, int bright_pct, int volume) {
     ctx_t c = ctx_page(fb, stride);
     if (s_gfxp) { gfx_page_draw(&c); return; }   /* its GRAPHICS face */
-    rect_fill(&c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(&c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     draw_text(&c, (PAGE_W - text_w("SETTINGS", 3)) / 2, SET_TITLE_Y, 3, 0xffffff, "SETTINGS");
     set_slider(&c, SET_ROW1_Y, "BRIGHTNESS", SET_BRT_MIN, bright_pct);
     set_slider(&c, SET_ROW2_Y, "VOLUME", 0, volume);
@@ -12535,7 +12689,7 @@ static int set_segment(float x, int n) {
  * left and right halves). The foot and the tiles: where render_settings_box draws them (the bands: render.h). */
 enum { SET_HIT_LIGHT_PREV = 100, SET_HIT_LIGHT_NEXT };
 int render_settings_tap(float x, float y, int *value) {
-    x -= PAGE_X; y -= PAGE_Y;                    /* the page's own coordinates */
+    x = FX_PAGE(x); y = FY_PAGE(y);              /* the page's own coordinates */
     *value = 0;
     if (y >= SET_NAV_HIT_Y1) return SET_TAP_NONE;   /* (under the foot: the version caption) */
     if (y >= SET_NAV_HIT_Y0) {                   /* THE FOOT (0.4.2): UPDATES | LINK | CLOSE, each to half the gap */
@@ -12564,7 +12718,7 @@ int render_settings_tap(float x, float y, int *value) {
  * (VIGNETTE has two); BACK in the settings foot's band (no slop above it, 14 under, 12 to each side). SET_TAP_GFX (*value the level), SET_TAP_VIG (*value 1 ON, 0 OFF),
  * SET_TAP_GFX_PAGE (*value 0: BACK), or SET_TAP_NONE */
 int render_gfx_page_tap(float x, float y, int *value) {
-    x -= PAGE_X; y -= PAGE_Y;
+    x = FX_PAGE(x); y = FY_PAGE(y);
     *value = 0;
     if (y >= SET_NAV_HIT_Y1) return SET_TAP_NONE;
     if (y >= SET_NAV_HIT_Y0) return x >= GFXP_BACK_X - 12 && x < GFXP_BACK_X + GFXP_BACK_W + 12 ? SET_TAP_GFX_PAGE : SET_TAP_NONE;
@@ -12625,7 +12779,7 @@ int render_settings_touch(tank_t *t, float x, float y, bool down, int *value) {
         }
     } else if (down && (s_set_hit == SET_TAP_BRIGHT || s_set_hit == SET_TAP_VOLUME)) {   /* a slider under a finger: the knob follows it along the row, */
         bool brt = s_set_hit == SET_TAP_BRIGHT;
-        int v = brt ? set_bright_at(x - PAGE_X) : set_volume_at(x - PAGE_X);   /* however far up or down the finger wanders */
+        int v = brt ? set_bright_at(FX_PAGE(x)) : set_volume_at(FX_PAGE(x));   /* however far up or down the finger wanders */
         if (v != s_set_hv) { s_set_hv = v; r = brt ? SET_TAP_BRIGHT_LIVE : SET_TAP_VOLUME_LIVE; *value = v; }
     } else if (!down && s_set_down && (s_set_hit == SET_TAP_BRIGHT || s_set_hit == SET_TAP_VOLUME)) {   /* let go: the last step it showed is the setting */
         r = s_set_hit; *value = s_set_hv;
@@ -12731,7 +12885,7 @@ static void link_glyph(ctx_t *c, int x, int y, uint32_t rgb) {
 #define LINK_DISC_W   156
 #define LINK_DISC_X   ((PAGE_W - LINK_DISC_W) / 2)
 #define LINK_DISC_Y   (LINK_DRIFT_Y + 122)
-static int link_dchip_w(void) { return 10 + text_w("DISCONNECT", 2) + 10; }
+static int link_dchip_w(void) { return 10 + text_w_px("DISCONNECT", 2) + 10; }   /* (the chip is drawn in frame px: its drawn width, not the page's) */
 #ifdef TANK_ROUND          /* the bowl's top is a narrow cap: DISCONNECT gets its own row, centred under DONE and the badge */
 static int link_dchip_x(void) { return (TANK_W - link_dchip_w()) / 2; }
 static int link_dchip_y(void) { return TOOL_CHIP_Y + TOOL_CHIP_H + 10; }
@@ -12745,7 +12899,7 @@ static int link_tab_x(int e) {
     return e == LINK_LEFT ? (int)tank_glass_x0(y) + LINK_TAB_GAP : (int)tank_glass_x1(y) - LINK_TAB_GAP - LINK_TAB_W;
 }
 static int link_tab_y(void) { return (int)link_mid_y() - LINK_TAB_H / 2; }
-static int link_chip_w(void) { return 8 + 20 + 8 + text_w("DONE", 2) + 10; }
+static int link_chip_w(void) { return 8 + 20 + 8 + text_w_px("DONE", 2) + 10; }
 /* SAND DOLLAR GIFTS (0.4.2): a coin button under an open door's tab - the door the gift goes through */
 #define LINK_COIN_W   46
 #define LINK_COIN_GAP 10
@@ -12794,7 +12948,7 @@ static bool  g_link_fired;
 void render_link_where(int what, float *x, float *y) {
     if (what == 2) { *x = TOOL_CHIP_X + link_chip_w() / 2.0f; *y = TOOL_CHIP_Y + TOOL_CHIP_H / 2.0f; return; }
     if (what == 3) { *x = link_dchip_x() + link_dchip_w() / 2.0f; *y = link_dchip_y() + TOOL_CHIP_H / 2.0f; return; }   /* DISCONNECT in link mode */
-    if (what == 4) { *x = PAGE_X + LINK_DISC_X + LINK_DISC_W / 2.0f; *y = PAGE_Y + LINK_DISC_Y + MSP_CLOSE_H / 2.0f; return; }   /* ... on the DRIFTED notice */
+    if (what == 4) { *x = PAGE_FX(LINK_DISC_X + LINK_DISC_W / 2.0f); *y = PAGE_FY(LINK_DISC_Y + MSP_CLOSE_H / 2.0f); return; }   /* ... on the DRIFTED notice */
     if (what == 5 || what == 6) { *x = link_coin_x(what - 5) + LINK_COIN_W / 2.0f; *y = link_coin_y() + LINK_COIN_W / 2.0f; return; }   /* a door's coin */
     *x = link_tab_x(what) + LINK_TAB_W / 2.0f; *y = link_mid_y();
 }
@@ -12833,7 +12987,7 @@ static void link_tab(ctx_t *c, const link_view_t *v, int e, float clock) {   /* 
 }
 static void link_line(ctx_t *c, int py, const char *s, uint32_t rgb) {   /* a centred hint line at PAGE y */
     if (!s || !*s) return;
-    int w = text_w(s, 2), x = PAGE_X + (PAGE_W - w) / 2, y = PAGE_Y + py;
+    int w = text_w(s, 2), x = (PAGE_W - w) / 2, y = py;
     for (int yy = y - 4; yy < y + 18; yy++) for (int xx = x - 8; xx < x + w + 8; xx++) px_blend(c, xx, yy, 0x04141a, 170);
     draw_text(c, x, y, 2, rgb, s);
 }
@@ -12902,17 +13056,18 @@ void render_link_mode(const link_view_t *v, uint16_t *fb, int stride, double tcl
     else                   { l1 = "PUT THE TANKS SIDE BY SIDE";   l2 = "HOLD THE ARROWS THAT TOUCH"; }
     if (open && tclock < g_link_sdl_until && tclock > g_link_sdl_until - 60) { l1 = g_link_sdl[0]; l2 = g_link_sdl[1]; }   /* a gift's news (0.4.2) */
     else if (open && (v->edge[0].sd || v->edge[1].sd) && !asked && !two && !ours) l2 = "THE COIN SENDS SAND DOLLARS";
-    link_line(&c, LINK_HINT_Y, l1, 0xffffff);
-    link_line(&c, LINK_HINT_Y + 22, l2, 0x9fd8e2);
+    ctx_t pc = ctx_page(fb, stride);                       /* the hint and the NEARBY row: page coordinates */
+    link_line(&pc, LINK_HINT_Y, l1, 0xffffff);
+    link_line(&pc, LINK_HINT_Y + 22, l2, 0x9fd8e2);
     /* NEARBY: every tank in link mode that is heard */
     { const int py = LINK_HINT_Y + 46, r = 7;
       int w = text_w("NEARBY", 2) + 10 + (v->n_near ? v->n_near * (2 * r + 8) : text_w("NONE YET", 2));
-      int x = PAGE_X + (PAGE_W - w) / 2, y = PAGE_Y + py;
-      for (int yy = y - 4; yy < y + 18; yy++) for (int xx = x - 8; xx < x + w + 8; xx++) px_blend(&c, xx, yy, 0x04141a, 170);
-      draw_text(&c, x, y, 2, 0x9fd8e2, "NEARBY");
+      int x = (PAGE_W - w) / 2, y = py;
+      for (int yy = y - 4; yy < y + 18; yy++) for (int xx = x - 8; xx < x + w + 8; xx++) px_blend(&pc, xx, yy, 0x04141a, 170);
+      draw_text(&pc, x, y, 2, 0x9fd8e2, "NEARBY");
       x += text_w("NEARBY", 2) + 10;
-      if (!v->n_near) draw_text(&c, x, y, 2, 0x8fb4ba, "NONE YET");
-      for (int i = 0; i < v->n_near; i++) link_badge_draw(&c, x + r + i * (2 * r + 8), y + 7, r, v->near_badge[i], 255); }
+      if (!v->n_near) draw_text(&pc, x, y, 2, 0x8fb4ba, "NONE YET");
+      for (int i = 0; i < v->n_near; i++) link_badge_draw(&pc, x + r + i * (2 * r + 8), y + 7, r, v->near_badge[i], 255); }
 }
 int render_link_touch(const link_view_t *v, float x, float y, bool down, float dt) {
     int r = LINK_UI_NONE;
@@ -12984,8 +13139,8 @@ void render_link_doors(const link_view_t *v, uint16_t *fb, int stride, double tc
 void render_link_drift(const link_view_t *v, uint16_t *fb, int stride, double clock) {
     (void)clock;
     if (!v->drifting) return;
-    ctx_t c = ctx_full(fb, stride, 1.0f);
-    const int W = 336, H = 164, X = PAGE_X + (PAGE_W - W) / 2, Y = PAGE_Y + LINK_DRIFT_Y;
+    ctx_t c = ctx_page(fb, stride);
+    const int W = 336, H = 164, X = (PAGE_W - W) / 2, Y = LINK_DRIFT_Y;
     shade_box(&c, X, Y, W, H);
     rect_edge(&c, X, Y, W, H, 0xffffff); rect_edge(&c, X + 1, Y + 1, W - 2, H - 2, 0x9fd8e2);
     static const char *const GRACE[4] = { "THE TANKS DRIFTED", "PUT THEM BACK SIDE BY SIDE", "AND KEEP THEM STILL", "OR THE FISH WILL SWIM HOME" };
@@ -12996,7 +13151,7 @@ void render_link_drift(const link_view_t *v, uint16_t *fb, int stride, double cl
     rect_edge(&c, X + 24, Y + 104, W - 48, 8, 0x3f6a72);
     rect_fill(&c, X + 26, Y + 106, (int)((W - 52) * left), 4, 0xffffff);
     /* DISCONNECT (Strato, 2026-10-05: "an easy way to unlink"): every door of this tank shuts now */
-    button(&c, PAGE_X + LINK_DISC_X, PAGE_Y + LINK_DISC_Y, LINK_DISC_W, MSP_CLOSE_H, 0x1c2f36, MSP_TEAL, "DISCONNECT", 2);
+    button(&c, LINK_DISC_X, LINK_DISC_Y, LINK_DISC_W, MSP_CLOSE_H, 0x1c2f36, MSP_TEAL, "DISCONNECT", 2);
 }
 /* the DRIFTED notice's DISCONNECT answers a tap only where the notice is seen (the 11-02 sweep: its hit ran under every
    page and card - a neighbor lifting their tank and a tap mid-page closed every door and ate the tap): no page up, and no
@@ -13007,7 +13162,7 @@ bool render_drift_live(const tank_t *t, bool page_up) {
 }
 bool render_link_drift_hit(const link_view_t *v, float x, float y) {
     if (!v->drifting) return false;
-    x -= PAGE_X; y -= PAGE_Y;
+    x = FX_PAGE(x); y = FY_PAGE(y);
     return x >= LINK_DISC_X - 10 && x < LINK_DISC_X + LINK_DISC_W + 10 && y >= LINK_DISC_Y - 8 && y < LINK_DISC_Y + MSP_CLOSE_H + 12;
 }
 /* ---- THE ADVANCED PAGE (0.3.9.2) ---------------------------------------
@@ -13071,7 +13226,7 @@ static void lit_button(ctx_t *c, int x, int y, int w, int h, const char *label) 
 void render_advanced(uint16_t *fb, int stride, int pick_mah, int pick_ma, int set_mah, bool stock, bool fast) {
     ctx_t c = ctx_page(fb, stride);
     char txt[40];
-    rect_fill(&c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(&c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     text_centre(&c, SET_TITLE_Y, 3, 0xffffff, "ADVANCED");
     draw_text_8px(&c, (PAGE_W - (13 * 6 - 1)) / 2, SET_TITLE_Y + 25, MSP_QUIET, "FOR GROWN-UPS");
     /* TOUCH */
@@ -13102,7 +13257,7 @@ void render_advanced(uint16_t *fb, int stride, int pick_mah, int pick_ma, int se
     button(&c, SET_CLOSE_X, SET_FOOT_Y, MSP_CLOSE_W, MSP_CLOSE_H, 0x1c2f36, MSP_TEAL, "BACK", 2);
 }
 int render_advanced_tap(float x, float y) {
-    x -= PAGE_X; y -= PAGE_Y;
+    x = FX_PAGE(x); y = FY_PAGE(y);
     if (x >= SET_CLOSE_X - 8 && y >= SET_FOOT_Y - 4) return ADV_HIT_BACK;
     if (x < SET_SEG_X - 10) return ADV_HIT_NONE;
     if (y >= SET_SEG_Y(SET_ROW1_Y) - 12 && y < SET_SEG_Y(SET_ROW1_Y) + SET_SEG_H + 12) return ADV_HIT_CALIBRATE;
@@ -13118,7 +13273,7 @@ int render_advanced_tap(float x, float y) {
 void render_battery_warning(uint16_t *fb, int stride, int cell_mah, int charge_ma, bool checked) {
     ctx_t c = ctx_page(fb, stride);
     char txt[48];
-    rect_fill(&c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(&c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     {   /* the sign and the word, one group, centred */
         int sw = 36, gap = 12, tw = text_w("WARNING", 3), x0 = (PAGE_W - sw - gap - tw) / 2;
         adv_warn_sign(&c, x0 + sw / 2, SET_TITLE_Y - 6, sw, ADV_WARN_RGB);
@@ -13153,7 +13308,7 @@ void render_battery_warning(uint16_t *fb, int stride, int cell_mah, int charge_m
     }
 }
 int render_battery_warning_tap(float x, float y) {
-    x -= PAGE_X; y -= PAGE_Y;
+    x = FX_PAGE(x); y = FY_PAGE(y);
     if (y >= SET_FOOT_Y - 8) {
         if (x >= SET_UPD_X - 8 && x < SET_UPD_X + SET_UPD_W + 4) return ADV_HIT_CANCEL;
         if (x >= ADV_CONT_X - 4 && x < ADV_CONT_X + ADV_CONT_W + 8) return ADV_HIT_CONTINUE;
@@ -13165,7 +13320,7 @@ int render_battery_warning_tap(float x, float y) {
 /* touch calibration's pages */
 void render_touch_intro(uint16_t *fb, int stride, bool own_in_use, const char *msg) {
     ctx_t c = ctx_page(fb, stride);
-    rect_fill(&c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(&c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     text_centre(&c, SET_TITLE_Y, 3, 0xffffff, "TOUCH");
     int y = SET_TITLE_Y + 46;
     text_centre(&c, y, 2, MSP_TEAL, "HOLD THE TANK THE WAY"); y += 22;
@@ -13178,31 +13333,31 @@ void render_touch_intro(uint16_t *fb, int stride, bool own_in_use, const char *m
     button(&c, SET_CLOSE_X, SET_FOOT_Y, MSP_CLOSE_W, MSP_CLOSE_H, 0x1c2f36, MSP_TEAL, "BACK", 2);
 }
 int render_touch_intro_tap(float x, float y, bool own_in_use) {
-    x -= PAGE_X; y -= PAGE_Y;
+    x = FX_PAGE(x); y = FY_PAGE(y);
     if (x >= SET_CLOSE_X - 8 && y >= SET_FOOT_Y - 4) return ADV_HIT_BACK;
     if (fabsf(x - PAGE_W / 2) < ADV_START_W / 2 + 12 && y >= ADV_START_Y - 12 && y < ADV_START_Y + SET_SEG_H + 6) return ADV_HIT_START;
     if (own_in_use && fabsf(x - PAGE_W / 2) < ADV_RESET_W / 2 + 12 && y >= ADV_RESET_Y - 6 && y < ADV_RESET_Y + MSP_CLOSE_H + 12) return ADV_HIT_RESET;
     return ADV_HIT_NONE;
 }
 static void touch_cross(ctx_t *c, int fx, int fy, uint32_t rgb) {      /* a cross at FRAME px */
-    int x = fx - PAGE_X, y = fy - PAGE_Y;
+    int x = (int)FX_PAGE(fx), y = (int)FY_PAGE(fy);
     rect_fill(c, x - 24, y - 1, 49, 3, rgb); rect_fill(c, x - 1, y - 24, 3, 49, rgb);
     rect_fill(c, x - 4, y - 4, 9, 9, 0xffffff);
 }
 void render_touch_cross(uint16_t *fb, int stride, int i, int n, int tx, int ty) {
     ctx_t c = ctx_page(fb, stride);
     char txt[32];
-    rect_fill(&c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(&c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     touch_cross(&c, tx, ty, MSP_TEAL);
     snprintf(txt, sizeof txt, "TAP THE CROSS  %d OF %d", i + 1, n);
-    text_centre(&c, ty - PAGE_Y < PAGE_H / 2 ? PAGE_H - 60 : 46, 2, 0xffffff, txt);
+    text_centre(&c, FY_PAGE(ty) < PAGE_H / 2 ? PAGE_H - 60 : 46, 2, 0xffffff, txt);
 }
 void render_touch_check(uint16_t *fb, int stride, int tx, int ty, float secs_left, float secs_total) {
     ctx_t c = ctx_page(fb, stride);
     char txt[40];
-    rect_fill(&c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(&c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     touch_cross(&c, tx, ty, MSP_TEAL);
-    int y = ty - PAGE_Y < PAGE_H / 2 ? PAGE_H - 96 : 30;
+    int y = FY_PAGE(ty) < PAGE_H / 2 ? PAGE_H - 96 : 30;
     text_centre(&c, y, 2, 0xffffff, "TAP THIS CROSS TO KEEP"); y += 22;
     text_centre(&c, y, 2, 0xffffff, "THE NEW TOUCH"); y += 28;
     int s = (int)ceilf(secs_left < 0 ? 0 : secs_left);
@@ -13265,7 +13420,7 @@ static void adv_turn_arrow(ctx_t *c, int x0, int x1, int cy) {   /* a plain arro
 }
 void render_touch_turn(uint16_t *fb, int stride) {
     ctx_t c = ctx_page(fb, stride);
-    rect_fill(&c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(&c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     text_centre(&c, SET_TITLE_Y, 3, 0xffffff, "TURN IT OVER");
     const int cy = ADV_TURN_PIC_Y + ADV_ICON_H / 2, gap = ADV_ICON_W / 2 + 54;
     adv_tank_icon(&c, PAGE_W / 2 - gap, cy, false);
@@ -13287,7 +13442,7 @@ void render_touch_turn(uint16_t *fb, int stride) {
 #endif
 }
 int render_touch_turn_tap(float x, float y) {
-    x -= PAGE_X; y -= PAGE_Y;
+    x = FX_PAGE(x); y = FY_PAGE(y);
     if (y < SET_FOOT_Y - 8 || y >= SET_FOOT_Y + MSP_CLOSE_H + 16) return ADV_HIT_NONE;
 #if TANK_WORN
     if (x >= SET_UPD_X - 8 && x < SET_UPD_X + SET_UPD_W + 6) return ADV_HIT_SKIP;
@@ -13302,7 +13457,7 @@ int render_touch_turn_tap(float x, float y) {
 #define ADV_OK_Y   (SET_FOOT_Y - (TANK_WORN ? 24 : 4))      /* (the watch: clear of its lower corners' bezel) */
 void render_touch_done(uint16_t *fb, int stride) {
     ctx_t c = ctx_page(fb, stride);
-    rect_fill(&c, -PAGE_X, -PAGE_Y, TANK_W, TANK_H, MSP_INK);
+    rect_fill(&c, PAGE_FX0, PAGE_FY0, PAGE_FW, PAGE_FH, MSP_INK);
     const int cx = PAGE_W / 2, top = SET_TITLE_Y + 8;      /* the check mark in a ring: a short stroke down, a long one up */
     for (int i = 0; i < 360; i++) { float a = i * (TAU / 360); rect_fill(&c, cx + (int)lroundf(cosf(a) * 40) - 2, top + 42 + (int)lroundf(sinf(a) * 40) - 2, 4, 4, MSP_TEAL); }
     for (int k = 0; k < 44; k++) {
@@ -13315,7 +13470,7 @@ void render_touch_done(uint16_t *fb, int stride) {
     lit_button(&c, (PAGE_W - ADV_OK_W) / 2, ADV_OK_Y, ADV_OK_W, SET_SEG_H, "OK");
 }
 int render_touch_done_tap(float x, float y) {
-    x -= PAGE_X; y -= PAGE_Y;
+    x = FX_PAGE(x); y = FY_PAGE(y);
     if (fabsf(x - PAGE_W / 2) < ADV_OK_W / 2 + 14 && y >= ADV_OK_Y - 12 && y < ADV_OK_Y + SET_SEG_H + 16) return ADV_HIT_OK;
     return ADV_HIT_NONE;
 }
@@ -13366,6 +13521,15 @@ int render_touch_done_tap(float x, float y) {
 #define SH_LID      5
 #define SH_BASE     4
 #define SH_PIC_W    (SH_TW - 4)                          /* the picture inside the glass's two sides */
+/* the picture itself is a FRAME picture: a snapshot shown px for px. On the CYD the glass around it is drawn scaled,
+   so the picture is made the glass's size on the glass (PAGE_K of it), and drawn unscaled from the glass's mapped corner */
+#if PAGE_SCALED
+#define SH_THUMB_W  ((int)(SH_PIC_W * PAGE_K + 0.5f))
+#define SH_THUMB_H  ((int)(SH_IH * PAGE_K + 0.5f))
+#else
+#define SH_THUMB_W  SH_PIC_W
+#define SH_THUMB_H  SH_IH
+#endif
 #define SH_BOX_H    (SH_LID + SH_IH + SH_BASE)
 #define SH_TOP      7                                    /* the plank's top, seen from a little above */
 #define SH_FACE     36                                   /* its front: the name plates (two lines of scale 2 - Strato: the 6 px names "barely visible") */
@@ -13376,7 +13540,22 @@ int render_touch_done_tap(float x, float y) {
 #define SH_ROW_GAP  22                                   /* (the 1.8 and the bowl: as tight as the tag allows) */
 #endif
 #define SH_ROW_W    (4 * SH_TW + 3 * SH_GAP)
-#define SH_X0       ((TANK_W - SH_ROW_W) / 2)
+#if PAGE_SCALED                  /* THE SHELF'S SPACE (the CYD): the page's 448 x 368 - drawn scaled through ctx_frame; the frame everywhere else */
+#define SH_SW PAGE_W
+#define SH_SH PAGE_H
+#define SH_IN_X(x) FX_PAGE(x)    /* a tap from the frame -> the shelf's space */
+#define SH_IN_Y(y) FY_PAGE(y)
+#define SH_OUT_X(x) PAGE_FX(x)   /* a box in the shelf's space -> the frame */
+#define SH_OUT_Y(y) PAGE_FY(y)
+#else
+#define SH_SW TANK_W
+#define SH_SH TANK_H
+#define SH_IN_X(x) (x)
+#define SH_IN_Y(y) (y)
+#define SH_OUT_X(x) (x)
+#define SH_OUT_Y(y) (y)
+#endif
+#define SH_X0       ((SH_SW - SH_ROW_W) / 2)
 #define SH_OVER     12                                   /* the plank runs this far past the end tanks */
 #define SH_BTN_W    116
 #define SH_ARW_W    36
@@ -13385,9 +13564,17 @@ int render_touch_done_tap(float x, float y) {
 #define SH_BRASS    0xd2b878
 static ctx_t ctx_frame(uint16_t *fb, int stride) {
     CTX_MADE();
+#if PAGE_SCALED                  /* the shelf's layout is the page's: the page mapping (px, span, text) puts it on the glass */
+    ctx_t c = { fb, stride, 1.0f, 0, 0, TANK_W, TANK_H, true };
+#else
     ctx_t c = { fb, stride, 1.0f, 0, 0, TANK_W, TANK_H };
+#endif
     g_dirty_hold = true;
     return c;
+}
+static void sh_frame_box(int *x, int *y, int *w, int *h) {   /* a box in the shelf's space -> the frame's (the identity off the CYD) */
+    const int x0 = SH_OUT_X(*x), y0 = SH_OUT_Y(*y), x1 = SH_OUT_X(*x + *w), y1 = SH_OUT_Y(*y + *h);
+    *x = x0; *y = y0; *w = x1 - x0; *h = y1 - y0;
 }
 static uint32_t sh_mix(uint32_t a, uint32_t b, int t) {   /* t 0..256 from a to b */
     int r = ((a >> 16) & 255) + ((((int)(b >> 16) & 255) - (int)((a >> 16) & 255)) * t >> 8);
@@ -13402,8 +13589,13 @@ static uint32_t sh_shade(uint32_t rgb, int pct) {          /* 100 = as is */
     if (b > 255) b = 255;
     return (uint32_t)(r << 16 | g << 8 | b);
 }
-static void sh_wall(ctx_t *c) {
-    for (int y = 0; y < TANK_H; y++) rect_fill(c, 0, y, TANK_W, 1, sh_mix(SH_WALL_TOP, SH_WALL_BOT, y * 256 / TANK_H));
+static void sh_wall(ctx_t *c) {   /* the whole glass: on the CYD the shelf's space is the page, narrower than the glass - the wall runs past it to the edges */
+#if PAGE_SCALED
+    const int x0 = PAGE_FX0, w = PAGE_FW, y0 = PAGE_FY0, y1 = PAGE_FY0 + PAGE_FH;
+#else
+    const int x0 = 0, w = SH_SW, y0 = 0, y1 = SH_SH;
+#endif
+    for (int y = y0; y < y1; y++) { int t = y < 0 ? 0 : y >= SH_SH ? SH_SH - 1 : y; rect_fill(c, x0, y, w, 1, sh_mix(SH_WALL_TOP, SH_WALL_BOT, t * 256 / SH_SH)); }
 }
 /* the wood: long streaks that wander, a little noise, darker end grain */
 static inline float sh_sin(float a) {                     /* sinf to ~1e-4, without libm's range reduction (the wood's first draw, 0.3.9.3) */
@@ -13422,7 +13614,7 @@ void render_shelf_free(void) {                            /* MY TANKS closed: th
 }
 static void sh_plank(ctx_t *c, int x, int y, int w) {     /* y = the top's back edge */
     for (int k = 1; k <= 10; k++)                          /* its shadow on the wall */
-        rect_fill(c, x + 4, y + SH_TOP + SH_FACE + k - 1, w - 8, 1, sh_shade(sh_mix(SH_WALL_TOP, SH_WALL_BOT, (y + SH_TOP + SH_FACE + k) * 256 / TANK_H), 40 + k * 6));
+        rect_fill(c, x + 4, y + SH_TOP + SH_FACE + k - 1, w - 8, 1, sh_shade(sh_mix(SH_WALL_TOP, SH_WALL_BOT, (y + SH_TOP + SH_FACE + k) * 256 / SH_SH), 40 + k * 6));
     for (int b = 0; b < 2; b++) {                          /* two iron brackets under it */
         int bx = b ? x + w - 34 : x + 22;
         for (int dy = 0; dy < 14; dy++) rect_fill(c, bx, y + SH_TOP + SH_FACE + dy, 14 - dy, 1, dy == 0 ? 0x4a3c32 : 0x2e2620);
@@ -13455,7 +13647,7 @@ static void sh_plank(ctx_t *c, int x, int y, int w) {     /* y = the top's back 
             if (slot >= 0) v = strip[slot][yy * w + xx];
             else { int pct = 100 + sh_grain(x + xx, y + yy) - (xx < 2 || xx >= w - 2 ? 22 : 0) + (yy < SH_TOP ? yy - 3 : 0);   /* (no memory: as before) */
                    v = src_color(sh_shade(yy < SH_TOP ? 0xb98652 : 0x8d5b31, pct), 1.0f).v; }
-            if (CTX_IN(c, x + xx, y + yy)) CTX_PX(c, x + xx, y + yy) = FB_SWAP16(v);
+            raw_px(c, x + xx, y + yy, v);
         }
     rect_fill(c, x, y + SH_TOP - 1, w, 1, 0xdcab74);       /* the lip catches the light */
     rect_fill(c, x, y + SH_TOP + SH_FACE - 1, w, 1, 0x3e2613);
@@ -13489,6 +13681,11 @@ static void sh_plate(ctx_t *c, int cx, int y, const char *name) {
     if (l2[0]) draw_text(c, x + 2 + (tw - text_w(l2, 2)) / 2, y + 18, 2, 0x2c2412, l2);   /* (2 px between the lines - Strato: they touched) */
 }
 static void sh_pic(ctx_t *c, int x, int y, const uint16_t *pic, int w, int h, bool dim) {
+    ctx_t f = *c;
+#if PAGE_SCALED
+    if (c->pg) { f = ctx_unpaged(c); x = PG_X(x); y = PG_Y(y); }
+#endif
+    (void)w; (void)h; w = SH_THUMB_W; h = SH_THUMB_H;    /* (the picture's own size, whatever glass it is in) */
     for (int j = 0; j < h; j++)
         for (int i = 0; i < w; i++) {
             uint16_t v = pic[j * w + i];
@@ -13496,7 +13693,7 @@ static void sh_pic(ctx_t *c, int x, int y, const uint16_t *pic, int w, int h, bo
                 int r = (v >> 11) * 9 / 20, g = ((v >> 5) & 63) * 9 / 20, b = (v & 31) * 11 / 20 + 1;
                 v = (uint16_t)(r << 11 | g << 5 | (b > 31 ? 31 : b));
             }
-            px(c, x + i, y + j, v);
+            px(&f, x + i, y + j, v);
         }
 }
 /* a little tank: lid, the picture between two glass sides, the base; a soft streak of reflection */
@@ -13551,14 +13748,14 @@ static void sh_pager(ctx_t *c, int cx, int y, int page, int pages) {
 static void sh_footer(ctx_t *c, const char *left, bool left_sd, int wallet, const char *right, int page, int pages) {
     int cw = MSP_CLOSE_W;
 #if PAGE_BOWL || defined(TANK_WATCH)
-    sh_pager(c, TANK_W / 2, SH_PAGER_Y, page, pages);
-    int lx = (TANK_W - (SH_BTN_W + 12 + cw)) / 2, rx = lx + SH_BTN_W + 12, y = SH_FOOT_Y;   /* the pair centred as one group */
+    sh_pager(c, SH_SW / 2, SH_PAGER_Y, page, pages);
+    int lx = (SH_SW - (SH_BTN_W + 12 + cw)) / 2, rx = lx + SH_BTN_W + 12, y = SH_FOOT_Y;   /* the pair centred as one group */
 #else
-    sh_pager(c, (SH_X0 + SH_BTN_W + TANK_W - SH_X0 - cw) / 2, SH_FOOT_Y, page, pages);
-    int lx = SH_X0, rx = TANK_W - SH_X0 - cw, y = SH_FOOT_Y;
+    sh_pager(c, (SH_X0 + SH_BTN_W + SH_SW - SH_X0 - cw) / 2, SH_FOOT_Y, page, pages);
+    int lx = SH_X0, rx = SH_SW - SH_X0 - cw, y = SH_FOOT_Y;
 #endif
 #if PAGE_BOWL || defined(TANK_WATCH)
-    if (!right[0]) lx = (TANK_W - SH_BTN_W) / 2;           /* (alone: centred) */
+    if (!right[0]) lx = (SH_SW - SH_BTN_W) / 2;           /* (alone: centred) */
 #endif
     if (left_sd) {                                         /* the wallet: the coin and the count */
         char t[16]; snprintf(t, sizeof t, "%d", wallet);
@@ -13570,7 +13767,7 @@ static void sh_footer(ctx_t *c, const char *left, bool left_sd, int wallet, cons
     if (right[0]) button(c, rx, y, cw, MSP_CLOSE_H, 0x1c2f36, MSP_TEAL, right, 2);
 }
 
-void render_shelf_thumb_size(int *w, int *h) { *w = SH_PIC_W; *h = SH_IH; }
+void render_shelf_thumb_size(int *w, int *h) { *w = SH_THUMB_W; *h = SH_THUMB_H; }
 void render_shelf_thumb(const uint16_t *frame, uint16_t *thumb) {
     int cw, ch;                                            /* the crop: the picture's shape from the frame's middle */
 #if PAGE_BOWL
@@ -13578,19 +13775,19 @@ void render_shelf_thumb(const uint16_t *frame, uint16_t *thumb) {
 #else
     ch = TANK_H;
 #endif
-    cw = ch * SH_PIC_W / SH_IH;
-    if (cw > TANK_W) { cw = TANK_W; ch = cw * SH_IH / SH_PIC_W; }
+    cw = ch * SH_THUMB_W / SH_THUMB_H;
+    if (cw > TANK_W) { cw = TANK_W; ch = cw * SH_THUMB_H / SH_THUMB_W; }
     int ox = (TANK_W - cw) / 2, oy = (TANK_H - ch) / 2;
-    for (int j = 0; j < SH_IH; j++)
-        for (int i = 0; i < SH_PIC_W; i++) {               /* a box filter over the source pixels each one covers */
-            int x0 = ox + i * cw / SH_PIC_W, x1 = ox + (i + 1) * cw / SH_PIC_W, y0 = oy + j * ch / SH_IH, y1 = oy + (j + 1) * ch / SH_IH;
+    for (int j = 0; j < SH_THUMB_H; j++)
+        for (int i = 0; i < SH_THUMB_W; i++) {             /* a box filter over the source pixels each one covers */
+            int x0 = ox + i * cw / SH_THUMB_W, x1 = ox + (i + 1) * cw / SH_THUMB_W, y0 = oy + j * ch / SH_THUMB_H, y1 = oy + (j + 1) * ch / SH_THUMB_H;
             int r = 0, g = 0, b = 0, n = 0;
             for (int y = y0; y < y1; y++)
                 for (int x = x0; x < x1; x++) {
                     uint16_t v = FB_SWAP16(frame[y * TANK_W + x]);
                     r += v >> 11; g += (v >> 5) & 63; b += v & 31; n++;
                 }
-            thumb[j * SH_PIC_W + i] = n ? (uint16_t)((r / n) << 11 | (g / n) << 5 | (b / n)) : 0;
+            thumb[j * SH_THUMB_W + i] = n ? (uint16_t)((r / n) << 11 | (g / n) << 5 | (b / n)) : 0;
         }
 }
 /* THE TOUCH LOCK (0.3.9.3, art approved by Strato): keepers asked for a way to stop taps reaching the tank. Taps can't
@@ -13618,7 +13815,7 @@ void render_touch_lock_hint(uint16_t *fb, int stride) {    /* a tap on a locked 
     ctx_t c = ctx_frame(fb, stride);
     const char *l1 = "TOUCH IS LOCKED", *l2 = "PRESS BOOT TWICE TO UNLOCK";
     int tw = text_w(l1, 2) > text_w(l2, 1) ? text_w(l1, 2) : text_w(l2, 1);
-    int w = 14 + 16 + 12 + tw + 14, h = 46, x = (TANK_W - w) / 2, y = TANK_H * 62 / 100;
+    int w = 14 + 16 + 12 + tw + 14, h = 46, x = (SH_SW - w) / 2, y = SH_SH * 62 / 100;
     for (int j = 0; j < h; j++) for (int i = 0; i < w; i++) px_blend(&c, x + i, y + j, 0x0b0f12, 225);
     rect_fill(&c, x, y, w, 1, MSP_TEAL); rect_fill(&c, x, y + h - 1, w, 1, MSP_TEAL);
     rect_fill(&c, x, y, 1, h, MSP_TEAL); rect_fill(&c, x + w - 1, y, 1, h, MSP_TEAL);
@@ -13643,9 +13840,9 @@ enum { SHI_LIB, SHI_LOCK, SHI_SET, SHI_CLOSE, SHI_N };
 #define SHI_GAP 10
 static void sh_foot_xy(int which, int *x, int *y) {
 #if PAGE_BOWL || defined(TANK_WATCH)
-    *x = (TANK_W - (SHI_N * SH_LOCK_W + (SHI_N - 1) * SHI_GAP)) / 2 + which * (SH_LOCK_W + SHI_GAP);
+    *x = (SH_SW - (SHI_N * SH_LOCK_W + (SHI_N - 1) * SHI_GAP)) / 2 + which * (SH_LOCK_W + SHI_GAP);
 #else
-    *x = which < 2 ? SH_X0 + which * (SH_LOCK_W + SHI_GAP) : TANK_W - SH_X0 - SH_LOCK_W - (SHI_N - 1 - which) * (SH_LOCK_W + SHI_GAP);
+    *x = which < 2 ? SH_X0 + which * (SH_LOCK_W + SHI_GAP) : SH_SW - SH_X0 - SH_LOCK_W - (SHI_N - 1 - which) * (SH_LOCK_W + SHI_GAP);
 #endif
     *y = SH_FOOT_Y;
 }
@@ -13681,9 +13878,9 @@ static void sh_ic_library(ctx_t *c, int cx, int cy, uint32_t ink, uint32_t back)
 }
 static void sh_icon_foot(ctx_t *c, int page, int pages) {
 #if PAGE_BOWL || defined(TANK_WATCH)
-    sh_pager(c, TANK_W / 2, SH_PAGER_Y, page, pages);
+    sh_pager(c, SH_SW / 2, SH_PAGER_Y, page, pages);
 #else
-    sh_pager(c, TANK_W / 2, SH_FOOT_Y, page, pages);
+    sh_pager(c, SH_SW / 2, SH_FOOT_Y, page, pages);
 #endif
     for (int b = 0; b < SHI_N; b++) {
         int x, y; sh_foot_xy(b, &x, &y);
@@ -13705,9 +13902,9 @@ void render_shelf(uint16_t *fb, int stride, const shelf_slot_t slot[8], int page
     const bool moving = g_sh_moving;
     if (moving) {                                          /* MOVE: the title names the tank in hand */
         char t[32]; snprintf(t, sizeof t, "MOVE %s", g_sh_move_name);
-        draw_text(&c, (TANK_W - text_w(t, 2)) / 2, SH_TITLE_Y + 4, 2, 0xffffff, t);
+        draw_text(&c, (SH_SW - text_w(t, 2)) / 2, SH_TITLE_Y + 4, 2, 0xffffff, t);
     } else {
-    const int tx = (TANK_W - text_w("MY TANKS", 3)) / 2;   /* (alone since 0.4.2: the padlock is in the icon foot) */
+    const int tx = (SH_SW - text_w("MY TANKS", 3)) / 2;   /* (alone since 0.4.2: the padlock is in the icon foot) */
     if (progression_bowl_has()) {                          /* THE TRAVEL BOWL (0.4.2): a fish waits in it - said here, where the keeper
                                                               picks the tank it goes to, in the title's place and at the name
                                                               plates' size (two lines in the title's box, the padlock's height;
@@ -13768,15 +13965,16 @@ void render_shelf(uint16_t *fb, int stride, const shelf_slot_t slot[8], int page
 }
 
 int render_shelf_tap(float x, float y) {
+    x = SH_IN_X(x); y = SH_IN_Y(y);                        /* the touch port's frame -> the shelf's space */
     const int s = 8;                                       /* a fingertip's slop round each button */
     if (g_sh_moving) {                                     /* MOVE: CANCEL (the caller reads SHELF_TAP_LIBRARY) and the pager, as sh_footer draws them */
 #if PAGE_BOWL || defined(TANK_WATCH)
-        int lx = (TANK_W - SH_BTN_W) / 2, fy = SH_FOOT_Y, py = SH_PAGER_Y, pcx = TANK_W / 2;
+        int lx = (SH_SW - SH_BTN_W) / 2, fy = SH_FOOT_Y, py = SH_PAGER_Y, pcx = SH_SW / 2;
 #else
-        int lx = SH_X0, fy = SH_FOOT_Y, py = SH_FOOT_Y, pcx = (SH_X0 + SH_BTN_W + TANK_W - SH_X0 - MSP_CLOSE_W) / 2;
+        int lx = SH_X0, fy = SH_FOOT_Y, py = SH_FOOT_Y, pcx = (SH_X0 + SH_BTN_W + SH_SW - SH_X0 - MSP_CLOSE_W) / 2;
 #endif
-        if (y >= fy - s && y < TANK_H && x >= lx - s && x < lx + SH_BTN_W + s) return SHELF_TAP_LIBRARY;   /* (the foot: down to the glass's edge - a tap there reads AT the edge, touch_port shelf_tap_y) */
-        if (y >= py - s && y < (py == SH_FOOT_Y ? TANK_H : py + MSP_CLOSE_H + s)) {
+        if (y >= fy - s && y < SH_SH && x >= lx - s && x < lx + SH_BTN_W + s) return SHELF_TAP_LIBRARY;   /* (the foot: down to the glass's edge - a tap there reads AT the edge, touch_port shelf_tap_y) */
+        if (y >= py - s && y < (py == SH_FOOT_Y ? SH_SH : py + MSP_CLOSE_H + s)) {
             if (x >= pcx - 120 && x < pcx - 30) return SHELF_TAP_PREV;
             if (x >= pcx + 30 && x < pcx + 120) return SHELF_TAP_NEXT;
         }
@@ -13784,15 +13982,15 @@ int render_shelf_tap(float x, float y) {
         static const int TAP[SHI_N] = { SHELF_TAP_LIBRARY, SHELF_TAP_TOUCH_LOCK, SHELF_TAP_SETTINGS, SHELF_TAP_CLOSE };
         for (int b = 0; b < SHI_N; b++) {                  /* the icon foot: half the gap each side between two of them, the slop elsewhere */
             int bx, by; sh_foot_xy(b, &bx, &by);
-            if (x >= bx - SHI_GAP / 2 && x < bx + SH_LOCK_W + SHI_GAP / 2 && y >= by - s && y < TANK_H) return TAP[b];   /* (down to the glass's edge, as above) */
+            if (x >= bx - SHI_GAP / 2 && x < bx + SH_LOCK_W + SHI_GAP / 2 && y >= by - s && y < SH_SH) return TAP[b];   /* (down to the glass's edge, as above) */
         }
 #if PAGE_BOWL || defined(TANK_WATCH)
         const int py = SH_PAGER_Y;
 #else
         const int py = SH_FOOT_Y;
 #endif
-        const int pcx = TANK_W / 2;
-        if (y >= py - s && y < (py == SH_FOOT_Y ? TANK_H : py + MSP_CLOSE_H + s)) {     /* the pager's arrows: either side of "1 OF 2" */
+        const int pcx = SH_SW / 2;
+        if (y >= py - s && y < (py == SH_FOOT_Y ? SH_SH : py + MSP_CLOSE_H + s)) {     /* the pager's arrows: either side of "1 OF 2" */
             if (x >= pcx - 100 && x < pcx - 30) return SHELF_TAP_PREV;
             if (x >= pcx + 30 && x < pcx + 100) return SHELF_TAP_NEXT;
         }
@@ -13863,7 +14061,7 @@ int render_shelf_tap(float x, float y) {
 #define NK_S  4
 #define NK_PLATE_Y 34
 #endif
-#define NK_X0 ((TANK_W - (6 * NK_PX + NK_W)) / 2)
+#define NK_X0 ((SH_SW - (6 * NK_PX + NK_W)) / 2)
 #ifdef NK_FN_Y
 #define NK_FH NK_FN_H
 #else
@@ -13873,7 +14071,7 @@ int render_shelf_tap(float x, float y) {
 #define NK_LH (7 * NK_S)
 #define NK_PW (SHR_N * NK_GW - NK_S + 24)
 #define NK_PH (2 * NK_LH + 30)
-#define NK_PX0 ((TANK_W - NK_PW) / 2 - 40)
+#define NK_PX0 ((SH_SW - NK_PW) / 2 - 40)
 #define NK_CLEAR_W 68
 static const char *const NK_PAGES[3] = { "ABCDEFGHIJKLMN", "OPQRSTUVWXYZ'.", "1234567890-!?/" };
 const char *render_shelf_rename_keys(int page) { return NK_PAGES[page < 0 || page > 2 ? 0 : page]; }
@@ -13882,7 +14080,7 @@ static void nk_fn_box(int key, int *x, int *y, int *w, int *h) {
     int col = key == SHK_MORE ? 0 : key == SHK_DEL ? 1 : key == SHK_SPACE ? 2 : key == SHK_LINE ? 4 : key == SHK_BACK ? 5 : 6;
 #ifdef NK_FN_Y
     int k = col < 3 ? col : col - 1;
-    *x = (TANK_W - (5 * NK_FN_PX + NK_FN_W)) / 2 + k * NK_FN_PX; *y = NK_FN_Y; *w = NK_FN_W; *h = NK_FN_H;
+    *x = (SH_SW - (5 * NK_FN_PX + NK_FN_W)) / 2 + k * NK_FN_PX; *y = NK_FN_Y; *w = NK_FN_W; *h = NK_FN_H;
 #else
     *x = NK_X0 + col * NK_PX; *y = NK_Y + 2 * NK_PY; *w = col == 2 ? NK_PX + NK_W : NK_W; *h = NK_H;
 #endif
@@ -13894,6 +14092,7 @@ static void nk_box(int key, int *x, int *y, int *w, int *h) {   /* any key's box
     nk_fn_box(key, x, y, w, h);
 }
 int render_shelf_rename_hit(float x, float y) {            /* the key under a finger (a few px of slop round each) */
+    x = SH_IN_X(x); y = SH_IN_Y(y);
     for (int key = SHK_CHAR0; key <= SHK_CLEAR; key++) {
         if (key >= SHK_CHAR0 + 14 && key < SHK_MORE) continue;
         int bx, by, bw, bh; nk_box(key, &bx, &by, &bw, &bh);
@@ -13902,7 +14101,7 @@ int render_shelf_rename_hit(float x, float y) {            /* the key under a fi
     }
     return SHK_NONE;
 }
-void render_shelf_rename_key_xy(int key, float *x, float *y) { int bx, by, bw, bh; nk_box(key, &bx, &by, &bw, &bh); *x = bx + bw * 0.5f; *y = by + bh * 0.5f; }
+void render_shelf_rename_key_xy(int key, float *x, float *y) { int bx, by, bw, bh; nk_box(key, &bx, &by, &bw, &bh); *x = SH_OUT_X(bx + bw * 0.5f); *y = SH_OUT_Y(by + bh * 0.5f); }
 /* a stored name -> its two lines: split at the line break, or (a name from before the two lines) as the plate wraps it */
 static void shr_split(const char *name, char l1[SHR_N + 1], char l2[SHR_N + 1]) {
     memset(l1, 0, SHR_N + 1); memset(l2, 0, SHR_N + 1);
@@ -13968,11 +14167,11 @@ void render_shelf_rename(uint16_t *fb, int stride, const shelf_slot_t *s, const 
     (void)s;
     ctx_t c = ctx_frame(fb, stride);
     if (part & 1) {
-        for (int y = 0; y < TANK_H; y++)
-            for (int x = 0; x < TANK_W; x++) px565_blend(&c, x, y, 0, 244);   /* (near black: the shelves only a hint behind) */
+        for (int y = PAGE_FY0 * PAGE_SCALED; y < (PAGE_SCALED ? PAGE_FY0 + PAGE_FH : SH_SH); y++)   /* (the whole glass: on the CYD past the shelf's page) */
+            for (int x = PAGE_FX0 * PAGE_SCALED; x < (PAGE_SCALED ? PAGE_FX0 + PAGE_FW : SH_SW); x++) px565_blend(&c, x, y, 0, 244);   /* (near black: the shelves only a hint behind) */
     }
     if (!(part & 2)) return;
-    draw_text(&c, (TANK_W - text_w("RENAME THIS TANK", 2)) / 2, NK_PLATE_Y - 26, 2, 0xffffff, "RENAME THIS TANK");
+    draw_text(&c, (SH_SW - text_w("RENAME THIS TANK", 2)) / 2, NK_PLATE_Y - 26, 2, 0xffffff, "RENAME THIS TANK");
     rect_fill(&c, NK_PX0, NK_PLATE_Y, NK_PW, NK_PH, SH_BRASS); rect_edge(&c, NK_PX0, NK_PLATE_Y, NK_PW, NK_PH, 0x7a6435);
     for (int k = 0; k < 2; k++) {
         int ty = NK_PLATE_Y + 9 + k * (NK_LH + 12), tx = NK_PX0 + 12;
@@ -14009,11 +14208,11 @@ static const char *g_sh_xt;                            /* another experimental t
 void render_shelf_set_xt(const char *creatures) { g_sh_xt = creatures; }
 void render_shelf_card(uint16_t *fb, int stride, const shelf_slot_t *s, const char *kind, int shelf_days, int age_days) {
     ctx_t c = ctx_frame(fb, stride);
-    for (int y = 0; y < TANK_H; y++)
-        for (int x = 0; x < TANK_W; x++) px565_blend(&c, x, y, 0, 150);
+    for (int y = 0; y < SH_SH; y++)
+        for (int x = 0; x < SH_SW; x++) px565_blend(&c, x, y, 0, 150);
     int top = SH_BOX_H > SHC_TOP ? SH_BOX_H : SHC_TOP;     /* the picture or the text, whichever is taller */
     int h = 16 + top + 14 + SHC_SEG_H + SHC_NOTE + MSP_CLOSE_H + 16;
-    int mx = (TANK_W - SHC_W) / 2, my = (TANK_H - h) / 2;
+    int mx = (SH_SW - SHC_W) / 2, my = (SH_SH - h) / 2;
     rect_fill(&c, mx, my, SHC_W, h, MSP_INK);
     rect_edge(&c, mx, my, SHC_W, h, MSP_TEAL); rect_edge(&c, mx + 1, my + 1, SHC_W - 2, h - 2, MSP_TEAL);
     sh_tank(&c, mx + 16, my + 16, SH_TW, SH_IH, s->thumb, false);
@@ -14075,11 +14274,12 @@ void render_shelf_card(uint16_t *fb, int stride, const shelf_slot_t *s, const ch
 #define SHM_H   (16 + SHM_TOP + 14 + 4 * 20 + 16 + MSP_CLOSE_H + 16)   /* (four lines: 0.4.1's refund may take two) */
 #define SHM_BW  92
 static void shm_btns(int *mx, int *my, int *by, int *rx, int *rw) {   /* the panel, its row of buttons, HOLD TO SELL's box */
-    *mx = (TANK_W - SHC_W) / 2; *my = (TANK_H - SHM_H) / 2;
+    *mx = (SH_SW - SHC_W) / 2; *my = (SH_SH - SHM_H) / 2;
     *by = *my + 16 + SHM_TOP + 14 + 4 * 20 + 16;
     *rw = SHC_W - 32 - SHM_BW - 12; *rx = *mx + 16 + SHM_BW + 12;
 }
 int render_shelf_remove_hit(float x, float y) {
+    x = SH_IN_X(x); y = SH_IN_Y(y);
     int mx, my, by, rx, rw; shm_btns(&mx, &my, &by, &rx, &rw); const int s = 6;
     if (x < mx || x >= mx + SHC_W || y < my || y >= my + SHM_H) return SHM_TAP_OUTSIDE;
     if (y >= by - s && y < by + MSP_CLOSE_H + s) {
@@ -14091,11 +14291,11 @@ int render_shelf_remove_hit(float x, float y) {
 void render_shelf_remove(uint16_t *fb, int stride, const shelf_slot_t *s, int refund, const int n[3], float hold, int part) {
     ctx_t c = ctx_frame(fb, stride);
     if (part & 1)
-        for (int y = 0; y < TANK_H; y++)
-            for (int x = 0; x < TANK_W; x++) px565_blend(&c, x, y, 0, 150);
+        for (int y = 0; y < SH_SH; y++)
+            for (int x = 0; x < SH_SW; x++) px565_blend(&c, x, y, 0, 150);
     if (!(part & 2)) return;
     const int top = SHM_TOP, h = SHM_H;
-    const int mx = (TANK_W - SHC_W) / 2, my = (TANK_H - h) / 2;
+    const int mx = (SH_SW - SHC_W) / 2, my = (SH_SH - h) / 2;
     rect_fill(&c, mx, my, SHC_W, h, MSP_INK);
     rect_edge(&c, mx, my, SHC_W, h, MSP_TEAL); rect_edge(&c, mx + 1, my + 1, SHC_W - 2, h - 2, MSP_TEAL);
     sh_tank(&c, mx + 16, my + 16, SH_TW, SH_IH, s->thumb, true);
@@ -14146,11 +14346,11 @@ void render_shelf_remove(uint16_t *fb, int stride, const shelf_slot_t *s, int re
  * so a board that asks the internet shows one screen whose words change, not two */
 void render_loading(uint16_t *fb, int stride, const char *name, double clock, const char *line) {
     ctx_t c = ctx_frame(fb, stride);
-    for (int y = 0; y < TANK_H; y++) {                     /* deep water, a little lighter at the top */
-        uint32_t col = sh_mix(0x0e3a4c, 0x04121a, y * 256 / TANK_H);
-        rect_fill(&c, 0, y, TANK_W, 1, col);
+    for (int y = 0; y < SH_SH; y++) {                     /* deep water, a little lighter at the top */
+        uint32_t col = sh_mix(0x0e3a4c, 0x04121a, y * 256 / SH_SH);
+        rect_fill(&c, 0, y, SH_SW, 1, col);
     }
-    const int cx = TANK_W / 2, cy = TANK_H / 2 - 24, R = 40;
+    const int cx = SH_SW / 2, cy = SH_SH / 2 - 24, R = 40;
     const int lead = (int)(clock * 10) % 8;                /* (a step a tenth of a second: once round in 0.8 s) */
     for (int k = 0; k < 8; k++) {
         float a = k * 6.2831853f / 8 - 1.5707963f;
@@ -14166,15 +14366,16 @@ void render_loading(uint16_t *fb, int stride, const char *name, double clock, co
         if (age == 0) rect_fill(&c, bx - 4, by - 4, 2, 2, 0xffffff);         /* (its glint) */
     }
     char nm[24]; snprintf(nm, sizeof nm, "%s", name ? name : ""); for (char *p = nm; *p; p++) if (*p == '\n') *p = ' ';
-    draw_text(&c, (TANK_W - text_w(nm, 2)) / 2, cy + R + 26, 2, 0xffffff, nm);
+    draw_text(&c, (SH_SW - text_w(nm, 2)) / 2, cy + R + 26, 2, 0xffffff, nm);
     if (!line) line = "FILLING THE TANK";
-    draw_text(&c, (TANK_W - text_w(line, 2)) / 2, cy + R + 48, 2, MSP_TEAL, line);
+    draw_text(&c, (SH_SW - text_w(line, 2)) / 2, cy + R + 48, 2, MSP_TEAL, line);
 }
 
 /* the card's places (as render_shelf_card draws them) */
 int render_shelf_card_tap(float x, float y) {
+    x = SH_IN_X(x); y = SH_IN_Y(y);
     int top = SH_BOX_H > SHC_TOP ? SH_BOX_H : SHC_TOP, h = 16 + top + 14 + SHC_SEG_H + SHC_NOTE + MSP_CLOSE_H + 16;
-    int mx = (TANK_W - SHC_W) / 2, my = (TANK_H - h) / 2, s = 6;
+    int mx = (SH_SW - SHC_W) / 2, my = (SH_SH - h) / 2, s = 6;
     if (x < mx || x >= mx + SHC_W || y < my || y >= my + h) return SHC_TAP_OUTSIDE;
     int sy = my + 16 + top + 14, sx = mx + 16 + text_w("TIME", 2) + 14, sw = mx + SHC_W - 16 - sx;
     if (g_shc_glass && g_sh_jelly) {                       /* the jelly tank on the glass: RENAME | SETTINGS (J7) */
@@ -14224,10 +14425,10 @@ static int g_lib_page = 1, g_lib_pages = 1;
 void render_library_set_page(int page, int pages) { g_lib_page = page; g_lib_pages = pages < 1 ? 1 : pages; }
 void render_library(uint16_t *fb, int stride, const library_row_t *row, int n, int wallet, const char *checked) {
     ctx_t c = ctx_frame(fb, stride);
-    rect_fill(&c, 0, 0, TANK_W, TANK_H, MSP_INK);
-    draw_text(&c, (TANK_W - text_w("THE LIBRARY", 3)) / 2, SH_TITLE_Y, 3, 0xffffff, "THE LIBRARY");
-    draw_text(&c, (TANK_W - text_w(checked, 1)) / 2, SH_TITLE_Y + 27, 1, MSP_QUIET, checked);
-    int x0 = SH_LIB_X0, x1 = TANK_W - SH_LIB_X0, bw = 116;
+    rect_fill(&c, PAGE_FX0 * PAGE_SCALED, PAGE_FY0 * PAGE_SCALED, PAGE_SCALED ? PAGE_FW : SH_SW, PAGE_SCALED ? PAGE_FH : SH_SH, MSP_INK);   /* (the whole glass: on the CYD past the shelf's page) */
+    draw_text(&c, (SH_SW - text_w("THE LIBRARY", 3)) / 2, SH_TITLE_Y, 3, 0xffffff, "THE LIBRARY");
+    draw_text(&c, (SH_SW - text_w(checked, 1)) / 2, SH_TITLE_Y + 27, 1, MSP_QUIET, checked);
+    int x0 = SH_LIB_X0, x1 = SH_SW - SH_LIB_X0, bw = 116;
     int y = SH_TITLE_Y + 46, pitch = SH_BOX_H + 22;
     for (int i = 0; i < n && i < 2; i++, y += pitch) {
         const library_row_t *r = &row[i];
@@ -14268,27 +14469,28 @@ void render_library(uint16_t *fb, int stride, const library_row_t *row, int n, i
     sh_footer(&c, NULL, true, wallet, "BACK", g_lib_page, g_lib_pages);
 }
 int render_library_tap(float x, float y, int n) {
+    x = SH_IN_X(x); y = SH_IN_Y(y);
     {   /* BACK: sh_footer's right button (MY TANKS's own foot is icons since 0.4.2 - its CLOSE no longer stands here) */
         const int s = 8;
 #if PAGE_BOWL || defined(TANK_WATCH)
-        const int rx = (TANK_W - (SH_BTN_W + 12 + MSP_CLOSE_W)) / 2 + SH_BTN_W + 12;
+        const int rx = (SH_SW - (SH_BTN_W + 12 + MSP_CLOSE_W)) / 2 + SH_BTN_W + 12;
 #else
-        const int rx = TANK_W - SH_X0 - MSP_CLOSE_W;
+        const int rx = SH_SW - SH_X0 - MSP_CLOSE_W;
 #endif
-        if (x >= rx - s && x < rx + MSP_CLOSE_W + s && y >= SH_FOOT_Y - s && y < TANK_H) return LIB_TAP_BACK;   /* (down to the glass's edge) */
+        if (x >= rx - s && x < rx + MSP_CLOSE_W + s && y >= SH_FOOT_Y - s && y < SH_SH) return LIB_TAP_BACK;   /* (down to the glass's edge) */
     }
     {   /* the pager's arrows, where sh_footer draws them */
 #if PAGE_BOWL || defined(TANK_WATCH)
-        const int py = SH_PAGER_Y, pcx = TANK_W / 2;
+        const int py = SH_PAGER_Y, pcx = SH_SW / 2;
 #else
-        const int py = SH_FOOT_Y, pcx = (SH_X0 + SH_BTN_W + TANK_W - SH_X0 - MSP_CLOSE_W) / 2;
+        const int py = SH_FOOT_Y, pcx = (SH_X0 + SH_BTN_W + SH_SW - SH_X0 - MSP_CLOSE_W) / 2;
 #endif
-        if (g_lib_pages > 1 && y >= py - 8 && y < (py == SH_FOOT_Y ? TANK_H : py + MSP_CLOSE_H + 8)) {
+        if (g_lib_pages > 1 && y >= py - 8 && y < (py == SH_FOOT_Y ? SH_SH : py + MSP_CLOSE_H + 8)) {
             if (x >= pcx - 100 && x < pcx - 30) return LIB_TAP_PREV;
             if (x >= pcx + 30 && x < pcx + 100) return LIB_TAP_NEXT;
         }
     }
-    int x1 = TANK_W - SH_LIB_X0, bw = 116, pitch = SH_BOX_H + 22, y0 = SH_TITLE_Y + 46;
+    int x1 = SH_SW - SH_LIB_X0, bw = 116, pitch = SH_BOX_H + 22, y0 = SH_TITLE_Y + 46;
     for (int i = 0; i < n && i < 2; i++) {
         int by = y0 + i * pitch + 10;
         if (x >= x1 - bw - 8 && x < x1 + 8 && y >= by - 24 && y < by + MSP_CLOSE_H + 30) return LIB_TAP_ROW0 + i;   /* the button and the price under it */
@@ -14302,6 +14504,10 @@ int render_library_tap(float x, float y, int n) {
  * hue. Drawn over the kept page every frame (three small rings: the page stays a copy plus this); t in seconds, any
  * origin. */
 static void sh_loading(ctx_t *c, int x, int y, int w, int h, float t, bool dim) {   /* (x, y, w, h): the picture's place */
+#if PAGE_SCALED
+    ctx_t f;                                       /* (a scaled page: the bubbles are in the picture, whose place is its frame box: sh_pic's) */
+    if (c->pg) { f = ctx_unpaged(c); c = &f; x = PG_X(x); y = PG_Y(y); w = SH_THUMB_W; h = SH_THUMB_H; }
+#endif
     const uint32_t rim = dim ? 0x6f8d95 : 0xd6f2f7, in = dim ? 0x14242a : 0x1d4450;
     static const struct { uint8_t at, r; float ph; } B[3] = { { 28, 3, 0.00f }, { 52, 5, 0.37f }, { 74, 4, 0.71f } };   /* across (%), radius, when */
     for (int k = 0; k < 3; k++) {
@@ -14332,6 +14538,7 @@ void render_library_pic(uint16_t *fb, int stride, int row, const uint16_t *pic, 
 }
 void render_library_pic_rect(int row, int *x, int *y, int *w, int *h) {
     *x = SH_LIB_X0 + 2; *y = SH_TITLE_Y + 46 + row * (SH_BOX_H + 22) + SH_LID; *w = SH_PIC_W; *h = SH_IH;
+    sh_frame_box(x, y, w, h); *w = SH_THUMB_W; *h = SH_THUMB_H;   /* (the picture's own size: its glass's on the glass) */
 }
 
 /* ---- PICK A THEME (the jelly tank, 2026-11-07, docs/jelly-tank-0.6.md J2) ----
@@ -14339,21 +14546,21 @@ void render_library_pic_rect(int row, int *x, int *y, int *w, int *h) {
  * the other two dimmed (never told by hue). Two plain lines: the theme is for good, and the D7 line. NEW TANK
  * (dim until a pick) and BACK stand where the shelf's footer buttons do. */
 static void jp_geom(int *x0, int *cw, int *y0) {
-    *x0 = SH_LIB_X0; *cw = (TANK_W - 2 * SH_LIB_X0) / 3;
+    *x0 = SH_LIB_X0; *cw = (SH_SW - 2 * SH_LIB_X0) / 3;
     int top = SH_TITLE_Y + 34, h = 10 + SH_BOX_H + 30 + 20 + 28 + 34;   /* the ring, the tanks, the names, four lines */
     *y0 = top + (SH_FOOT_Y - 12 - top - h) / 2 + 10;                    /* centred between the title and the buttons */
 }
 static void jp_footer_x(int *lx, int *rx) {
 #if PAGE_BOWL || defined(TANK_WATCH)
-    *lx = (TANK_W - (SH_BTN_W + 12 + MSP_CLOSE_W)) / 2; *rx = *lx + SH_BTN_W + 12;
+    *lx = (SH_SW - (SH_BTN_W + 12 + MSP_CLOSE_W)) / 2; *rx = *lx + SH_BTN_W + 12;
 #else
-    *lx = SH_X0; *rx = TANK_W - SH_X0 - MSP_CLOSE_W;
+    *lx = SH_X0; *rx = SH_SW - SH_X0 - MSP_CLOSE_W;
 #endif
 }
 void render_jelly_pick(uint16_t *fb, int stride, const char *const names[3], const uint16_t *const thumbs[3], int picked) {
     ctx_t c = ctx_frame(fb, stride);
-    rect_fill(&c, 0, 0, TANK_W, TANK_H, MSP_INK);
-    draw_text(&c, (TANK_W - text_w("PICK A THEME", 3)) / 2, SH_TITLE_Y, 3, 0xffffff, "PICK A THEME");
+    rect_fill(&c, PAGE_FX0 * PAGE_SCALED, PAGE_FY0 * PAGE_SCALED, PAGE_SCALED ? PAGE_FW : SH_SW, PAGE_SCALED ? PAGE_FH : SH_SH, MSP_INK);
+    draw_text(&c, (SH_SW - text_w("PICK A THEME", 3)) / 2, SH_TITLE_Y, 3, 0xffffff, "PICK A THEME");
     int x0, cw, y0; jp_geom(&x0, &cw, &y0);
     for (int k = 0; k < 3; k++) {
         int bx = x0 + k * cw + (cw - SH_TW) / 2;
@@ -14366,13 +14573,13 @@ void render_jelly_pick(uint16_t *fb, int stride, const char *const names[3], con
     }
     int y = y0 + SH_BOX_H + 40;
     const char *l1 = "THE THEME STAYS WITH", *l2 = "THIS TANK FOR GOOD.";
-    draw_text(&c, (TANK_W - text_w(l1, 2)) / 2, y, 2, 0xffffff, l1); y += 20;
-    draw_text(&c, (TANK_W - text_w(l2, 2)) / 2, y, 2, 0xffffff, l2); y += 28;
+    draw_text(&c, (SH_SW - text_w(l1, 2)) / 2, y, 2, 0xffffff, l1); y += 20;
+    draw_text(&c, (SH_SW - text_w(l2, 2)) / 2, y, 2, 0xffffff, l2); y += 28;
     const char *e1 = "STILL BEING BUILT. IT MAY", *e2 = "CHANGE, AND MAY START OVER.";
     int ew = text_w(e1, 2) > text_w(e2, 2) ? text_w(e1, 2) : text_w(e2, 2);
-    sh_flask(&c, (TANK_W - ew) / 2 - 12, y + 1, MSP_QUIET);
-    draw_text(&c, (TANK_W - text_w(e1, 2)) / 2, y, 2, MSP_QUIET, e1); y += 20;
-    draw_text(&c, (TANK_W - text_w(e2, 2)) / 2, y, 2, MSP_QUIET, e2);
+    sh_flask(&c, (SH_SW - ew) / 2 - 12, y + 1, MSP_QUIET);
+    draw_text(&c, (SH_SW - text_w(e1, 2)) / 2, y, 2, MSP_QUIET, e1); y += 20;
+    draw_text(&c, (SH_SW - text_w(e2, 2)) / 2, y, 2, MSP_QUIET, e2);
     int lx, rx; jp_footer_x(&lx, &rx);
     if (picked >= 0) lit_button(&c, lx, SH_FOOT_Y, SH_BTN_W, MSP_CLOSE_H, "NEW TANK");
     else { rect_edge(&c, lx, SH_FOOT_Y, SH_BTN_W, MSP_CLOSE_H, MSP_DIM);
@@ -14380,10 +14587,11 @@ void render_jelly_pick(uint16_t *fb, int stride, const char *const names[3], con
     button(&c, rx, SH_FOOT_Y, MSP_CLOSE_W, MSP_CLOSE_H, 0x1c2f36, MSP_TEAL, "BACK", 2);
 }
 int render_jelly_pick_tap(float x, float y) {
+    x = SH_IN_X(x); y = SH_IN_Y(y);
     int x0, cw, y0; jp_geom(&x0, &cw, &y0);
     if (y >= y0 - 10 && y < y0 + SH_BOX_H + 40 && x >= x0 && x < x0 + 3 * cw) return JP_TAP_THEME0 + (int)((x - x0) / cw);   /* the picture or its name */
     int lx, rx; jp_footer_x(&lx, &rx);
-    if (y >= SH_FOOT_Y - 8 && y < TANK_H) {
+    if (y >= SH_FOOT_Y - 8 && y < SH_SH) {
         if (x >= lx - 8 && x < lx + SH_BTN_W + 8) return JP_TAP_NEW;
         if (x >= rx - 8 && x < rx + MSP_CLOSE_W + 8) return JP_TAP_BACK;
     }
@@ -14393,6 +14601,7 @@ int render_jelly_pick_tap(float x, float y) {
 void render_jelly_pick_pic_rect(int k, int *x, int *y, int *w, int *h) {
     int x0, cw, y0; jp_geom(&x0, &cw, &y0);
     *x = x0 + k * cw + (cw - SH_TW) / 2 + 2; *y = y0 + SH_LID; *w = SH_PIC_W; *h = SH_IH;
+    sh_frame_box(x, y, w, h); *w = SH_THUMB_W; *h = SH_THUMB_H;
 }
 void render_jelly_pick_pic(uint16_t *fb, int stride, int k, const uint16_t *pic, int picked) {   /* (as render_library_pic) */
     ctx_t c = ctx_frame(fb, stride);
@@ -14400,7 +14609,7 @@ void render_jelly_pick_pic(uint16_t *fb, int stride, int k, const uint16_t *pic,
     sh_tank(&c, x0 + k * cw + (cw - SH_TW) / 2, y0, SH_TW, SH_IH, pic, picked >= 0 && k != picked);
 }
 void render_jelly_pick_loading(uint16_t *fb, int stride, unsigned themes, int picked, float t) {   /* (A PICTURE STILL BEING MADE, above) */
-    ctx_t c = ctx_frame(fb, stride);
+    ctx_t cf = ctx_frame(fb, stride), c = ctx_tank(&cf);   /* (the rects below are the frame's already: no page mapping on the CYD) */
     for (int k = 0; k < 3; k++) {
         if (!(themes >> k & 1)) continue;
         int x, y, w, h; render_jelly_pick_pic_rect(k, &x, &y, &w, &h);
@@ -14416,12 +14625,12 @@ static const char *const LNOTE[] = { "AN EXPERIMENTAL TANK,", "STILL BEING BUILT
 #define LNOTE_N   ((int)(sizeof LNOTE / sizeof LNOTE[0]))
 #define LNOTE_LH  18
 #define LNOTE_H   (16 + 22 + 10 + LNOTE_N * LNOTE_LH + 12 + MSP_CLOSE_H + 16)
-static void lnote_box(int *mx, int *my) { *mx = (TANK_W - SHC_W) / 2; *my = (TANK_H - LNOTE_H) / 2; }
+static void lnote_box(int *mx, int *my) { *mx = (SH_SW - SHC_W) / 2; *my = (SH_SH - LNOTE_H) / 2; }
 static const char *g_lnote_name = "JELLY TANK";      /* the row the note is for (0.4.2: the piranhas and the minnows have it too) */
 void render_library_note_name(const char *name) { g_lnote_name = name ? name : "JELLY TANK"; }
 void render_library_note(uint16_t *fb, int stride) {
     ctx_t c = ctx_frame(fb, stride);
-    for (int y = 0; y < TANK_H; y++) for (int x = 0; x < TANK_W; x++) px565_blend(&c, x, y, 0, 150);
+    for (int y = 0; y < SH_SH; y++) for (int x = 0; x < SH_SW; x++) px565_blend(&c, x, y, 0, 150);
     int mx, my; lnote_box(&mx, &my);
     rect_fill(&c, mx, my, SHC_W, LNOTE_H, MSP_INK);
     rect_edge(&c, mx, my, SHC_W, LNOTE_H, MSP_TEAL); rect_edge(&c, mx + 1, my + 1, SHC_W - 2, LNOTE_H - 2, MSP_TEAL);
@@ -14434,6 +14643,7 @@ void render_library_note(uint16_t *fb, int stride) {
     lit_button(&c, mx + (SHC_W - 98) / 2, y, 98, MSP_CLOSE_H, "OK");
 }
 int render_library_note_tap(float x, float y) {
+    x = SH_IN_X(x); y = SH_IN_Y(y);
     int mx, my; lnote_box(&mx, &my);
     if (x < mx || x >= mx + SHC_W || y < my || y >= my + LNOTE_H) return LNOTE_TAP_OUTSIDE;
     int by = my + LNOTE_H - 16 - MSP_CLOSE_H, bx = mx + (SHC_W - 98) / 2;
@@ -14448,12 +14658,12 @@ static const char *const TLNOTE[] = { "TOUCH LOCK IS NOW ACTIVE", "ON YOUR TANK.
 #define TLNOTE_H (16 + 20 + 12 + TLNOTE_N * LNOTE_LH + 10 + 8 + 14)
 void render_shelf_lock_note(uint16_t *fb, int stride) {
     ctx_t c = ctx_frame(fb, stride);
-    for (int y = 0; y < TANK_H; y++) for (int x = 0; x < TANK_W; x++) px565_blend(&c, x, y, 0, 150);
-    const int mx = (TANK_W - SHC_W) / 2, my = (TANK_H - TLNOTE_H) / 2;
+    for (int y = 0; y < SH_SH; y++) for (int x = 0; x < SH_SW; x++) px565_blend(&c, x, y, 0, 150);
+    const int mx = (SH_SW - SHC_W) / 2, my = (SH_SH - TLNOTE_H) / 2;
     rect_fill(&c, mx, my, SHC_W, TLNOTE_H, MSP_INK);
     rect_edge(&c, mx, my, SHC_W, TLNOTE_H, MSP_TEAL); rect_edge(&c, mx + 1, my + 1, SHC_W - 2, TLNOTE_H - 2, MSP_TEAL);
     int y = my + 16;
-    sh_padlock(&c, TANK_W / 2, y + 10, true, MSP_TEAL, MSP_INK); y += 20 + 12;
+    sh_padlock(&c, SH_SW / 2, y + 10, true, MSP_TEAL, MSP_INK); y += 20 + 12;
     for (int k = 0; k < TLNOTE_N; k++, y += LNOTE_LH)
         if (TLNOTE[k][0]) draw_text(&c, mx + (SHC_W - text_w(TLNOTE[k], 2)) / 2, y, 2, k >= 3 ? MSP_TEAL : 0xffffff, TLNOTE[k]);
     y += 10;
@@ -14477,7 +14687,7 @@ void render_breed_close(void) { g_bp.on = false; g_bp.a = 0; }
 bool render_breed_card_up(void) { return g_bp.on; }
 static int breed_fish_at(const tank_t *t, float x, float y);   /* below */
 bool render_breed_button_at(const tank_t *t, float x, float y) {   /* a firm press that is still a tap (touch_gate.h): the card, the chip, a fish */
-    if (g_bp.on) { int X = (TANK_W - 336) / 2, Y = (TANK_H - 268) / 2; return x >= X && x < X + 336 && y >= Y && y < Y + 278; }
+    if (g_bp.on) { int X = (PAGE_W - 336) / 2, Y = (PAGE_H - 268) / 2; const float px = FX_PAGE(x), py = FY_PAGE(y); return px >= X && px < X + 336 && py >= Y && py < Y + 278; }
     return render_tool_chip_hit(t, x, y) || breed_fish_at(t, x, y) >= 0;
 }
 void render_breed_tool_up(const tank_t *t) {             /* the tool just picked up: a pair already set shows at once */
@@ -14506,11 +14716,12 @@ static int breed_fish_at(const tank_t *t, float x, float y) {
 #define BP_W 336
 #define BP_H 268
 #define BP_BTN_H 34
-static void bp_frame(int *X, int *Y) { *X = (TANK_W - BP_W) / 2; *Y = (TANK_H - BP_H) / 2; }
+static void bp_frame(int *X, int *Y) { *X = (PAGE_W - BP_W) / 2; *Y = (PAGE_H - BP_H) / 2; }
 /* every tap while the BREEDING tool is in hand (the tool owns the glass): the card's buttons, the chip's CANCEL, a fish */
 int render_breed_tap(tank_t *t, float x, float y) {
     if (t->tool != TOOL_BREED) return RENDER_BT_NONE;
     if (g_bp.on) {
+        x = FX_PAGE(x); y = FY_PAGE(y);                    /* the card's own space: the page's (every path below returns) */
         int X, Y; bp_frame(&X, &Y);
         const int BW = (BP_W - 36) / 2, BY = Y + BP_H - BP_BTN_H - 12;
         if (x < X || x >= X + BP_W || y < Y || y >= Y + BP_H + 10) return RENDER_BT_NONE;   /* (off the card: nothing - a kid's stray tap) */
@@ -14546,7 +14757,7 @@ void render_breed_card(const tank_t *t, uint16_t *fb, int stride) {
     int ia = uid_slot(t, g_bp.pa), ib = uid_slot(t, g_bp.pb);
     if (!g_bp.set && (uid_here(t, g_bp.pa) < 0 || uid_here(t, g_bp.pb) < 0)) { g_bp.on = false; g_bp.a = 0; }   /* (not paired yet and a fish gone or next door: the card goes, nothing paid) */
     if (!g_bp.on) return;
-    ctx_t cc = ctx_full(fb, stride, 1.0f); ctx_t *c = &cc;
+    ctx_t cc = ctx_page(fb, stride); ctx_t *c = &cc;
     const uint32_t INK = 0x13324f, EDGE = 0x9fd8e2;
     const int W = BP_W, H = BP_H; int X, Y; bp_frame(&X, &Y);
     rect_fill(c, X, Y, W, H, 0x0e2233);
@@ -14559,7 +14770,7 @@ void render_breed_card(const tank_t *t, uint16_t *fb, int stride) {
         rect_fill(c, bx, PY, PW, PH, 0x0a1824); rect_edge(c, bx, PY, PW, PH, EDGE);
         if (i < 0) { draw_text(c, bx + (PW - text_w("NEXT DOOR", 1)) / 2, PY + PH / 2 - 3, 1, 0x7fa3b5, "NEXT DOOR"); continue; }
         const fish_t *f = &t->fish[i];
-        render_fish_portrait(fb, stride, bx + PW / 2.0f - PAGE_X, PY + PH / 2.0f - PAGE_Y, 1.3f, f, PW - 20, t->clock + k * 0.8);   /* (page coordinates) */
+        render_fish_portrait(fb, stride, bx + PW / 2.0f, PY + PH / 2.0f, 1.3f, f, PW - 20, t->clock + k * 0.8);   /* (page coordinates) */
         draw_text(c, bx + (PW - text_w(f->name, 2)) / 2, PY + PH + 8, 2, 0xffffff, f->name);
     }
     const icon_t *hi = &icon_tool_breed;                /* the heart between them, at 2x */

@@ -35,6 +35,11 @@
 #define TANK_W 480
 #define TANK_H 480
 #endif
+#ifdef TANK_CYD                 /* the CYD (Freenove FNK0104B, 2026-11-18): a 2.8-inch ILI9341 IPS LCD, 320 x 240 landscape,
+                                 * square corners - the rectangle's world at 0.71 x 0.65; the pages are laid out for it */
+#define TANK_W 320
+#define TANK_H 240
+#endif
 /* a tank WORN on a wrist (2026-10-02): the picture's way up is the keeper's
  * setting (settings SCREEN), never the live IMU's - the arm swings through
  * every angle (tank_screen_*) */
@@ -239,6 +244,8 @@ typedef enum { VEG_KIND_GRASS, VEG_KIND_SWORD } veg_kind_t;
 #define VEG_SEG_PX 4.3f
 #elif defined(TANK_SQUARE)                     /* ... and the square's 112 px taller: 107 x 4.2 from y 464, the tip at 14 */
 #define VEG_SEG_PX 4.2f
+#elif defined(TANK_CYD)                        /* ... and the CYD's 128 px shorter: 107 x 2.0 from y 224, the tip at 10 */
+#define VEG_SEG_PX 2.0f
 #else
 #define VEG_SEG_PX 3.2f
 #endif
