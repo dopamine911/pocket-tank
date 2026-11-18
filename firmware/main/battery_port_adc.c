@@ -71,14 +71,15 @@ bool battery_port_init(i2c_master_bus_handle_t bus) {
     return false;                              /* false: no PMIC (main.c's night is a deep sleep, the PWR key is BOOT) */
 }
 
-/* the meter: a straight line between the cell's ends, uncalibrated. The cable is not sensed: never charging */
+/* the meter: HIDDEN (2026-11-18, Daniel: the board runs with no cell). With nothing on the socket GPIO 9 reads the
+   charger's output (~4.1 V: "88%" on the glass), and with a cell the cable still could not be told - a pill and a battery
+   page that are never true. So the meter is not shown: false, as a board with no gauge (main.c's battery_frame then
+   stops at its first check: no pill, no page, no low-battery notice or cue). The reading stays for the director
+   (`battery`, battery_port_vbat_mv) until a cell and a divider are measured */
 bool battery_port_read(float *frac, bool *charging) {
+    (void)frac; (void)charging;
     refresh();
-    if (!s_valid) return false;
-    float f = (float)(s_mv - BAT_EMPTY_MV) / (float)(BAT_FULL_MV - BAT_EMPTY_MV);
-    *frac = f < 0 ? 0 : f > 1 ? 1 : f;
-    *charging = false;
-    return true;
+    return false;
 }
 int battery_port_state(void) { return BAT_ON_BATTERY; }   /* no charger status on this board: the cable is not sensed */
 int battery_port_vbat_mv(void) { refresh(); return s_valid ? s_mv : 0; }

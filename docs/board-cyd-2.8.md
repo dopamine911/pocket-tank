@@ -28,7 +28,7 @@ no charger status line, no PWR key (BOOT is the key).
   `map_touch`). The same FT5x06 driver as the 1.8's, reset on GPIO 18.
 - `firmware/main/audio_port_es8311.c`: the CYD's I2S pins; the amplifier's level is `AMP_EN_ON` (0). It is set
   off before the pin becomes an output, and held off through deep sleep.
-- `firmware/main/battery_port_adc.c`: the battery port without a PMIC. Uncalibrated (see below).
+- `firmware/main/battery_port_adc.c`: the battery port without a PMIC. The meter is hidden (see below).
 - `firmware/main/board_probe.h`: the CYD signature (no expander, no ES7210, no PMIC, FT6336 at 0x38, ES8311 at 0x18).
 
 ## The pages: drawn scaled (`PAGE_SCALED`, common/render.h)
@@ -59,10 +59,13 @@ The build is signed (firmware/keys/ota_signing_key.pem, tools/ota_key.sh).
   decision. Picture upright, colours right, taps land where the finger is (the 180-degree map holds).
 - A boot loop on the first image: the stats card (258 px) was copied into a 240 px frame - fixed (226 px, and a
   static assert in render.h for every board).
-- Not measured: the audio level on a speaker, the backlight PWM curve, every battery number, the sleep currents.
-- The battery is uncalibrated: the x2 divider ratio is the vendor's sketch, and the percent is a straight line
-  from 3.3 V to 4.2 V; with no cell fitted it reads ~4.1 V (the charger's output). The meter reports not charging,
-  on battery, because the cable is not sensed.
+- Not measured: the audio level on a speaker, the backlight PWM curve, the sleep currents.
+- No battery: the board runs on USB with no cell, and GPIO 9 reads the charger's output (~4.1 V), so the meter is
+  hidden - no pill, no battery page, no low-battery notice (`battery_port_read` answers false). The voltage is still
+  read for the director's `battery`. A cell would need its divider measured and a way to tell the cable first.
+- The model: the shipped v3m decides in 3.1 s (13.9 tok/s); the 4.8M candidate from PR #3 (relabel-d256n6) in 1.2 s
+  (35.4 tok/s), with 20 KB more internal heap and 0.9 MB more PSRAM free. The frame rate is the same with either
+  (the 34 ms SPI send bounds it).
 - The RTC: there is none, so the clock is the ESP32's own. A deep sleep keeps it; a power cut or RESET loses
   it (rtc_port_pcf85063.c leaves it unset, and the network or the save sets it).
 - The tank's own world numbers are the rectangle's formulas at 320 x 240 (beds, frond pitch, algae cells of 16 px,
